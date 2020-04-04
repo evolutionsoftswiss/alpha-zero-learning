@@ -1,7 +1,5 @@
 package ch.evolutionsoft.rl4j.tictactoe;
 
-import java.util.Random;
-
 import org.deeplearning4j.nn.api.NeuralNetwork;
 import org.deeplearning4j.nn.graph.ComputationGraph;
 import org.deeplearning4j.nn.multilayer.MultiLayerNetwork;
@@ -12,6 +10,7 @@ import org.deeplearning4j.rl4j.network.NeuralNet;
 import org.deeplearning4j.rl4j.policy.EpsGreedy;
 import org.deeplearning4j.rl4j.space.DiscreteSpace;
 import org.nd4j.linalg.api.ndarray.INDArray;
+import org.nd4j.linalg.cpu.nativecpu.rng.CpuNativeRandom;
 import org.nd4j.linalg.factory.Nd4j;
 
 import ch.evolutionsoft.net.game.NeuralNetConstants;
@@ -37,7 +36,7 @@ public class TicTacToeEpsilonGreedyPolicy extends EpsGreedy<TicTacToeState, Inte
       NeuralNetwork perfectPlayingModel, StepCountable stepCountable) {
 
     super(null, null, qLConfiguration.getUpdateStart(), qLConfiguration.getEpsilonNbStep(),
-        new Random(NeuralNetConstants.DEFAULT_SEED), qLConfiguration.getMinEpsilon(), stepCountable);
+        new CpuNativeRandom(NeuralNetConstants.DEFAULT_SEED), qLConfiguration.getMinEpsilon(), stepCountable);
 
     this.mdp = mdp;
     this.updateStart = qLConfiguration.getUpdateStart();

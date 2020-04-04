@@ -23,7 +23,6 @@ import org.deeplearning4j.rl4j.network.dqn.DQN;
 import org.deeplearning4j.rl4j.network.dqn.IDQN;
 import org.deeplearning4j.rl4j.space.DiscreteSpace;
 import org.deeplearning4j.rl4j.space.Encodable;
-import org.deeplearning4j.rl4j.util.DataManager;
 import org.deeplearning4j.rl4j.util.IDataManager.StatEntry;
 import org.deeplearning4j.util.ModelSerializer;
 import org.nd4j.evaluation.classification.Evaluation;
@@ -41,7 +40,7 @@ import ch.evolutionsoft.net.game.tictactoe.TicTacToeNeuralDataConverter;
 
 public class ReinforcementLearningMain {
 
-  private static final int NUMBER_OF_NODES = 42;
+  private static final int NUMBER_OF_NODES = 75;
 
   Pair<INDArray, INDArray> p1 = TicTacToeNeuralDataConverter.stackFeedForwardPlaygroundLabels(
       TicTacToeNeuralDataConverter.convertMiniMaxLabels(
@@ -88,7 +87,7 @@ public class ReinforcementLearningMain {
     @Override
     public double[] toArray() {
 
-      return getPlayground().reshape(1, COLUMN_NUMBER).toDoubleVector();
+      return getPlayground().reshape(1, COLUMN_COUNT).toDoubleVector();
     }
   }
 
@@ -130,24 +129,21 @@ public class ReinforcementLearningMain {
 
   private static final Logger log = LoggerFactory.getLogger(ReinforcementLearningMain.class);
 
-  static final double LEARNING_RATE = 5e-5;
-  static final int NET_ITERATIONS = 1;
-  static final int TARGET_NET_UPDATE = 100;
-  static final int QLEARNING_MAX_STEP = 10000;
-  static final int STEPS_EPSILON_GREEDY = 2000;
+  static final double LEARNING_RATE = 2e-6;
+  static final int TARGET_NET_UPDATE = 2000;
+  static final int QLEARNING_MAX_STEP = 100000;
+  static final int STEPS_EPSILON_GREEDY = 100;
   static final int BATCH_SIZE = 9;
-  static final float MIN_EPSILON = 0.01f;
+  static final float MIN_EPSILON = 0.1f;
   static final double ERROR_CLAMP = 0.4;
   static final double GAMMA = 1;
-  static final double REWARD_FACTOR = 1;
+  static final double REWARD_FACTOR = 0.1;
   static final int MAX_EPOCH_STEP = 9;
   static final int MAX_EXP_REPLAY_SIZE = 5;
 
   public static void main(String[] args) throws IOException {
 
     ReinforcementLearningMain reinforcementLearning = new ReinforcementLearningMain();
-
-    DataManager dataManager = new DataManager("output", true);
 
     MultiLayerNetwork model = reinforcementLearning.createConvolutionalConfiguration();
     TicTacToeGame mdp = new TicTacToeGame();
@@ -166,7 +162,7 @@ public class ReinforcementLearningMain {
         mdp,
         mdp.getFetchable().getNeuralNet(),
         reinforcementLearning.createQLConfiguration(),
-        dataManager, perfectModel) {
+        perfectModel) {
  
       int lastIterationCount;
       int lastTotalSteps;
@@ -176,17 +172,9 @@ public class ReinforcementLearningMain {
         
         StatEntry statEntry = super.trainEpoch();
         reinforcementLearning.statisticEntries.add(statEntry);
-        
-        return statEntry;
-      }
-
-      @Override
-      public void postEpoch() {
 
         int totalGamesPlayed = reinforcementLearning.statisticEntries.size();
         if (totalGamesPlayed > 0 && totalGamesPlayed % TARGET_NET_UPDATE == 0) {
-
-          assert totalGamesPlayed > 0;
           
           int minWins = 0;
           int maxWins = 0;
@@ -199,9 +187,9 @@ public class ReinforcementLearningMain {
                 reinforcementLearning.statisticEntries.get(lastResultsIndex);
             double result = currentResult.getReward();
 
-            if (currentResult.getStepCounter() == 9) {
+            if (result > TicTacToeGame.DRAW_REWARD) {
 
-              draws++;
+              maxWins++;
 
             } else if (result < TicTacToeGame.DRAW_REWARD) {
 
@@ -209,7 +197,7 @@ public class ReinforcementLearningMain {
 
             } else {
 
-              maxWins++;
+              draws++;
             }
           }
 
@@ -231,6 +219,8 @@ public class ReinforcementLearningMain {
           lastTotalSteps = reinforcementLearning.dql.getStepCounter();
           lastIterationCount = totalGamesPlayed;
         }
+
+        return statEntry;
       }
     };
 
@@ -262,7 +252,7 @@ public class ReinforcementLearningMain {
 
       log.info("Last Games (" + draws + " / " + (draws + maxWins + minWins) + "=" + lastResultsIndex + " games): " +
                ((double) draws / (draws + maxWins)));
-
+      
     } catch (AssertionError ae) {
       log.error(String.valueOf(mdp.currentState.getPlayground()));
       throw ae;
@@ -295,6 +285,7 @@ public class ReinforcementLearningMain {
   QLConfiguration createQLConfiguration() {
 
     QLConfiguration qlConfiguration = QLConfiguration.builder()
+        .seed(DEFAULT_SEED)
         .maxEpochStep(MAX_EPOCH_STEP) // Max step By epoch
         .maxStep(QLEARNING_MAX_STEP) // Max step
         .expRepMaxSize(MAX_EXP_REPLAY_SIZE) // Max size of experience replay
@@ -318,7 +309,7 @@ public class ReinforcementLearningMain {
     return new NeuralNetConfiguration.ListBuilder(generalConfigBuilder)
         .layer(0, new DenseLayer.Builder()
             .activation(Activation.TANH)
-            .nIn(TicTacToeConstants.COLUMN_NUMBER)
+            .nIn(TicTacToeConstants.COLUMN_COUNT)
             .nOut(NUMBER_OF_NODES)
             .name(DEFAULT_INPUT_LAYER_NAME)
             .build())
@@ -331,7 +322,7 @@ public class ReinforcementLearningMain {
         .layer(2, new OutputLayer.Builder()
             .activation(Activation.SOFTMAX)
             .nIn(NUMBER_OF_NODES)
-            .nOut(TicTacToeConstants.COLUMN_NUMBER)
+            .nOut(COLUMN_COUNT)
             .name(DEFAULT_OUTPUT_LAYER_NAME)
             .build());
   }
@@ -339,7 +330,7 @@ public class ReinforcementLearningMain {
   protected void evaluateNetwork(MultiLayerNetwork model) {
 
     INDArray output = model.output(p1.getFirst());
-    Evaluation eval = new Evaluation(COLUMN_NUMBER);
+    Evaluation eval = new Evaluation(TicTacToeConstants.COLUMN_COUNT);
     eval.eval(p1.getSecond(), output);
 
     if (log.isInfoEnabled()) {

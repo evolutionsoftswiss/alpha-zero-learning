@@ -53,7 +53,7 @@ public class TicTacToeGame implements MDP<TicTacToeState, Integer, DiscreteSpace
   public ObservationSpace<TicTacToeState> getObservationSpace() {
 
     ArrayObservationSpace<TicTacToeState> observationSpace =
-        new ArrayObservationSpace<>(new int[] { COLUMN_NUMBER });
+        new ArrayObservationSpace<>(new int[] { COLUMN_COUNT });
 
     return observationSpace;
   }
@@ -148,7 +148,7 @@ public class TicTacToeGame implements MDP<TicTacToeState, Integer, DiscreteSpace
         return DRAW_REWARD;
       }
       
-      return 0;
+      return DRAW_REWARD;
   }
 
   public boolean isDone() {
@@ -171,9 +171,9 @@ public class TicTacToeGame implements MDP<TicTacToeState, Integer, DiscreteSpace
   Set<Integer> getEmptyFields(INDArray inputState) {
     
     Set<Integer> emptyFieldsIndices = new HashSet<>(SMALL_CAPACITY);
-    for (int column = 0; column < COLUMN_NUMBER; column++) {
+    for (int column = 0; column < COLUMN_COUNT; column++) {
 
-      if (equalsEpsilon(EMPTY_FIELD_VALUE, inputState.getDouble(0, column), DOUBLE_COMPARISON_EPSILON) ) {
+      if (equalsEpsilon(EMPTY_FIELD_VALUE, inputState.getDouble(column), DOUBLE_COMPARISON_EPSILON) ) {
 
         emptyFieldsIndices.add(column);
       }
@@ -249,7 +249,7 @@ public class TicTacToeGame implements MDP<TicTacToeState, Integer, DiscreteSpace
    */
   int countOccupiedImagePoints(INDArray channelImage) {
     
-    return COLUMN_NUMBER - getEmptyFields(channelImage).size();
+    return COLUMN_COUNT - getEmptyFields(channelImage).size();
   }
 
   public void printTest() {
@@ -285,7 +285,7 @@ public class TicTacToeGame implements MDP<TicTacToeState, Integer, DiscreteSpace
     int maxStones = countMaxStones(playground);
     int minStones = countMinStones(playground);
     int emptyFieldsCount = getEmptyFields(currentState.getPlayground()).size();
-    int totalStones = COLUMN_NUMBER - countOccupiedImagePoints(currentState.getPlayground());
+    int totalStones = COLUMN_COUNT - countOccupiedImagePoints(currentState.getPlayground());
     
     assert maxStones == minStones || maxStones == minStones + 1;
     assert totalStones == maxStones + minStones;
