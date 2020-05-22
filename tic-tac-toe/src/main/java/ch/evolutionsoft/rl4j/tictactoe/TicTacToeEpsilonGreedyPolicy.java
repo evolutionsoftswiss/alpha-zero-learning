@@ -1,8 +1,6 @@
 package ch.evolutionsoft.rl4j.tictactoe;
 
-import org.deeplearning4j.nn.api.NeuralNetwork;
 import org.deeplearning4j.nn.graph.ComputationGraph;
-import org.deeplearning4j.nn.multilayer.MultiLayerNetwork;
 import org.deeplearning4j.rl4j.learning.Learning;
 import org.deeplearning4j.rl4j.learning.StepCountable;
 import org.deeplearning4j.rl4j.learning.sync.qlearning.QLearning.QLConfiguration;
@@ -19,21 +17,16 @@ import ch.evolutionsoft.rl4j.tictactoe.ReinforcementLearningMain.TicTacToeState;
 
 public class TicTacToeEpsilonGreedyPolicy extends EpsGreedy<TicTacToeState, Integer, DiscreteSpace> {
 
-  final protected TicTacToeGame mdp;
-  final protected int updateStart;
-  final protected int epsilonNbStep;
-  final protected float minEpsilon;
-  final protected StepCountable stepCountable;
+  protected final TicTacToeGame mdp;
+  protected final int updateStart;
+  protected final int epsilonNbStep;
+  protected final float minEpsilon;
+  protected final StepCountable stepCountable;
 
-  final private NeuralNetwork perfectPlayer;
-
-  public float getEpsilon() {
-
-    return Math.min(1f, Math.max(minEpsilon, 1f - (stepCountable.getStepCounter() - updateStart) * 1f / epsilonNbStep));
-  }
+  private final ComputationGraph perfectPlayer;
 
   public TicTacToeEpsilonGreedyPolicy(TicTacToeGame mdp, QLConfiguration qLConfiguration,
-      NeuralNetwork perfectPlayingModel, StepCountable stepCountable) {
+      ComputationGraph perfectPlayingModel, StepCountable stepCountable) {
 
     super(null, null, qLConfiguration.getUpdateStart(), qLConfiguration.getEpsilonNbStep(),
         new CpuNativeRandom(NeuralNetConstants.DEFAULT_SEED), qLConfiguration.getMinEpsilon(), stepCountable);
@@ -48,34 +41,29 @@ public class TicTacToeEpsilonGreedyPolicy extends EpsGreedy<TicTacToeState, Inte
 
   @Override
   public Integer nextAction(INDArray input) {
+    
+    // Here input is batched shaped
+    INDArray reducedInput = input.dup().slice(0);
 
     float ep = getEpsilon();
 
-    if (mdp.getCurrentPlayerChannel(input) == TicTacToeGame.TRAINING_PLAYER) {
+    if (mdp.getCurrentPlayer(reducedInput) == mdp.getTrainingPlayer()) {
 
       if (NeuralNetConstants.randomGenerator.nextFloat() > ep) {
 
-        return nextLegalAction(input, mdp.getActionSpace(input));
+        return nextLegalAction(input, mdp.getActionSpace(reducedInput));
       }
 
-      return mdp.getActionSpace(input).randomAction();
+      return mdp.getActionSpace(reducedInput).randomAction();
     }
 
-    if (mdp.allFieldsEmpty(input)) {
+    if (mdp.allFieldsEmpty(reducedInput)) {
 
-      return mdp.getActionSpace(input).randomAction();
+      return mdp.getActionSpace(reducedInput).randomAction();
     }
 
-    INDArray perfectOutput;
-    if (perfectPlayer instanceof ComputationGraph) {
-
-      perfectOutput = ((ComputationGraph) perfectPlayer).outputSingle(input);
-
-    } else {
-
-      perfectOutput = ((MultiLayerNetwork) perfectPlayer).output(input);
-    }
-
+    INDArray perfectOutput = perfectPlayer.outputSingle(input);
+    
     return Learning.getMaxAction(perfectOutput);
   }
 
@@ -94,34 +82,18 @@ public class TicTacToeEpsilonGreedyPolicy extends EpsGreedy<TicTacToeState, Inte
       }
     }
 
-    /*
-     * if (TicTacToeGameHelper.getCurrentPlayer(input) == MAX_PLAYER) {
-     * 
-     * if (Nd4j.max(legalOutput).getDouble(0) == ZERO) {
-     * 
-     * return
-     * legalAction.availableMoves.get(randomGenerator.nextInt(legalAction.
-     * availableMoves.size())); }
-     */
-
     return Nd4j.argMax(legalOutput, Integer.MAX_VALUE).getInt(0);
-    // }
-
-    /*
-     * INDArray minimizedMax = legalOutput.muli(Integer.valueOf(-1));
-     * 
-     * if (Nd4j.max(minimizedMax).getDouble(0) == ZERO) {
-     * 
-     * return
-     * legalAction.availableMoves.get(randomGenerator.nextInt(legalAction.
-     * availableMoves.size())); }
-     * 
-     * return Nd4j.argMax(minimizedMax, Integer.MAX_VALUE).getInt(0);
-     */
   }
 
-  public NeuralNet getNeuralNet() {
+  @Override
+  public NeuralNet<ConvolutionalNeuralNetDQN> getNeuralNet() {
     return mdp.getFetchable().getNeuralNet();
+  }
+
+  @Override
+  public float getEpsilon() {
+
+    return Math.min(1f, Math.max(minEpsilon, 1f - (stepCountable.getStepCounter() - updateStart) * 1f / epsilonNbStep));
   }
 
 }

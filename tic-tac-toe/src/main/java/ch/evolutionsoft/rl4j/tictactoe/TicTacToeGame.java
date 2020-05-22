@@ -30,15 +30,15 @@ public class TicTacToeGame implements MDP<TicTacToeState, Integer, DiscreteSpace
 
   static final double MIN_WIN_REWARD = 0;
   
-  static final double TRAINING_PLAYER = MAX_PLAYER;
+  double trainingPlayer = MIN_PLAYER;
 
   private static final Logger logger = LoggerFactory.getLogger(TicTacToeGame.class);
 
-  TicTacToeState currentState = new TicTacToeState(EMPTY_PLAYGROUND, 0);
+  TicTacToeState currentState = new TicTacToeState(ReinforcementLearningMain.EMPTY_CONVOLUTIONAL_PLAYGROUND, 0);
 
   double accumulatedReward;
   
-  NeuralNetFetchable<IDQN> fetchable;
+  NeuralNetFetchable<IDQN<ConvolutionalNeuralNetDQN>> fetchable;
   
   TicTacToeGame() {
   }
@@ -52,10 +52,9 @@ public class TicTacToeGame implements MDP<TicTacToeState, Integer, DiscreteSpace
 
   public ObservationSpace<TicTacToeState> getObservationSpace() {
 
-    ArrayObservationSpace<TicTacToeState> observationSpace =
-        new ArrayObservationSpace<>(new int[] { COLUMN_COUNT });
-
-    return observationSpace;
+    return new ArrayObservationSpace<>(
+      new int[] {1, IMAGE_CHANNELS, IMAGE_SIZE, IMAGE_SIZE }
+    );
   }
 
   public INDArray getCurrentPlayground() {
@@ -83,7 +82,7 @@ public class TicTacToeGame implements MDP<TicTacToeState, Integer, DiscreteSpace
 
     TicTacToeAction currentActions = new TicTacToeAction(availableMoves);
 
-    invariant();
+    //TODO invariant 3d
     
     printTest(availableMoves);
     
@@ -92,7 +91,7 @@ public class TicTacToeGame implements MDP<TicTacToeState, Integer, DiscreteSpace
 
   public TicTacToeState reset() {
     
-    return currentState = new TicTacToeState(EMPTY_PLAYGROUND, 0);
+    return new TicTacToeState(ReinforcementLearningMain.EMPTY_CONVOLUTIONAL_PLAYGROUND, 0);
   }
 
   @Override
@@ -107,7 +106,7 @@ public class TicTacToeGame implements MDP<TicTacToeState, Integer, DiscreteSpace
   @Override
   public StepReply<TicTacToeState> step(Integer action) {
 
-    invariant();
+    //TODO invariant 3d
     
     if (Integer.valueOf(-1).equals(action)) {
 
@@ -118,39 +117,51 @@ public class TicTacToeGame implements MDP<TicTacToeState, Integer, DiscreteSpace
     
     double reward = calculateReward(currentState);
 
-    invariant();
+    //TODO invariant 3d
 
     printDebugTest();
     
-    return new StepReply<TicTacToeState>(currentState, reward, isDone(), new JSONObject("{}"));
+    return new StepReply<>(currentState, reward, isDone(), new JSONObject("{}"));
   }
 
   protected double calculateReward(TicTacToeState newTicTacToeState) {
 
     INDArray newPlayground = newTicTacToeState.getPlayground();
 
-    if (hasWon(MAX_PLAYER_CHANNEL)) {
-
-        logger.debug(String.valueOf(newPlayground));
-        return MAX_WIN_REWARD; // + 0.1 * this.currentState.depth;
+    if (logger.isDebugEnabled()) {
+      logger.debug(String.valueOf(newPlayground));
+    }
+    
+    if (MAX_PLAYER == trainingPlayer) {
+      if (hasWon(MAX_PLAYER_CHANNEL)) {
+  
+        return MAX_WIN_REWARD;
       }
-
+  
       if (hasWon(MIN_PLAYER_CHANNEL)) {
-
-        logger.debug(String.valueOf(newPlayground));
-        return MIN_WIN_REWARD; // - 0.1 * this.currentState.depth;
-
+        
+        return MIN_WIN_REWARD;
       }
-      
-      if (noEmptyFieldsLeft(newPlayground)) {
+    
+    } else if (hasWon(MAX_PLAYER_CHANNEL)) {
+        
+      return MIN_WIN_REWARD;
+    
+    } else if (hasWon(MIN_PLAYER_CHANNEL)) {
+  
+      return MAX_WIN_REWARD;
+    }    
 
-        logger.debug(String.valueOf(newPlayground));
-        return DRAW_REWARD;
-      }
-      
-      return DRAW_REWARD;
+    return DRAW_REWARD - 0.02 * (COLUMN_COUNT - currentState.depth);
   }
 
+  public double switchTrainingPlayer() {
+    
+    this.setTrainingPlayer(this.trainingPlayer == MAX_PLAYER ? MIN_PLAYER : MAX_PLAYER);
+    
+    return this.getTrainingPlayer();
+  }
+  
   public boolean isDone() {
 
     return noEmptyFieldsLeft(currentState.getPlayground()) || hasWon(MAX_PLAYER_CHANNEL) || hasWon(MIN_PLAYER_CHANNEL);
@@ -168,77 +179,82 @@ public class TicTacToeGame implements MDP<TicTacToeState, Integer, DiscreteSpace
     return IMAGE_POINTS == getEmptyFields(inputState).size();
   }
   
-  Set<Integer> getEmptyFields(INDArray inputState) {
+  Set<Integer> getEmptyFields(INDArray emptyPlaygroundImage) {
     
     Set<Integer> emptyFieldsIndices = new HashSet<>(SMALL_CAPACITY);
-    for (int column = 0; column < COLUMN_COUNT; column++) {
-
-      if (equalsEpsilon(EMPTY_FIELD_VALUE, inputState.getDouble(column), DOUBLE_COMPARISON_EPSILON) ) {
-
-        emptyFieldsIndices.add(column);
+    
+    for (int row = 0; row < IMAGE_SIZE; row++) {
+      for (int column = 0; column < IMAGE_SIZE; column++) {
+  
+        if (equalsEpsilon(OCCUPIED_IMAGE_POINT,
+            emptyPlaygroundImage.getDouble(EMPTY_FIELDS_CHANNEL, row, column),
+            DOUBLE_COMPARISON_EPSILON) ) {
+  
+          emptyFieldsIndices.add(IMAGE_SIZE * row + column);
+        }
       }
     }
     
     return emptyFieldsIndices;
   }
   
-  int getCurrentPlayerChannel(INDArray inputState) {
+  double getCurrentPlayer(INDArray inputState) {
     
-    boolean oddEmptyFields = 1 == countOccupiedImagePoints(inputState) % 2;
+    boolean oddEmptyFields = 1 == countOccupiedImagePoints(inputState.slice(0)) % 2;
     
     if (oddEmptyFields) {
       
-      return MIN_PLAYER_CHANNEL;
+      return MIN_PLAYER;
     }
     
-    return MAX_PLAYER_CHANNEL;
+    return MAX_PLAYER;
   }
 
-  boolean hasWon(int playerChannel) {
+  boolean hasWon(int player) {
 
-    return horizontalWin(playerChannel) || verticalWin(playerChannel) || diagonalWin(playerChannel);
+    return horizontalWin(player) || verticalWin(player) || diagonalWin(player);
   }
 
-  boolean horizontalWin(int playerChannel) {
+  boolean horizontalWin(int player) {
     
     INDArray playerFieldsImage = currentState.getPlayground();
 
-    return (playerFieldsImage.getDouble(FIELD_1) == playerChannel &&
-        playerFieldsImage.getDouble(FIELD_2) == playerChannel &&
-            playerFieldsImage.getDouble(FIELD_3) == playerChannel) ||
-           (playerFieldsImage.getDouble(FIELD_4) == playerChannel &&
-               playerFieldsImage.getDouble(FIELD_5) == playerChannel &&
-                   playerFieldsImage.getDouble(FIELD_6) == playerChannel) ||
-           (playerFieldsImage.getDouble(FIELD_7) == playerChannel &&
-               playerFieldsImage.getDouble(FIELD_8) == playerChannel &&
-                   playerFieldsImage.getDouble(FIELD_9) == playerChannel);
+    return (playerFieldsImage.getDouble(player, 0, 0) == OCCUPIED_IMAGE_POINT &&
+        playerFieldsImage.getDouble(player, 0, 1) == OCCUPIED_IMAGE_POINT &&
+            playerFieldsImage.getDouble(player, 0, 2) == OCCUPIED_IMAGE_POINT) ||
+           (playerFieldsImage.getDouble(player, 1, 0) == OCCUPIED_IMAGE_POINT &&
+               playerFieldsImage.getDouble(player, 1, 1) == OCCUPIED_IMAGE_POINT &&
+                   playerFieldsImage.getDouble(player, 1, 2) == OCCUPIED_IMAGE_POINT) ||
+           (playerFieldsImage.getDouble(player, 2, 0) == OCCUPIED_IMAGE_POINT &&
+               playerFieldsImage.getDouble(player, 2, 1) == OCCUPIED_IMAGE_POINT &&
+                   playerFieldsImage.getDouble(player, 2, 2) == OCCUPIED_IMAGE_POINT);
   }
 
-  boolean diagonalWin(int playerChannel) {
+  boolean diagonalWin(int player) {
     
     INDArray playerFieldsImage = currentState.getPlayground();
 
-    return (playerFieldsImage.getDouble(FIELD_1) == playerChannel &&
-        playerFieldsImage.getDouble(FIELD_5) == playerChannel &&
-            playerFieldsImage.getDouble(FIELD_9) == playerChannel) ||
-           (playerFieldsImage.getDouble(FIELD_3) == playerChannel &&
-               playerFieldsImage.getDouble(FIELD_5) == playerChannel &&
-                   playerFieldsImage.getDouble(FIELD_7) == playerChannel);
+    return (playerFieldsImage.getDouble(player, 0, 0) == OCCUPIED_IMAGE_POINT &&
+        playerFieldsImage.getDouble(player, 1, 1) == OCCUPIED_IMAGE_POINT &&
+            playerFieldsImage.getDouble(player, 2, 2) == OCCUPIED_IMAGE_POINT) ||
+           (playerFieldsImage.getDouble(player, 0, 2) == OCCUPIED_IMAGE_POINT &&
+               playerFieldsImage.getDouble(player, 1, 1) == OCCUPIED_IMAGE_POINT &&
+                   playerFieldsImage.getDouble(player, 2, 0) == OCCUPIED_IMAGE_POINT);
   }
 
-  boolean verticalWin(int playerChannel) {
+  boolean verticalWin(int player) {
     
     INDArray playerFieldsImage = currentState.getPlayground();
 
-    return (playerFieldsImage.getDouble(FIELD_1) == playerChannel &&
-        playerFieldsImage.getDouble(FIELD_4) == playerChannel &&
-            playerFieldsImage.getDouble(FIELD_7) == playerChannel) ||
-           (playerFieldsImage.getDouble(FIELD_2) == playerChannel &&
-               playerFieldsImage.getDouble(FIELD_5) == playerChannel &&
-                   playerFieldsImage.getDouble(FIELD_8) == playerChannel) ||
-           (playerFieldsImage.getDouble(FIELD_3) == playerChannel &&
-               playerFieldsImage.getDouble(FIELD_6) == playerChannel &&
-                   playerFieldsImage.getDouble(FIELD_9) == playerChannel);
+    return (playerFieldsImage.getDouble(player, 0, 0) == OCCUPIED_IMAGE_POINT &&
+        playerFieldsImage.getDouble(player, 1, 0) == OCCUPIED_IMAGE_POINT &&
+            playerFieldsImage.getDouble(player, 2, 0) == OCCUPIED_IMAGE_POINT) ||
+           (playerFieldsImage.getDouble(player, 0, 1) == OCCUPIED_IMAGE_POINT &&
+               playerFieldsImage.getDouble(player, 1, 1) == OCCUPIED_IMAGE_POINT &&
+                   playerFieldsImage.getDouble(player, 2, 1) == OCCUPIED_IMAGE_POINT) ||
+           (playerFieldsImage.getDouble(player, 0, 2) == OCCUPIED_IMAGE_POINT &&
+               playerFieldsImage.getDouble(player, 1, 2) == OCCUPIED_IMAGE_POINT &&
+                   playerFieldsImage.getDouble(player, 2, 2) == OCCUPIED_IMAGE_POINT);
   }
   
   /**
@@ -256,8 +272,10 @@ public class TicTacToeGame implements MDP<TicTacToeState, Integer, DiscreteSpace
 
     INDArray output = fetchable.getNeuralNet().output(
         currentState.getPlayground());
-    logger.info(String.valueOf(currentState.getPlayground()));
-    logger.info(String.valueOf(output));
+    if (logger.isInfoEnabled()) {
+      logger.info(String.valueOf(currentState.getPlayground()));
+      logger.info(String.valueOf(output));
+    }
   }
 
   public void printDebugTest() {
@@ -292,11 +310,11 @@ public class TicTacToeGame implements MDP<TicTacToeState, Integer, DiscreteSpace
     assert emptyFieldsCount == IMAGE_POINTS - totalStones;
   }
   
-  public NeuralNetFetchable<IDQN> getFetchable() {
+  public NeuralNetFetchable<IDQN<ConvolutionalNeuralNetDQN>> getFetchable() {
     return fetchable;
   }
 
-  public void setFetchable(NeuralNetFetchable<IDQN> fetchable) {
+  public void setFetchable(NeuralNetFetchable<IDQN<ConvolutionalNeuralNetDQN>> fetchable) {
     this.fetchable = fetchable;
   }
   
@@ -314,6 +332,14 @@ public class TicTacToeGame implements MDP<TicTacToeState, Integer, DiscreteSpace
 
   public void setReward(double accumulatedReward) {
     this.accumulatedReward = accumulatedReward;
+  }
+
+  public double getTrainingPlayer() {
+    return trainingPlayer;
+  }
+
+  public void setTrainingPlayer(double trainingPlayer) {
+    this.trainingPlayer = trainingPlayer;
   }
 
   public int getSteps() {
