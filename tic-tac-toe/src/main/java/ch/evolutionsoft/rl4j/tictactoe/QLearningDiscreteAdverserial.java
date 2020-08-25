@@ -20,7 +20,9 @@ public class QLearningDiscreteAdverserial extends QLearningDiscrete<TicTacToeSta
     this(mdp, neuralNet, qLConfiguration, qLConfiguration.getEpsilonNbStep());
     
     this.perfectPlayingModel = perfectModel;
-    policy = new TicTacToeEpsilonGreedyPolicy(mdp, qLConfiguration, perfectPlayingModel, this); 
+    policy = new TicTacToeEpsilonGreedyPolicy(mdp, qLConfiguration, perfectPlayingModel, this);
+    
+    policy.setEpsilonStart(ReinforcementLearningMain.MAX_EPSILON);
   }
 
   public QLearningDiscreteAdverserial(

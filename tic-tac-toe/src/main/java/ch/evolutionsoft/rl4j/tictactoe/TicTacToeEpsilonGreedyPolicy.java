@@ -1,5 +1,7 @@
 package ch.evolutionsoft.rl4j.tictactoe;
 
+import java.util.Set;
+
 import org.deeplearning4j.nn.graph.ComputationGraph;
 import org.deeplearning4j.rl4j.learning.Learning;
 import org.deeplearning4j.rl4j.learning.StepCountable;
@@ -12,6 +14,7 @@ import org.nd4j.linalg.cpu.nativecpu.rng.CpuNativeRandom;
 import org.nd4j.linalg.factory.Nd4j;
 
 import ch.evolutionsoft.net.game.NeuralNetConstants;
+import ch.evolutionsoft.net.game.tictactoe.TicTacToeConstants;
 import ch.evolutionsoft.rl4j.tictactoe.ReinforcementLearningMain.TicTacToeAction;
 import ch.evolutionsoft.rl4j.tictactoe.ReinforcementLearningMain.TicTacToeState;
 
@@ -24,6 +27,7 @@ public class TicTacToeEpsilonGreedyPolicy extends EpsGreedy<TicTacToeState, Inte
   protected final StepCountable stepCountable;
 
   private final ComputationGraph perfectPlayer;
+  private float epsilonStart = 1f;
 
   public TicTacToeEpsilonGreedyPolicy(TicTacToeGame mdp, QLConfiguration qLConfiguration,
       ComputationGraph perfectPlayingModel, StepCountable stepCountable) {
@@ -44,20 +48,22 @@ public class TicTacToeEpsilonGreedyPolicy extends EpsGreedy<TicTacToeState, Inte
     
     // Here input is batched shaped
     INDArray reducedInput = input.dup().slice(0);
+    
+    Set<Integer> emptyFields = mdp.getEmptyFields(reducedInput);
 
-    float ep = getEpsilon();
+    if (emptyFields.size() >= TicTacToeConstants.IMAGE_POINTS) {
 
-    if (mdp.getCurrentPlayer(reducedInput) == mdp.getTrainingPlayer()) {
+      return mdp.getActionSpace(reducedInput).randomAction();
+    }
+
+    if (mdp.getCurrentPlayer(emptyFields) == mdp.getTrainingPlayer()) {
+
+      float ep = getEpsilon();
 
       if (NeuralNetConstants.randomGenerator.nextFloat() > ep) {
 
         return nextLegalAction(input, mdp.getActionSpace(reducedInput));
       }
-
-      return mdp.getActionSpace(reducedInput).randomAction();
-    }
-
-    if (mdp.allFieldsEmpty(reducedInput)) {
 
       return mdp.getActionSpace(reducedInput).randomAction();
     }
@@ -89,11 +95,17 @@ public class TicTacToeEpsilonGreedyPolicy extends EpsGreedy<TicTacToeState, Inte
   public NeuralNet<ConvolutionalNeuralNetDQN> getNeuralNet() {
     return mdp.getFetchable().getNeuralNet();
   }
+  
+  // Default 1f
+  public void setEpsilonStart(float epsilonStart) {
+    
+    this.epsilonStart  = epsilonStart;
+  }
 
   @Override
   public float getEpsilon() {
 
-    return Math.min(1f, Math.max(minEpsilon, 1f - (stepCountable.getStepCounter() - updateStart) * 1f / epsilonNbStep));
+    return Math.min(epsilonStart, Math.max(minEpsilon, epsilonStart - (stepCountable.getStepCounter() - updateStart) * 1f / epsilonNbStep));
   }
 
 }

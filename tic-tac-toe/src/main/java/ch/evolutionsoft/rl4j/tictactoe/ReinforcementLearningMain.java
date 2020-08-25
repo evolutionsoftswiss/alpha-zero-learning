@@ -10,6 +10,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
 
+import org.deeplearning4j.api.storage.StatsStorage;
 import org.deeplearning4j.nn.conf.ComputationGraphConfiguration;
 import org.deeplearning4j.nn.conf.NeuralNetConfiguration;
 import org.deeplearning4j.nn.graph.ComputationGraph;
@@ -20,11 +21,18 @@ import org.deeplearning4j.rl4j.learning.sync.qlearning.discrete.QLearningDiscret
 import org.deeplearning4j.rl4j.space.DiscreteSpace;
 import org.deeplearning4j.rl4j.space.Encodable;
 import org.deeplearning4j.rl4j.util.IDataManager.StatEntry;
+import org.deeplearning4j.ui.VertxUIServer;
+import org.deeplearning4j.ui.api.UIServer;
+import org.deeplearning4j.ui.stats.BaseStatsListener;
+import org.deeplearning4j.ui.stats.StatsListener;
+import org.deeplearning4j.ui.stats.impl.DefaultStatsUpdateConfiguration;
+import org.deeplearning4j.ui.stats.impl.SbeStatsReport;
+import org.deeplearning4j.ui.storage.InMemoryStatsStorage;
 import org.deeplearning4j.util.ModelSerializer;
 import org.nd4j.evaluation.classification.Evaluation;
 import org.nd4j.linalg.api.ndarray.INDArray;
 import org.nd4j.linalg.factory.Nd4j;
-import org.nd4j.linalg.learning.config.Adam;
+import org.nd4j.linalg.learning.config.RmsProp;
 import org.nd4j.linalg.primitives.Pair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -45,17 +53,19 @@ public class ReinforcementLearningMain {
 
   private static final Logger log = LoggerFactory.getLogger(ReinforcementLearningMain.class);
 
-  static final double LEARNING_RATE = 3e-6;
-  static final int TARGET_NET_UPDATE = 200;
+  static final double LEARNING_RATE = 5e-6;
+  static final int TARGET_NET_UPDATE = 500;
   static final int QLEARNING_MAX_STEP = 200000;
-  static final int STEPS_EPSILON_GREEDY = 20000;
-  static final int BATCH_SIZE = 400;
-  static final float MIN_EPSILON = 0.1f;
-  static final double ERROR_CLAMP = 0.2;
-  static final double GAMMA = 1;
-  static final double REWARD_FACTOR = 1;
+  static final int STEPS_EPSILON_GREEDY = 500;
+  static final int BATCH_SIZE = 512;
+  static final float MAX_EPSILON = 1f;
+  static final float MIN_EPSILON = 0.2f;
+  static final double ERROR_CLAMP = 0.1;
+  static final double GAMMA = 0.95;
+  static final double REWARD_FACTOR = 9;
   static final int MAX_EPOCH_STEP = 9;
   static final int MAX_EXP_REPLAY_SIZE = 9;
+  static final int NUM_STEPS_NO_UPDATE = 0;
   
   public static final INDArray ZEROS_PLAYGROUND_IMAGE = Nd4j.zeros(1, IMAGE_SIZE, IMAGE_SIZE);
   public static final INDArray ONES_PLAYGROUND_IMAGE = Nd4j.ones(1, IMAGE_SIZE, IMAGE_SIZE);
@@ -157,6 +167,7 @@ public class ReinforcementLearningMain {
     ReinforcementLearningMain reinforcementLearning = new ReinforcementLearningMain();
 
     ComputationGraph model = reinforcementLearning.createConvolutionalConfiguration();
+    //ComputationGraph model = ModelSerializer.restoreComputationGraph("src/main/resources/rl-model-2.bin");
     
     if (log.isInfoEnabled()) {
       log.info(model.summary());
@@ -178,6 +189,38 @@ public class ReinforcementLearningMain {
   protected static void setupDql(ReinforcementLearningMain reinforcementLearning, ComputationGraph model,
       TicTacToeGame mdp) throws IOException {
 
+    VertxUIServer uiServer = (VertxUIServer) UIServer.getInstance();
+ 
+    StatsStorage statsStorage = new InMemoryStatsStorage();
+    uiServer.attach(statsStorage);
+    try {
+      uiServer.start();
+    } catch (Exception e) {
+      log.error("Error starting UI server", e);
+    }
+    
+    StatsListener statsListener = new StatsListener(statsStorage, 1);
+    
+    statsListener.setUpdateConfig(new DefaultStatsUpdateConfiguration.Builder().
+        collectHistogramsActivations(false).
+        collectHistogramsGradients(false).
+        collectHistogramsParameters(false).
+        collectHistogramsUpdates(false).
+        collectLearningRates(true).
+        collectMeanActivations(true).
+        collectMeanGradients(true).
+        collectMeanMagnitudesActivations(false).
+        collectMeanMagnitudesGradients(false).
+        collectMeanMagnitudesParameters(false).
+        collectMeanMagnitudesUpdates(false).
+        collectMeanParameters(true).
+        collectMeanUpdates(true).
+        collectStdevActivations(true).
+        collectStdevGradients(true).
+        collectStdevParameters(true).
+        collectStdevUpdates(true).build());
+    model.addListeners(statsListener);
+
     final ComputationGraph perfectModel =
         ModelSerializer.restoreComputationGraph("src/main/resources/TicTacToeResNet.bin");
  
@@ -194,6 +237,7 @@ public class ReinforcementLearningMain {
       protected StatEntry trainEpoch() {
         
         StatEntry statEntry = super.trainEpoch();
+        
         reinforcementLearning.statisticEntries.add(statEntry);
 
         int totalGamesPlayed = reinforcementLearning.statisticEntries.size();
@@ -215,8 +259,9 @@ public class ReinforcementLearningMain {
 
               draws++; 
             }
-            
-            else if (result >= 1.48) {
+
+            // dependent from calculateReward
+            else if (result / episodeLength > 0.9) {
 
               maxWins++;
 
@@ -229,26 +274,37 @@ public class ReinforcementLearningMain {
 
           int gamesPlayed = totalGamesPlayed - lastIterationCount;
 
+          double drawFactor = (double) draws / gamesPlayed;
+          
           String logInfo = "Last iterations (steps): " + gamesPlayed + " (" +
                            (reinforcementLearning.dql.getStepCounter() - lastTotalSteps) + ")\n" +
                            "Last game length avg: " +
                            (double) (reinforcementLearning.dql.getStepCounter() - lastTotalSteps) / gamesPlayed +
-                           "\nL=" + maxWins + " / W=" + minWins + " / D=" + draws +
-                           " / " + gamesPlayed + " / D Performance: " + ((double) draws /
-                                                                         gamesPlayed) +
+                           "\nL=" + minWins + " / W=" + maxWins + " / D=" + draws +
+                           " / " + gamesPlayed + " / D Performance: " + drawFactor +
                            "\nTotal games (steps) = " + totalGamesPlayed + " (" +
                            reinforcementLearning.dql.getStepCounter() + ")";
           log.info(logInfo);
 
           reinforcementLearning.evaluateNetwork(model);
+          
+          final SbeStatsReport drawStatsReport = new SbeStatsReport();
+          drawStatsReport.setWorkerID(statsListener.getWorkerID());
+          drawStatsReport.setSessionID(statsListener.getSessionID());
+          drawStatsReport.setTypeID(BaseStatsListener.TYPE_ID);
+          drawStatsReport.setTimeStamp(System.currentTimeMillis());
+          drawStatsReport.reportIterationCount(lastTotalSteps);
+          drawStatsReport.reportScore(model.score());
+          statsStorage.putUpdate(drawStatsReport);
+          statsListener.getStorageRouter().putUpdate(drawStatsReport);
 
           lastTotalSteps = reinforcementLearning.dql.getStepCounter();
           lastIterationCount = totalGamesPlayed;
+          
+          statsListener.iterationDone(model, lastTotalSteps, totalGamesPlayed);
          
-          if (totalGamesPlayed % ( 5 * TARGET_NET_UPDATE) == 0) {
-            mdp.switchTrainingPlayer();
-            log.info("Training player switched to {}", mdp.getTrainingPlayer());
-          }
+          mdp.switchTrainingPlayer();
+          log.info("Training player switched to {}", mdp.getTrainingPlayer());
         }
 
         return statEntry;
@@ -261,6 +317,7 @@ public class ReinforcementLearningMain {
   protected static void performTraining(ReinforcementLearningMain reinforcementLearning, ComputationGraph model,
       TicTacToeGame mdp) throws AssertionError {
     try {
+      
       // start the training
       reinforcementLearning.dql.train();
 
@@ -268,14 +325,14 @@ public class ReinforcementLearningMain {
       int minWins = 0;
       int maxWins = 0;
       int draws = 0;
-      int lastResultsIndex = totalGamesPlayed - 1;
+      int lastResultsIndex = 0;
+
       for (; lastResultsIndex < totalGamesPlayed; lastResultsIndex++) {
 
         StatEntry currentResult =
             reinforcementLearning.statisticEntries.get(lastResultsIndex);
-        double result = currentResult.getReward();
 
-        if (currentResult.getStepCounter() == 9 || result < TicTacToeGame.MAX_WIN_REWARD) {
+        if (currentResult.getStepCounter() == 9) {
 
           draws++;
 
@@ -312,7 +369,7 @@ public class ReinforcementLearningMain {
     return new NeuralNetConfiguration.Builder()
         .seed(DEFAULT_SEED)
         .weightInit(WeightInit.XAVIER)
-        .updater(new Adam(LEARNING_RATE));
+        .updater(new RmsProp(LEARNING_RATE));
   }
 
   QLConfiguration createQLConfiguration() {
@@ -324,14 +381,14 @@ public class ReinforcementLearningMain {
         .expRepMaxSize(MAX_EXP_REPLAY_SIZE) // Max size of experience replay
         .batchSize(BATCH_SIZE) // size of batches
         .targetDqnUpdateFreq(TARGET_NET_UPDATE) // target update (hard)
-        .updateStart(0) // num step noop warmup
+        .updateStart(NUM_STEPS_NO_UPDATE) // num step noop warmup
         .rewardFactor(REWARD_FACTOR) // reward scaling
         .gamma(GAMMA) // gamma
         .errorClamp(ERROR_CLAMP) // td-error clipping
         .minEpsilon(MIN_EPSILON) // min epsilon
         .epsilonNbStep(STEPS_EPSILON_GREEDY) // num step for eps greedy anneal
-        .doubleDQN(false)
-        .build(); // single DQN
+        .doubleDQN(true) // double DQN
+        .build(); 
   }
 
   protected void evaluateNetwork(MultiLayerNetwork model) {

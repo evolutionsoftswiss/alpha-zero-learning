@@ -24,30 +24,26 @@ import ch.evolutionsoft.rl4j.tictactoe.ReinforcementLearningMain.TicTacToeState;
 
 public class TicTacToeGame implements MDP<TicTacToeState, Integer, DiscreteSpace> {
 
-  static final double DRAW_REWARD = 0.5;
+  /**
+   * Set draw reward nearer MAX_WIN_REWARD as its desired in perfect play
+   */
+  static final double DRAW_REWARD = 0.9;
 
   static final double MAX_WIN_REWARD = 1;
 
   static final double MIN_WIN_REWARD = 0;
   
-  double trainingPlayer = MIN_PLAYER;
+  double trainingPlayer = MAX_PLAYER;
+  
+  boolean enableAssertions = false;
 
   private static final Logger logger = LoggerFactory.getLogger(TicTacToeGame.class);
 
   TicTacToeState currentState = new TicTacToeState(ReinforcementLearningMain.EMPTY_CONVOLUTIONAL_PLAYGROUND, 0);
-
-  double accumulatedReward;
   
   NeuralNetFetchable<IDQN<ConvolutionalNeuralNetDQN>> fetchable;
   
   TicTacToeGame() {
-  }
-  
-  TicTacToeGame(int step, TicTacToeState nextO, double reward) {
-    
-    currentState = nextO;
-    currentState.depth = step;
-    accumulatedReward = reward;
   }
 
   public ObservationSpace<TicTacToeState> getObservationSpace() {
@@ -82,7 +78,7 @@ public class TicTacToeGame implements MDP<TicTacToeState, Integer, DiscreteSpace
 
     TicTacToeAction currentActions = new TicTacToeAction(availableMoves);
 
-    //TODO invariant 3d
+    invariant();
     
     printTest(availableMoves);
     
@@ -91,7 +87,8 @@ public class TicTacToeGame implements MDP<TicTacToeState, Integer, DiscreteSpace
 
   public TicTacToeState reset() {
     
-    return new TicTacToeState(ReinforcementLearningMain.EMPTY_CONVOLUTIONAL_PLAYGROUND, 0);
+    currentState = new TicTacToeState(ReinforcementLearningMain.EMPTY_CONVOLUTIONAL_PLAYGROUND, 0);
+    return currentState;
   }
 
   @Override
@@ -106,7 +103,7 @@ public class TicTacToeGame implements MDP<TicTacToeState, Integer, DiscreteSpace
   @Override
   public StepReply<TicTacToeState> step(Integer action) {
 
-    //TODO invariant 3d
+    invariant();
     
     if (Integer.valueOf(-1).equals(action)) {
 
@@ -117,7 +114,7 @@ public class TicTacToeGame implements MDP<TicTacToeState, Integer, DiscreteSpace
     
     double reward = calculateReward(currentState);
 
-    //TODO invariant 3d
+    invariant();
 
     printDebugTest();
     
@@ -152,7 +149,7 @@ public class TicTacToeGame implements MDP<TicTacToeState, Integer, DiscreteSpace
       return MAX_WIN_REWARD;
     }    
 
-    return DRAW_REWARD - 0.02 * (COLUMN_COUNT - currentState.depth);
+    return DRAW_REWARD;
   }
 
   public double switchTrainingPlayer() {
@@ -173,13 +170,7 @@ public class TicTacToeGame implements MDP<TicTacToeState, Integer, DiscreteSpace
     return getEmptyFields(inputState).isEmpty();
   }
   
-  boolean allFieldsEmpty(INDArray inputState) {
-  
-    //Performance possible
-    return IMAGE_POINTS == getEmptyFields(inputState).size();
-  }
-  
-  Set<Integer> getEmptyFields(INDArray emptyPlaygroundImage) {
+  Set<Integer> getEmptyFields(INDArray playground) {
     
     Set<Integer> emptyFieldsIndices = new HashSet<>(SMALL_CAPACITY);
     
@@ -187,7 +178,7 @@ public class TicTacToeGame implements MDP<TicTacToeState, Integer, DiscreteSpace
       for (int column = 0; column < IMAGE_SIZE; column++) {
   
         if (equalsEpsilon(OCCUPIED_IMAGE_POINT,
-            emptyPlaygroundImage.getDouble(EMPTY_FIELDS_CHANNEL, row, column),
+            playground.getDouble(EMPTY_FIELDS_CHANNEL, row, column),
             DOUBLE_COMPARISON_EPSILON) ) {
   
           emptyFieldsIndices.add(IMAGE_SIZE * row + column);
@@ -198,11 +189,11 @@ public class TicTacToeGame implements MDP<TicTacToeState, Integer, DiscreteSpace
     return emptyFieldsIndices;
   }
   
-  double getCurrentPlayer(INDArray inputState) {
+  double getCurrentPlayer(Set<Integer> emptyFields) {
     
-    boolean oddEmptyFields = 1 == countOccupiedImagePoints(inputState.slice(0)) % 2;
+    boolean oddOccupiedFields = 1 == countOccupiedImagePoints(emptyFields.size()) % 2;
     
-    if (oddEmptyFields) {
+    if (oddOccupiedFields) {
       
       return MIN_PLAYER;
     }
@@ -263,9 +254,9 @@ public class TicTacToeGame implements MDP<TicTacToeState, Integer, DiscreteSpace
    * @param channelImage
    * @return number of occupied 1 image points
    */
-  int countOccupiedImagePoints(INDArray channelImage) {
+  int countOccupiedImagePoints(int emptyFieldsCount) {
     
-    return COLUMN_COUNT - getEmptyFields(channelImage).size();
+    return COLUMN_COUNT - emptyFieldsCount;
   }
 
   public void printTest() {
@@ -299,15 +290,17 @@ public class TicTacToeGame implements MDP<TicTacToeState, Integer, DiscreteSpace
 
   public void invariant() {
 
-    INDArray playground = getCurrentPlayground();
-    int maxStones = countMaxStones(playground);
-    int minStones = countMinStones(playground);
-    int emptyFieldsCount = getEmptyFields(currentState.getPlayground()).size();
-    int totalStones = COLUMN_COUNT - countOccupiedImagePoints(currentState.getPlayground());
-    
-    assert maxStones == minStones || maxStones == minStones + 1;
-    assert totalStones == maxStones + minStones;
-    assert emptyFieldsCount == IMAGE_POINTS - totalStones;
+    if (enableAssertions) {
+      INDArray playground = getCurrentPlayground();
+      int maxStones = countMaxStones(playground);
+      int minStones = countMinStones(playground);
+      int emptyFieldsCount = getEmptyFields(currentState.getPlayground()).size();
+      int totalStones = countOccupiedImagePoints(emptyFieldsCount);
+      
+      assert maxStones == minStones || maxStones == minStones + 1;
+      assert totalStones == maxStones + minStones;
+      assert emptyFieldsCount == IMAGE_POINTS - totalStones;
+    }
   }
   
   public NeuralNetFetchable<IDQN<ConvolutionalNeuralNetDQN>> getFetchable() {
@@ -324,14 +317,6 @@ public class TicTacToeGame implements MDP<TicTacToeState, Integer, DiscreteSpace
 
   public void setCurrentState(TicTacToeState currentState) {
     this.currentState = currentState;
-  }
-
-  public double getReward() {
-    return accumulatedReward;
-  }
-
-  public void setReward(double accumulatedReward) {
-    this.accumulatedReward = accumulatedReward;
   }
 
   public double getTrainingPlayer() {
