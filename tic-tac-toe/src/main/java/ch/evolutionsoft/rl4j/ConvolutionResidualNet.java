@@ -1,4 +1,4 @@
-package ch.evolutionsoft.rl4j.tictactoe;
+package ch.evolutionsoft.rl4j;
 
 import static ch.evolutionsoft.net.game.NeuralNetConstants.DEFAULT_OUTPUT_LAYER_NAME;
 import static ch.evolutionsoft.net.game.NeuralNetConstants.DEFAULT_SEED;
@@ -17,6 +17,7 @@ import org.deeplearning4j.nn.conf.layers.SubsamplingLayer;
 import org.deeplearning4j.nn.weights.WeightInit;
 import org.nd4j.linalg.activations.Activation;
 import org.nd4j.linalg.learning.config.Adam;
+import org.nd4j.linalg.lossfunctions.LossFunctions.LossFunction;
 
 public class ConvolutionResidualNet {
 
@@ -76,13 +77,13 @@ public class ConvolutionResidualNet {
         .addInputs(INPUT).setInputTypes(InputType.convolutional(3, 3, 3))
         // block1
         .addLayer(BLOCK1_CONVOLUTION1,
-            new ConvolutionLayer.Builder(2, 2).stride(1, 1).nIn(3).nOut(8).hasBias(false)
+            new ConvolutionLayer.Builder(2, 2).stride(1, 1).nIn(3).nOut(7).hasBias(false)
                 .build(),
             INPUT)
         .addLayer(BLOCK1_CONV1_BATCH_NORMALIZATION, new BatchNormalization(), BLOCK1_CONVOLUTION1)
         .addLayer(BLOCK1_CONVOLUTION1_ACTIVATION, new ActivationLayer(Activation.RELU), BLOCK1_CONV1_BATCH_NORMALIZATION)
         .addLayer(BLOCK1_CONVOLUTION2,
-            new ConvolutionLayer.Builder(2, 2).stride(1, 1).padding(1, 1).nOut(16).hasBias(false)
+            new ConvolutionLayer.Builder(2, 2).stride(1, 1).padding(1, 1).nOut(14).hasBias(false)
                 .build(),
             BLOCK1_CONVOLUTION1_ACTIVATION)
         .addLayer(BLOCK1_CONVOLUTION2_BATCH_NORMALIZATION, new BatchNormalization(), BLOCK1_CONVOLUTION2)
@@ -90,20 +91,20 @@ public class ConvolutionResidualNet {
 
         // residual1
         .addLayer(RESIDUAL1_CONVOLUTION,
-            new ConvolutionLayer.Builder(2, 2).stride(1, 1).nOut(16).hasBias(false)
+            new ConvolutionLayer.Builder(2, 2).stride(1, 1).nOut(14).hasBias(false)
                 .convolutionMode(ConvolutionMode.Same).build(),
             BLOCK1_CONV2_ACTIVATION)
         .addLayer(RESIDUAL1, new BatchNormalization(), RESIDUAL1_CONVOLUTION)
 
         // block2
         .addLayer(BLOCK2_SEPARABLE_CONVOLUTION1,
-            new SeparableConvolution2D.Builder(2, 2).nOut(16).hasBias(false).convolutionMode(ConvolutionMode.Same)
+            new SeparableConvolution2D.Builder(2, 2).nOut(14).hasBias(false).convolutionMode(ConvolutionMode.Same)
                 .build(),
             BLOCK1_CONV2_ACTIVATION)
         .addLayer(BLOCK2_SEPARABLE_CONVOLUTION1_BATCH_NORMALIZATION, new BatchNormalization(), BLOCK2_SEPARABLE_CONVOLUTION1)
         .addLayer(BLOCK2_SEPCONV1_ACTIVATION, new ActivationLayer(Activation.RELU), BLOCK2_SEPARABLE_CONVOLUTION1_BATCH_NORMALIZATION)
         .addLayer(BLOCK2_SEPARABLE_CONVOLUTION2,
-            new SeparableConvolution2D.Builder(2, 2).nOut(16).hasBias(false).convolutionMode(ConvolutionMode.Same)
+            new SeparableConvolution2D.Builder(2, 2).nOut(14).hasBias(false).convolutionMode(ConvolutionMode.Same)
                 .build(),
             BLOCK2_SEPCONV1_ACTIVATION)
         .addLayer(BLOCK2_SEPARABLE_CONVOLUTION2_BATCH_NORNMALIZATION, new BatchNormalization(), BLOCK2_SEPARABLE_CONVOLUTION2)
@@ -118,7 +119,13 @@ public class ConvolutionResidualNet {
             .nOut(9)
             .activation(Activation.SOFTMAX)
             .build(), ADD1)
-        .setOutputs(DEFAULT_OUTPUT_LAYER_NAME)
+        
+        .addLayer(DEFAULT_OUTPUT_LAYER_NAME + "_value", new OutputLayer.Builder()
+            .nOut(1)
+            .activation(Activation.TANH)
+            .lossFunction(LossFunction.MSE)
+            .build(), ADD1)
+        .setOutputs(DEFAULT_OUTPUT_LAYER_NAME, DEFAULT_OUTPUT_LAYER_NAME + "_value")
         .build();
   }
 
