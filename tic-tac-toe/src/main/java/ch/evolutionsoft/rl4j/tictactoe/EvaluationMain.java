@@ -23,11 +23,9 @@ public class EvaluationMain {
 
   public static void main(String[] args) throws IOException {
 
-    ComputationGraph computationGraph1 = ModelSerializer.restoreComputationGraph("src/main/resources/2021-04-13-constantWeightInit19-bestmodel.bin", true);
-    ComputationGraph computationGraph2 = ModelSerializer.restoreComputationGraph("src/main/resources/2021-04-14-defautWeightInit19-bestmodel.bin", true);
+    ComputationGraph computationGraph1 = ModelSerializer.restoreComputationGraph("bestmodel.bin", true);
     
     evaluateNetwork(computationGraph1);
-    evaluateNetwork(computationGraph2);
   }
 
   public static void evaluateNetwork(ComputationGraph graphNetwork) {

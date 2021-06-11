@@ -12,11 +12,14 @@ import java.util.Set;
 import org.nd4j.linalg.api.ndarray.INDArray;
 import org.nd4j.linalg.factory.Nd4j;
 
+import ch.evolutionsoft.net.game.tictactoe.TicTacToeConstants;
 import ch.evolutionsoft.rl4j.AdversaryTrainingExample;
 
 public class TicTacToe {
   
-  public static List<AdversaryTrainingExample> getSymmetries(INDArray playground, INDArray actionProbabilities, int currentPlayer) {
+  public static final int[] COLUMN_INDICES = new int[] {0, 1, 2, 3, 4, 5, 6, 7, 8};
+  
+  public static List<AdversaryTrainingExample> getSymmetries(INDArray playground, INDArray actionProbabilities, int currentPlayer, int iteration) {
     
     List<AdversaryTrainingExample> symmetries = new ArrayList<>();
     
@@ -24,14 +27,15 @@ public class TicTacToe {
     INDArray playgroundRotation = Nd4j.create(IMAGE_CHANNELS, IMAGE_SIZE, IMAGE_SIZE);
     Nd4j.copy(playground, playgroundRotation);
 
-    INDArray actionMirrorVertical = mirrorVertical(twoDimensionalActionProbabilities);
+    INDArray actionMirrorVertical = mirrorVertical(twoDimensionalActionProbabilities.dup());
     actionMirrorVertical = actionMirrorVertical.reshape(COLUMN_COUNT);
-    INDArray boardMirrorVertical = mirrorBoardVertically(playgroundRotation);
+    INDArray boardMirrorVertical = mirrorBoardVertically(playgroundRotation.dup());
     symmetries.add(
         new AdversaryTrainingExample(
             boardMirrorVertical.dup(),
             currentPlayer,
-            actionMirrorVertical)
+            actionMirrorVertical,
+            iteration)
         );
     
     INDArray actionMirrorHorizontal = mirrorBoardPartHorizontally(twoDimensionalActionProbabilities);
@@ -41,41 +45,45 @@ public class TicTacToe {
         new AdversaryTrainingExample(
             newPlaygroundMirrorHorizontal.dup(),
             currentPlayer,
-            actionMirrorHorizontal)
+            actionMirrorHorizontal,
+            iteration)
         );
     
     for (int rotation = 1; rotation < 4; rotation++) {
      
-      INDArray newActionRotation = rotate90(twoDimensionalActionProbabilities);
-      INDArray newPlaygroundRotation = rotateBoard90(playgroundRotation);
+      INDArray newActionRotation = rotate90(twoDimensionalActionProbabilities.dup());
+      INDArray newPlaygroundRotation = rotateBoard90(playgroundRotation.dup());
       symmetries.add(
           new AdversaryTrainingExample(
               newPlaygroundRotation.dup(),
               currentPlayer,
-              newActionRotation.reshape(COLUMN_COUNT).dup())
+              newActionRotation.reshape(COLUMN_COUNT).dup(),
+              iteration)
           );
       
-      INDArray newActionMirrorVertical = mirrorVertical(twoDimensionalActionProbabilities);
-      INDArray newPlaygroundMirror = mirrorBoardVertically(playgroundRotation);
+      INDArray newActionMirrorVertical = mirrorVertical(newActionRotation.dup());
+      INDArray newPlaygroundMirror = mirrorBoardVertically(newPlaygroundRotation.dup());
       symmetries.add(
           new AdversaryTrainingExample(
               newPlaygroundMirror.dup(),
               currentPlayer,
-              newActionMirrorVertical.reshape(COLUMN_COUNT).dup())
+              newActionMirrorVertical.reshape(COLUMN_COUNT).dup(),
+              iteration)
           );
       
-      INDArray newActionMirrorHorizontal = mirrorBoardPartHorizontally(twoDimensionalActionProbabilities);
+      INDArray newActionMirrorHorizontal = mirrorBoardPartHorizontally(newActionRotation.dup());
       newActionMirrorHorizontal = newActionMirrorHorizontal.reshape(COLUMN_COUNT);
-      newPlaygroundMirrorHorizontal = mirrorBoardHorizontally(newPlaygroundRotation);
+      newPlaygroundMirrorHorizontal = mirrorBoardHorizontally(newPlaygroundRotation.dup());
       symmetries.add(
           new AdversaryTrainingExample(
               newPlaygroundMirrorHorizontal.dup(),
               currentPlayer,
-              newActionMirrorHorizontal.dup())
+              newActionMirrorHorizontal.dup(),
+              iteration)
           );
       
-      twoDimensionalActionProbabilities = newActionRotation;
-      playgroundRotation = newPlaygroundRotation;
+      Nd4j.copy(newActionRotation, twoDimensionalActionProbabilities);
+      Nd4j.copy(newPlaygroundRotation, playgroundRotation);
     }
     
     
@@ -89,9 +97,12 @@ public class TicTacToe {
     for (int row = 0; row < IMAGE_SIZE; row++) {
       for (int column = 0; column < IMAGE_SIZE; column++) {
   
-        if (equalsEpsilon(OCCUPIED_IMAGE_POINT,
-            playground.getDouble(EMPTY_FIELDS_CHANNEL, row, column),
-            DOUBLE_COMPARISON_EPSILON) ) {
+        if (equalsEpsilon(EMPTY_IMAGE_POINT,
+            playground.getDouble(MAX_PLAYER_CHANNEL, row, column),
+            DOUBLE_COMPARISON_EPSILON) &&
+            equalsEpsilon(EMPTY_IMAGE_POINT,
+                playground.getDouble(MIN_PLAYER_CHANNEL, row, column),
+                DOUBLE_COMPARISON_EPSILON)) {
   
           emptyFieldsIndices.add(IMAGE_SIZE * row + column);
         }
@@ -108,11 +119,14 @@ public class TicTacToe {
     for (int row = 0; row < IMAGE_SIZE; row++) {
       for (int column = 0; column < IMAGE_SIZE; column++) {
   
-        if (equalsEpsilon(OCCUPIED_IMAGE_POINT,
-            playground.getDouble(EMPTY_FIELDS_CHANNEL, row, column),
-            DOUBLE_COMPARISON_EPSILON) ) {
-  
-            validMoves.putScalar(IMAGE_SIZE * row + column, 1f);
+        if (equalsEpsilon(EMPTY_IMAGE_POINT,
+            playground.getDouble(MAX_PLAYER_CHANNEL, row, column),
+            DOUBLE_COMPARISON_EPSILON) && 
+            equalsEpsilon(EMPTY_IMAGE_POINT,
+                playground.getDouble(MIN_PLAYER_CHANNEL, row, column),
+                DOUBLE_COMPARISON_EPSILON) ) {
+          
+          validMoves.putScalar(IMAGE_SIZE * row + column, 1f);
         }
       }
     }
@@ -132,7 +146,7 @@ public class TicTacToe {
     return MAX_PLAYER_CHANNEL;
   }
   
-  public static double getOtherPlayer(Set<Integer> emptyFields) {
+  public static int getOtherPlayer(Set<Integer> emptyFields) {
     
     boolean evenOccupiedFields = 0 == (COLUMN_COUNT - emptyFields.size()) % 2;
     
@@ -155,6 +169,16 @@ public class TicTacToe {
 
     return horizontalWin(board, player) || verticalWin(board, player) || diagonalWin(board, player);
   }
+  
+  public static int getOtherColor(int color) {
+    
+    if (TicTacToeConstants.MAX_PLAYER_CHANNEL == color) {
+      
+      return MIN_PLAYER_CHANNEL;
+    }
+    
+    return MAX_PLAYER_CHANNEL;
+  }
 
   public static INDArray makeMove(INDArray board, int flatIndex, int player) {
 
@@ -162,7 +186,13 @@ public class TicTacToe {
     int column = flatIndex % IMAGE_CHANNELS;
     
     INDArray newBoard = board.dup();
-    newBoard.putScalar(EMPTY_FIELDS_CHANNEL, row, column, EMPTY_FIELD_VALUE);
+    if (MIN_PLAYER_CHANNEL == player) {
+
+      newBoard.putRow(PLAYER_CHANNEL, ONES_PLAYGROUND_IMAGE); 
+    } else {
+
+      newBoard.putRow(PLAYER_CHANNEL, MINUS_ONES_PLAYGROUND_IMAGE);
+    }
     newBoard.putScalar(player, row, column, OCCUPIED_IMAGE_POINT);
 
     return newBoard;
@@ -206,7 +236,7 @@ public class TicTacToe {
 
   static INDArray mirrorBoardHorizontally(INDArray playgroundRotation) {
 
-    INDArray boardEmptyMirrorHorizontal = mirrorBoardPartHorizontally(playgroundRotation.slice(EMPTY_FIELDS_CHANNEL));
+    INDArray boardEmptyMirrorHorizontal = playgroundRotation.slice(PLAYER_CHANNEL);
     INDArray maxPlayerMirrorHorizontal = mirrorBoardPartHorizontally(playgroundRotation.slice(MAX_PLAYER_CHANNEL));
     INDArray minPlayerMirrorHorizontal = mirrorBoardPartHorizontally(playgroundRotation.slice(MIN_PLAYER_CHANNEL));
     
@@ -218,7 +248,7 @@ public class TicTacToe {
   
   static INDArray mirrorBoardPartHorizontally(INDArray toMirror) {
     
-    INDArray mirrorHorizontal = Nd4j.create(IMAGE_SIZE, IMAGE_SIZE);
+    INDArray mirrorHorizontal = Nd4j.ones(toMirror.shape()).neg();
     mirrorHorizontal.putRow(0, toMirror.slice(2));
     mirrorHorizontal.putRow(1, toMirror.slice(1));
     mirrorHorizontal.putRow(2, toMirror.slice(0));
@@ -228,7 +258,7 @@ public class TicTacToe {
   
   static INDArray mirrorBoardVertically(INDArray boardToMirror) {
 
-    INDArray boardEmptyMirror = mirrorVertical(boardToMirror.slice(EMPTY_FIELDS_CHANNEL));
+    INDArray boardEmptyMirror = boardToMirror.slice(PLAYER_CHANNEL);
     INDArray maxPlayerMirror = mirrorVertical(boardToMirror.slice(MAX_PLAYER_CHANNEL));
     INDArray minPlayerMirror = mirrorVertical(boardToMirror.slice(MIN_PLAYER_CHANNEL));
     
@@ -251,7 +281,7 @@ public class TicTacToe {
 
   static INDArray rotateBoard90(INDArray playgroundRotation) {
 
-    INDArray boardEmptyRotation = rotate90(playgroundRotation.slice(EMPTY_FIELDS_CHANNEL));
+    INDArray boardEmptyRotation = playgroundRotation.slice(PLAYER_CHANNEL);
     INDArray maxPlayerRotation = rotate90(playgroundRotation.slice(MAX_PLAYER_CHANNEL));
     INDArray minPlayerRotation = rotate90(playgroundRotation.slice(MIN_PLAYER_CHANNEL));
     
@@ -263,7 +293,7 @@ public class TicTacToe {
   static INDArray createNewBoard(INDArray newEmptyBoardPart, INDArray newMaxPlayerBoardPart, INDArray newMinPlayerBoardPart) {
 
     INDArray newPlaygroundRotation = Nd4j.create(IMAGE_CHANNELS, IMAGE_SIZE, IMAGE_SIZE);
-    newPlaygroundRotation.putRow(EMPTY_FIELDS_CHANNEL, newEmptyBoardPart);
+    newPlaygroundRotation.putRow(PLAYER_CHANNEL, newEmptyBoardPart);
     newPlaygroundRotation.putRow(MAX_PLAYER_CHANNEL, newMaxPlayerBoardPart);
     newPlaygroundRotation.putRow(MIN_PLAYER_CHANNEL, newMinPlayerBoardPart);
 
@@ -283,18 +313,18 @@ public class TicTacToe {
           
           if (row == col) {
             
-            INDArray slice = toRotate.getColumn(col);
-            rotated90.putRow(row, slice);
+            INDArray slice = toRotate.getColumn(col).dup();
+            rotated90.putRow(row, Nd4j.reverse(slice));
           
           } else {
           
-            INDArray slice = toRotate.getRow(row);
+            INDArray slice = toRotate.getRow(row).dup();
             rotated90.putColumn(col, slice);
           }
         
         } else if (row == middle && col == middle) {
           
-          rotated90.putScalar(new int[]{middle, middle}, toRotate.getInt(middle, middle));
+          rotated90.putScalar(new int[]{middle, middle}, toRotate.getDouble(middle, middle));
         }
       }
     }

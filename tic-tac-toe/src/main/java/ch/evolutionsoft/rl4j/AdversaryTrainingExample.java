@@ -12,21 +12,24 @@ public class AdversaryTrainingExample implements Serializable {
   
   INDArray actionIndexProbabilities;
   
-  Integer currentPlayerValue;
+  Float currentPlayerValue;
+  
+  int iteration;
 
   public AdversaryTrainingExample(INDArray board, int currentPlayer, 
-      INDArray actionIndexProbabilities) {
+      INDArray actionIndexProbabilities, int iteration) {
     
     this.board = board.dup();
     this.currentPlayer = currentPlayer;
     this.actionIndexProbabilities = actionIndexProbabilities;
+    this.iteration = iteration;
   }
 
-  public Integer getCurrentPlayerValue() {
+  public Float getCurrentPlayerValue() {
     return currentPlayerValue;
   }
 
-  public void setCurrentPlayerValue(Integer currentPlayerValue) {
+  public void setCurrentPlayerValue(Float currentPlayerValue) {
     this.currentPlayerValue = currentPlayerValue;
   }
 
@@ -56,6 +59,16 @@ public class AdversaryTrainingExample implements Serializable {
   
   public int hashCode() {
     
-    return this.board.hashCode();
+    return 7 * this.board.hashCode();
+  }
+  
+  public String toString() {
+    
+    return "TrainExample {" + 
+        this.board.toString() + System.lineSeparator() +
+        this.currentPlayer + System.lineSeparator() +
+        this.actionIndexProbabilities.toString() + System.lineSeparator() +
+        this.currentPlayerValue + System.lineSeparator() +
+        "}";
   }
 }

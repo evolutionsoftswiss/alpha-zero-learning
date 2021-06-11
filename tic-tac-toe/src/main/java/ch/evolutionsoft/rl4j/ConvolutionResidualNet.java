@@ -6,11 +6,13 @@ import static ch.evolutionsoft.net.game.NeuralNetConstants.DEFAULT_SEED;
 import org.deeplearning4j.nn.conf.ComputationGraphConfiguration;
 import org.deeplearning4j.nn.conf.ConvolutionMode;
 import org.deeplearning4j.nn.conf.NeuralNetConfiguration;
+import org.deeplearning4j.nn.conf.distribution.ConstantDistribution;
 import org.deeplearning4j.nn.conf.graph.ElementWiseVertex;
 import org.deeplearning4j.nn.conf.inputs.InputType;
 import org.deeplearning4j.nn.conf.layers.ActivationLayer;
 import org.deeplearning4j.nn.conf.layers.BatchNormalization;
 import org.deeplearning4j.nn.conf.layers.ConvolutionLayer;
+import org.deeplearning4j.nn.conf.layers.DenseLayer;
 import org.deeplearning4j.nn.conf.layers.OutputLayer;
 import org.deeplearning4j.nn.conf.layers.SeparableConvolution2D;
 import org.deeplearning4j.nn.conf.layers.SubsamplingLayer;
@@ -55,7 +57,7 @@ public class ConvolutionResidualNet {
 
   public static final int CNN_OUTPUT_CHANNELS = 3;
   
-  private double learningRate = 5e-5;
+  private double learningRate = 1e-3;
 
   public ConvolutionResidualNet(double learningRate) {
 
@@ -81,13 +83,13 @@ public class ConvolutionResidualNet {
                 .build(),
             INPUT)
         .addLayer(BLOCK1_CONV1_BATCH_NORMALIZATION, new BatchNormalization(), BLOCK1_CONVOLUTION1)
-        .addLayer(BLOCK1_CONVOLUTION1_ACTIVATION, new ActivationLayer(Activation.RELU), BLOCK1_CONV1_BATCH_NORMALIZATION)
+        .addLayer(BLOCK1_CONVOLUTION1_ACTIVATION, new ActivationLayer(Activation.LEAKYRELU), BLOCK1_CONV1_BATCH_NORMALIZATION)
         .addLayer(BLOCK1_CONVOLUTION2,
             new ConvolutionLayer.Builder(2, 2).stride(1, 1).padding(1, 1).nOut(14).hasBias(false)
                 .build(),
             BLOCK1_CONVOLUTION1_ACTIVATION)
         .addLayer(BLOCK1_CONVOLUTION2_BATCH_NORMALIZATION, new BatchNormalization(), BLOCK1_CONVOLUTION2)
-        .addLayer(BLOCK1_CONV2_ACTIVATION, new ActivationLayer(Activation.RELU), BLOCK1_CONVOLUTION2_BATCH_NORMALIZATION)
+        .addLayer(BLOCK1_CONV2_ACTIVATION, new ActivationLayer(Activation.LEAKYRELU), BLOCK1_CONVOLUTION2_BATCH_NORMALIZATION)
 
         // residual1
         .addLayer(RESIDUAL1_CONVOLUTION,
@@ -102,7 +104,7 @@ public class ConvolutionResidualNet {
                 .build(),
             BLOCK1_CONV2_ACTIVATION)
         .addLayer(BLOCK2_SEPARABLE_CONVOLUTION1_BATCH_NORMALIZATION, new BatchNormalization(), BLOCK2_SEPARABLE_CONVOLUTION1)
-        .addLayer(BLOCK2_SEPCONV1_ACTIVATION, new ActivationLayer(Activation.RELU), BLOCK2_SEPARABLE_CONVOLUTION1_BATCH_NORMALIZATION)
+        .addLayer(BLOCK2_SEPCONV1_ACTIVATION, new ActivationLayer(Activation.LEAKYRELU), BLOCK2_SEPARABLE_CONVOLUTION1_BATCH_NORMALIZATION)
         .addLayer(BLOCK2_SEPARABLE_CONVOLUTION2,
             new SeparableConvolution2D.Builder(2, 2).nOut(14).hasBias(false).convolutionMode(ConvolutionMode.Same)
                 .build(),
@@ -115,17 +117,31 @@ public class ConvolutionResidualNet {
         
         .addVertex(ADD1, new ElementWiseVertex(ElementWiseVertex.Op.Add), BLOCK2_POOL, RESIDUAL1)
         
+        .addLayer("dense1", new DenseLayer.Builder().
+            nOut(32).
+            activation(Activation.LEAKYRELU).
+            build(), ADD1)
+        
+        .addLayer("dense2", new DenseLayer.Builder().
+            nOut(16).
+            activation(Activation.LEAKYRELU).
+            build(), ADD1)
+        
         .addLayer(DEFAULT_OUTPUT_LAYER_NAME, new OutputLayer.Builder()
             .nOut(9)
             .activation(Activation.SOFTMAX)
-            .build(), ADD1)
+            .weightInit(new ConstantDistribution(0.01))
+            .build(), "dense1")
         
         .addLayer(DEFAULT_OUTPUT_LAYER_NAME + "_value", new OutputLayer.Builder()
             .nOut(1)
-            .activation(Activation.TANH)
+            .activation(Activation.SIGMOID)
+            .weightInit(new ConstantDistribution(0.01))
             .lossFunction(LossFunction.MSE)
-            .build(), ADD1)
+            .build(), "dense2")
+ 
         .setOutputs(DEFAULT_OUTPUT_LAYER_NAME, DEFAULT_OUTPUT_LAYER_NAME + "_value")
+
         .build();
   }
 

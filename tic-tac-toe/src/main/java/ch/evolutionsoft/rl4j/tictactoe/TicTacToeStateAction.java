@@ -1,10 +1,6 @@
 package ch.evolutionsoft.rl4j.tictactoe;
 
-import static ch.evolutionsoft.net.game.tictactoe.TicTacToeConstants.EMPTY_FIELDS_CHANNEL;
-import static ch.evolutionsoft.net.game.tictactoe.TicTacToeConstants.IMAGE_CHANNELS;
-import static ch.evolutionsoft.net.game.tictactoe.TicTacToeConstants.IMAGE_SIZE;
-import static ch.evolutionsoft.net.game.tictactoe.TicTacToeConstants.MAX_PLAYER_CHANNEL;
-import static ch.evolutionsoft.net.game.tictactoe.TicTacToeConstants.MIN_PLAYER_CHANNEL;
+import static ch.evolutionsoft.net.game.tictactoe.TicTacToeConstants.*;
 
 import org.nd4j.linalg.api.ndarray.INDArray;
 import org.nd4j.linalg.factory.Nd4j;
@@ -16,7 +12,7 @@ public class TicTacToeStateAction {
   
   public static final INDArray EMPTY_CONVOLUTIONAL_PLAYGROUND = Nd4j.create(IMAGE_CHANNELS, IMAGE_SIZE, IMAGE_SIZE);
   static {
-    EMPTY_CONVOLUTIONAL_PLAYGROUND.putRow(EMPTY_FIELDS_CHANNEL, ONES_PLAYGROUND_IMAGE);
+    EMPTY_CONVOLUTIONAL_PLAYGROUND.putRow(PLAYER_CHANNEL, ONES_PLAYGROUND_IMAGE);
     EMPTY_CONVOLUTIONAL_PLAYGROUND.putRow(MAX_PLAYER_CHANNEL, ZEROS_PLAYGROUND_IMAGE);
     EMPTY_CONVOLUTIONAL_PLAYGROUND.putRow(MIN_PLAYER_CHANNEL, ZEROS_PLAYGROUND_IMAGE);
   }

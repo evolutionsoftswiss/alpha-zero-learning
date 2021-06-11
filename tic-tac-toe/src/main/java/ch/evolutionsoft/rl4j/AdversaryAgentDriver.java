@@ -1,28 +1,32 @@
 package ch.evolutionsoft.rl4j;
 
+import static ch.evolutionsoft.rl4j.AdversaryLearning.*;
 import static ch.evolutionsoft.net.game.tictactoe.TicTacToeConstants.MAX_PLAYER_CHANNEL;
 import static ch.evolutionsoft.net.game.tictactoe.TicTacToeConstants.MIN_PLAYER_CHANNEL;
 
+import java.util.ArrayList;
 import java.util.Set;
 
+import org.deeplearning4j.nn.graph.ComputationGraph;
 import org.nd4j.linalg.api.ndarray.INDArray;
 import org.nd4j.linalg.factory.Nd4j;
 
 import ch.evolutionsoft.net.game.NeuralNetConstants;
 import ch.evolutionsoft.net.game.tictactoe.TicTacToeConstants;
+import ch.evolutionsoft.rl4j.tictactoe.PlayoutMain;
 import ch.evolutionsoft.rl4j.tictactoe.TicTacToe;
 
 public class AdversaryAgentDriver {
 
-  MonteCarloTreeSearch player1, player2;
+  ComputationGraph player1Policy, player2Policy;
   
-  public AdversaryAgentDriver(MonteCarloTreeSearch player1, MonteCarloTreeSearch player2) {
+  public AdversaryAgentDriver(ComputationGraph player1, ComputationGraph player2) {
     
-    this.player1 = player1;
-    this.player2 = player2;
+    this.player1Policy = player1;
+    this.player2Policy = player2;
   }
 
-  public int[] playGames(int numberOfEpisodes, INDArray board) {
+  public int[] playGames(int numberOfEpisodes, INDArray board, double temperature) {
     
     int numberOfEpisodesPlayer1Starts = numberOfEpisodes / 2;
     int numberOfEpisodesPlayer2Starts = numberOfEpisodes - numberOfEpisodesPlayer1Starts;
@@ -33,13 +37,13 @@ public class AdversaryAgentDriver {
     
     for (int gameNumber = 1; gameNumber <= numberOfEpisodesPlayer1Starts; gameNumber++) {
       
-      float gameResult = this.playGame(board);
+      double gameResult = this.playGame(board, temperature, gameNumber % TicTacToeConstants.COLUMN_COUNT);
       
-      if (gameResult >= 1) {
+      if (gameResult >= MAX_WIN) {
         
         player1Wins++;
       
-      } else if (gameResult <= -1) {
+      } else if (gameResult <= MIN_WIN) {
         
         player2Wins++;
       
@@ -49,19 +53,19 @@ public class AdversaryAgentDriver {
       }
     }
     
-    MonteCarloTreeSearch tempPlayer = player1;
-    player1 = player2;
-    player2 = tempPlayer;
+    ComputationGraph tempPlayerPolicy = player1Policy;
+    player1Policy = player2Policy;
+    player2Policy = tempPlayerPolicy;
 
     for (int gameNumber = 1; gameNumber <= numberOfEpisodesPlayer2Starts; gameNumber++) {
       
-      float gameResult = this.playGame(board);
+      double gameResult = this.playGame(board, temperature, gameNumber % TicTacToeConstants.COLUMN_COUNT);
       
-      if (gameResult <= -1) {
+      if (gameResult <= MIN_WIN) {
         
         player1Wins++;
       
-      } else if (gameResult >= 1) {
+      } else if (gameResult >= MAX_WIN) {
         
         player2Wins++;
       
@@ -74,37 +78,33 @@ public class AdversaryAgentDriver {
     return new int[] {player1Wins, player2Wins, draws};
   }
   
-  public float playGame(INDArray board) {
-
-    INDArray currentBoard = board.dup();
+  public double playGame(INDArray board, double temperature, int firstIndex) {
     
-    Set<Integer> emptyFields = TicTacToe.getEmptyFields(board);
+    MonteCarloSearch player1 = new MonteCarloSearch(this.player1Policy);
+    MonteCarloSearch player2 = new MonteCarloSearch(this.player2Policy);
+    
+    INDArray currentBoard = PlayoutMain.doFirstMove(firstIndex);
+    Set<Integer> emptyFields = TicTacToe.getEmptyFields(currentBoard);
+    
     int currentPlayer = TicTacToe.getCurrentPlayer(emptyFields);
+
     while (!TicTacToe.gameEnded(currentBoard)) {
     
       INDArray moveActionValues = Nd4j.zeros(TicTacToeConstants.COLUMN_COUNT);
       if (currentPlayer == MAX_PLAYER_CHANNEL) {
         
-        moveActionValues = player1.getActionValues(currentBoard, 0);
+        moveActionValues = player1.getActionValues(currentBoard, temperature);
         
       } else if (currentPlayer == MIN_PLAYER_CHANNEL) {
         
-        moveActionValues = player2.getActionValues(currentBoard, 0);
+        moveActionValues = player2.getActionValues(currentBoard, temperature);
       }
       
-      INDArray maxMoveValueIndices = moveActionValues.argMax(0);
-      
-      for (int maxMoveValueIndex = 0; maxMoveValueIndex < maxMoveValueIndices.size(0); maxMoveValueIndex++) {
-        
-        if (!emptyFields.contains(maxMoveValueIndices.getInt(maxMoveValueIndex))) {
-          
-          throw new IllegalStateException("Move " + maxMoveValueIndices.getInt(maxMoveValueIndex) +
-              " is not valid on board " + currentBoard);
-        }
+      int moveAction = moveActionValues.argMax(0).getInt(0);
+
+      if (!emptyFields.contains(moveAction)) {
+        moveAction = new ArrayList<>(emptyFields).get(NeuralNetConstants.randomGenerator.nextInt(emptyFields.size()));
       }
-      
-      int moveAction = maxMoveValueIndices.getInt(
-          NeuralNetConstants.randomGenerator.nextInt((int) maxMoveValueIndices.size(0)));
       
       currentBoard = TicTacToe.makeMove(currentBoard, moveAction, currentPlayer);
       emptyFields = TicTacToe.getEmptyFields(currentBoard);
@@ -113,15 +113,15 @@ public class AdversaryAgentDriver {
     
     if (TicTacToe.hasWon(currentBoard, MAX_PLAYER_CHANNEL)) {
       
-      return 1;
+      return MAX_WIN;
     
     }
     
     if (TicTacToe.hasWon(currentBoard, MIN_PLAYER_CHANNEL)) {
       
-      return -1;
+      return MIN_WIN;
     }
     
-    return 0;
+    return DRAW_VALUE;
   }
 }
