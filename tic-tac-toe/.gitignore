@@ -3,3 +3,5 @@
 /.project
 /logs/
 /output/
+/trainExamples.obj
+/*-bestmodel*.bin
