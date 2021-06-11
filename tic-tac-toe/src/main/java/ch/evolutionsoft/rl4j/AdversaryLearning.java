@@ -105,7 +105,7 @@ public class AdversaryLearning {
       for (AdversaryTrainingExample symmetryExample : symmetries) {
 
         if (!addedSymmetries.contains(symmetryExample)) {
-          trainExamples.remove(trainingExample);
+          trainExamples.remove(symmetryExample);
           trainExamples.add(symmetryExample);
           addedSymmetries.add(symmetryExample);
         }
