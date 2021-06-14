@@ -49,9 +49,9 @@ public class AdversaryLearning {
   
   MonteCarloSearch mcts;
   
-  int iterationStart = 3001;
+  int iterationStart = 1;
   
-  int iterationSteps = 1000;
+  int iterationSteps = 4000;
   
   double temperature = 1;
 
@@ -140,13 +140,15 @@ public class AdversaryLearning {
       
       if (TicTacToe.gameEnded(currentBoard)) {
         
-        if (TicTacToe.hasWon(currentBoard, currentPlayer)) {
+        // Now the currentPlayer has moved, clarify with previousPlayer for clarifying gameResult
+        int previousPlayer = currentPlayer;
+        if (TicTacToe.hasWon(currentBoard, previousPlayer)) {
   
           double gameResult = 0;
           
           for (AdversaryTrainingExample trainExample : trainExamples) {
             
-            trainExample.setCurrentPlayerValue((float) (trainExample.getCurrentPlayer() == currentPlayer ? gameResult : 1 - gameResult));
+            trainExample.setCurrentPlayerValue((float) (trainExample.getCurrentPlayer() == previousPlayer ? gameResult : 1 - gameResult));
           }
         } else {
 
@@ -245,6 +247,12 @@ public class AdversaryLearning {
         }
         
         log.info("Iteration {} ended, train examples {}", iteration, this.trainExamplesHistory.size());
+      
+        if (0 == iteration % 1000) {
+          
+          ModelSerializer.writeModel(computationGraph, "2021-06-14-bestmodel0" + iteration + "a.bin", true);
+        }
+      
       }
     
   }

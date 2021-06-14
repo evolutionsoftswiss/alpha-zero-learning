@@ -31,9 +31,7 @@ public class PlayoutMain {
         
         if (xPlayer) {
 
-          INDArray resNetBoard = board.dup();
-          resNetBoard.putRow(0, Nd4j.ones(3, 3).sub(resNetBoard.slice(1, 0).add(resNetBoard.slice(2, 0))));
-          int moveIndex = getBestMove(perfectResNet, resNetBoard);
+          int moveIndex = getBestMove(perfectResNet, board);
           
           if (!TicTacToe.getEmptyFields(board).contains(moveIndex)) {
             System.out.println("Invalid X move");
@@ -97,9 +95,7 @@ public class PlayoutMain {
         
         if (!xPlayer) {
 
-          INDArray resNetBoard = board.dup();
-          resNetBoard.putRow(0, Nd4j.ones(3, 3).sub(resNetBoard.slice(1, 0).add(resNetBoard.slice(2, 0))));
-          int moveIndex = getBestMove(perfectResNet, resNetBoard);
+          int moveIndex = getBestMove(perfectResNet, board);
 
           if (!TicTacToe.getEmptyFields(board).contains(moveIndex)) {
             System.out.println("Invalid O move");
