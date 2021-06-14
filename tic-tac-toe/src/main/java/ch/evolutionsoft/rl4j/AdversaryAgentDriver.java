@@ -13,7 +13,6 @@ import org.nd4j.linalg.factory.Nd4j;
 
 import ch.evolutionsoft.net.game.NeuralNetConstants;
 import ch.evolutionsoft.net.game.tictactoe.TicTacToeConstants;
-import ch.evolutionsoft.rl4j.tictactoe.PlayoutMain;
 import ch.evolutionsoft.rl4j.tictactoe.TicTacToe;
 
 public class AdversaryAgentDriver {

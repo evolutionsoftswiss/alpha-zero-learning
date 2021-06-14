@@ -1,4 +1,4 @@
-package ch.evolutionsoft.rl4j;
+package ch.evolutionsoft.rl4j.tictactoe;
 
 import java.io.IOException;
 
@@ -6,6 +6,8 @@ import org.deeplearning4j.nn.conf.ComputationGraphConfiguration;
 import org.deeplearning4j.nn.graph.ComputationGraph;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import ch.evolutionsoft.rl4j.AdversaryLearning;
 
 public class TicTacToeReinforcementLearningMain {
 

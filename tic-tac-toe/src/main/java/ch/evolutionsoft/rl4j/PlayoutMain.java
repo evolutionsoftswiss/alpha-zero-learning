@@ -1,4 +1,4 @@
-package ch.evolutionsoft.rl4j.tictactoe;
+package ch.evolutionsoft.rl4j;
 
 import java.io.IOException;
 
@@ -8,7 +8,7 @@ import org.nd4j.linalg.api.ndarray.INDArray;
 import org.nd4j.linalg.factory.Nd4j;
 
 import ch.evolutionsoft.net.game.tictactoe.TicTacToeConstants;
-import ch.evolutionsoft.rl4j.MonteCarloSearch;
+import ch.evolutionsoft.rl4j.tictactoe.TicTacToe;
 
 public class PlayoutMain {
 

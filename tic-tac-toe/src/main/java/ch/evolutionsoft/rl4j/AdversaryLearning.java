@@ -169,7 +169,7 @@ public class AdversaryLearning {
     return null;
   }
   
-  void performLearning() throws IOException {
+  public void performLearning() throws IOException {
 
     if (restoreTrainedNeuralNet) {
       
