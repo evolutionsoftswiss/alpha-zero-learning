@@ -4,29 +4,29 @@ import org.deeplearning4j.nn.graph.ComputationGraph;
 import org.nd4j.linalg.api.ndarray.INDArray;
 import org.nd4j.linalg.factory.Nd4j;
 
-import ch.evolutionsoft.net.game.tictactoe.TicTacToeConstants;
-import ch.evolutionsoft.rl4j.tictactoe.TicTacToe;
-
 public class MonteCarloSearch {
 
   double cUct = 1.0;
   
   int numberOfSimulations = 50;
+  
+  Game game;
 
   ComputationGraph computationGraph;
   
   TreeNode rootNode;
   TreeNode treeNode;
   
-  public MonteCarloSearch(ComputationGraph computationGraph) {
+  public MonteCarloSearch(Game game, ComputationGraph computationGraph) {
     
-    this(computationGraph, TicTacToeConstants.EMPTY_CONVOLUTIONAL_PLAYGROUND);
+    this(game, computationGraph, game.getInitialBoard());
   }
   
-  public MonteCarloSearch(ComputationGraph computationGraph, INDArray currentBoard) {
+  public MonteCarloSearch(Game game, ComputationGraph computationGraph, INDArray currentBoard) {
     
+    this.game = game;
     this.computationGraph = computationGraph;
-    int currentPlayer = TicTacToe.getOtherPlayer(TicTacToe.getEmptyFields(currentBoard));
+    int currentPlayer = game.getOtherPlayer(game.getEmptyFields(currentBoard));
     this.rootNode = new TreeNode(-1, currentPlayer, 0, 1.0f, null);
   }
   
@@ -37,7 +37,7 @@ public class MonteCarloSearch {
     while (!treeNode.children.isEmpty()) {
       
       treeNode = treeNode.selectMove(this.cUct);
-      currentBoard = TicTacToe.makeMove(currentBoard, treeNode.move, treeNode.lastColorMove);
+      currentBoard = game.makeMove(currentBoard, treeNode.move, treeNode.lastColorMove);
     }
     
 
@@ -48,23 +48,23 @@ public class MonteCarloSearch {
     INDArray actionProbabilities = nnOutput[0];
     double leafValue = nnOutput[1].getDouble(0);
     
-    if (TicTacToe.gameEnded(currentBoard)) {
+    if (game.gameEnded(currentBoard)) {
       
       leafValue = 0.5f;
       
-      if (TicTacToe.hasWon(currentBoard, treeNode.lastColorMove)) {
+      if (game.hasWon(currentBoard, treeNode.lastColorMove)) {
         
         leafValue = 1f;
       
       // Not possible in TicTacToe, connect four, chess and so an, but in Go
-      } else if (TicTacToe.hasWon(currentBoard, TicTacToe.getOtherColor(treeNode.lastColorMove))) {
+      } else if (game.hasWon(currentBoard, game.getOtherPlayer(treeNode.lastColorMove))) {
         
         leafValue = 0f;
       }
     
     } else {
       
-      treeNode.expand(actionProbabilities, currentBoard);
+      treeNode.expand(game, actionProbabilities, currentBoard);
     }
 
     treeNode.updateRecursiv(leafValue);
@@ -78,10 +78,10 @@ public class MonteCarloSearch {
       this.playout(board.dup());
     }
 
-    int[] visitedCounts = new int[TicTacToeConstants.COLUMN_COUNT];
+    int[] visitedCounts = new int[game.getFieldCount()];
     int maxVisitedCounts = 0;
 
-    for (int index = 0; index < TicTacToeConstants.COLUMN_COUNT; index++) {
+    for (int index = 0; index < game.getFieldCount(); index++) {
       
       if (this.rootNode.children.containsKey(index)) {
         
@@ -97,7 +97,7 @@ public class MonteCarloSearch {
       }
     }
     
-    INDArray moveProbabilities = Nd4j.zeros(TicTacToeConstants.COLUMN_COUNT);
+    INDArray moveProbabilities = Nd4j.zeros(game.getFieldCount());
 
     if (0 == temperature) {
       
@@ -110,7 +110,7 @@ public class MonteCarloSearch {
       return moveProbabilities;
     }
     
-    for (int index = 0; index < TicTacToeConstants.COLUMN_COUNT; index++) {
+    for (int index = 0; index < game.getFieldCount(); index++) {
 
       double softmaxProbability = 0;
       

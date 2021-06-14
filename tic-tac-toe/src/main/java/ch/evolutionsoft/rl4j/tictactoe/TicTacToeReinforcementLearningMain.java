@@ -21,7 +21,7 @@ public class TicTacToeReinforcementLearningMain {
     
     log.info(neuralNet.summary());
     
-    AdversaryLearning adversaryLearning = new AdversaryLearning(neuralNet, 20);
+    AdversaryLearning adversaryLearning = new AdversaryLearning(new TicTacToe(), neuralNet, 20);
     
     adversaryLearning.performLearning();
   }

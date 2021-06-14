@@ -1,9 +1,5 @@
 package ch.evolutionsoft.rl4j;
 
-import static ch.evolutionsoft.net.game.tictactoe.TicTacToeConstants.IMAGE_CHANNELS;
-import static ch.evolutionsoft.net.game.tictactoe.TicTacToeConstants.IMAGE_SIZE;
-import static ch.evolutionsoft.net.game.tictactoe.TicTacToeConstants.OCCUPIED_IMAGE_POINT;
-
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
@@ -26,9 +22,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import cc.mallet.types.Dirichlet;
-import ch.evolutionsoft.net.game.tictactoe.TicTacToeConstants;
-import ch.evolutionsoft.rl4j.tictactoe.EvaluationMain;
-import ch.evolutionsoft.rl4j.tictactoe.TicTacToe;
 
 public class AdversaryLearning {
 
@@ -39,6 +32,8 @@ public class AdversaryLearning {
   private static final Logger log = LoggerFactory.getLogger(AdversaryLearning.class);
 
   List<AdversaryTrainingExample> trainExamplesHistory = new ArrayList<>();
+  
+  Game game;
   
   ComputationGraph computationGraph;
   ComputationGraph pComputationGraph;
@@ -51,7 +46,7 @@ public class AdversaryLearning {
   
   int iterationStart = 1;
   
-  int iterationSteps = 4000;
+  int iterationSteps = 5000;
   
   double temperature = 1;
 
@@ -61,8 +56,9 @@ public class AdversaryLearning {
   
   boolean alwaysUpdateNeuralNet = false;
 
-  public AdversaryLearning(ComputationGraph computationGraph, int numberOfEpisodes) {
-    
+  public AdversaryLearning(Game game, ComputationGraph computationGraph, int numberOfEpisodes) {
+
+    this.game = game;
     this.computationGraph = computationGraph;
     this.numberOfEpisodesUpdate = numberOfEpisodes;
   }
@@ -71,15 +67,15 @@ public class AdversaryLearning {
     
     List<AdversaryTrainingExample> trainExamples = new ArrayList<>();
     
-    INDArray currentBoard = TicTacToeConstants.EMPTY_CONVOLUTIONAL_PLAYGROUND;
-    int currentPlayer = TicTacToeConstants.MAX_PLAYER_CHANNEL;
+    INDArray currentBoard = game.getInitialBoard();
+    int currentPlayer = Game.MAX_PLAYER;
     
-    this.mcts = new MonteCarloSearch(computationGraph, currentBoard);
+    this.mcts = new MonteCarloSearch(game, computationGraph, currentBoard);
     
-    while (!TicTacToe.gameEnded(currentBoard)) {
+    while (!game.gameEnded(currentBoard)) {
 
-      INDArray validMoves = TicTacToe.getValidMoves(currentBoard);
-      Set<Integer> emptyFields = TicTacToe.getEmptyFields(currentBoard);
+      INDArray validMoves = game.getValidMoves(currentBoard);
+      Set<Integer> emptyFields = game.getEmptyFields(currentBoard);
 
       INDArray actionProbabilities = this.mcts.getActionValues(currentBoard, temperature);
       INDArray validActionProbabilities = actionProbabilities.mul(validMoves);
@@ -94,7 +90,7 @@ public class AdversaryLearning {
       trainExamples.remove(trainingExample);
       trainExamples.add(trainingExample);
       
-      List<AdversaryTrainingExample> symmetries = TicTacToe.getSymmetries(
+      List<AdversaryTrainingExample> symmetries = game.getSymmetries(
           currentBoard.dup(),
           normalizedActionProbabilities.dup(),
           currentPlayer,
@@ -111,20 +107,20 @@ public class AdversaryLearning {
         }
       }
 
-      double alpha = 0.25;
+      double alpha = 0.35;
       Dirichlet dirichlet = new Dirichlet(
-          Nd4j.ones(TicTacToeConstants.COLUMN_COUNT).mul(validMoves).add(1e-10).
+          Nd4j.ones(game.getFieldCount()).mul(validMoves).add(1e-12).
           mul(alpha).toDoubleVector());
       
       INDArray nextDistribution = Nd4j.createFromArray(dirichlet.nextDistribution()); 
-      INDArray noiseActionDistribution = normalizedActionProbabilities.mul(0.75).add(
-          nextDistribution.mul(0.25));
+      INDArray noiseActionDistribution = normalizedActionProbabilities.mul(0.65).add(
+          nextDistribution.mul(0.35));
       
       noiseActionDistribution.div(noiseActionDistribution.sum(0));
       
       EnumeratedIntegerDistribution d =
           new EnumeratedIntegerDistribution(
-              TicTacToe.COLUMN_INDICES,
+              game.getAllIndices(),
               noiseActionDistribution.toDoubleVector()
               );
       
@@ -135,14 +131,14 @@ public class AdversaryLearning {
         moveAction = d.sample();
       }
       
-      currentBoard = TicTacToe.makeMove(currentBoard, moveAction, currentPlayer);
+      currentBoard = game.makeMove(currentBoard, moveAction, currentPlayer);
       this.mcts.updateWithMove(moveAction);
       
-      if (TicTacToe.gameEnded(currentBoard)) {
+      if (game.gameEnded(currentBoard)) {
         
         // Now the currentPlayer has moved, clarify with previousPlayer for clarifying gameResult
         int previousPlayer = currentPlayer;
-        if (TicTacToe.hasWon(currentBoard, previousPlayer)) {
+        if (game.hasWon(currentBoard, previousPlayer)) {
   
           double gameResult = 0;
           
@@ -162,8 +158,8 @@ public class AdversaryLearning {
         return trainExamples;
       }
       
-      currentPlayer = currentPlayer == TicTacToeConstants.MAX_PLAYER_CHANNEL ?
-          TicTacToeConstants.MIN_PLAYER_CHANNEL : TicTacToeConstants.MAX_PLAYER_CHANNEL;
+      currentPlayer = currentPlayer == Game.MAX_PLAYER ?
+          Game.MIN_PLAYER : Game.MAX_PLAYER;
     }
     
     return null;
@@ -214,8 +210,8 @@ public class AdversaryLearning {
           
           this.computationGraph = this.performTraining(this.computationGraph, trainExamples);
           
-          AdversaryAgentDriver adversaryAgentDriver = new AdversaryAgentDriver(this.pComputationGraph, this.computationGraph);
-          int[] gameResults = adversaryAgentDriver.playGames(36, TicTacToeConstants.EMPTY_CONVOLUTIONAL_PLAYGROUND, temperature);
+          AdversaryAgentDriver adversaryAgentDriver = new AdversaryAgentDriver(this.game, this.pComputationGraph, this.computationGraph);
+          int[] gameResults = adversaryAgentDriver.playGames(36, temperature);
           
           log.info("New model wins {} / prev model wins {} / draws {}", gameResults[1], gameResults[0], gameResults[2]);
           
@@ -239,10 +235,10 @@ public class AdversaryLearning {
           log.info("Accepting new model");
           ModelSerializer.writeModel(computationGraph, "bestmodel.bin", true);
           if (updateAfterBetterPlayout) {
-            evaluateOpeningAnswers(pComputationGraph);
+            game.evaluateOpeningAnswers(pComputationGraph);
           }
-          evaluateOpeningAnswers(computationGraph);
-          EvaluationMain.evaluateNetwork(computationGraph);
+          game.evaluateOpeningAnswers(computationGraph);
+          game.evaluateNetwork(computationGraph);
         
         }
         
@@ -250,7 +246,7 @@ public class AdversaryLearning {
       
         if (0 == iteration % 1000) {
           
-          ModelSerializer.writeModel(computationGraph, "2021-06-14-bestmodel0" + iteration + "a.bin", true);
+          ModelSerializer.writeModel(computationGraph, "2021-06-14-bestmodel0" + iteration + "c.bin", true);
         }
       
       }
@@ -272,7 +268,7 @@ public class AdversaryLearning {
   ComputationGraph performTraining(ComputationGraph computationGraph, List<AdversaryTrainingExample> trainingExamples) {
 
     INDArray inputBoards = Nd4j.zeros(trainingExamples.size(), 3, 3, 3);
-    INDArray probabilitiesLabels = Nd4j.zeros(trainingExamples.size(), TicTacToeConstants.COLUMN_COUNT);
+    INDArray probabilitiesLabels = Nd4j.zeros(trainingExamples.size(), game.getFieldCount());
     INDArray valueLabels =  Nd4j.zeros(trainingExamples.size(), 1);    
     
     for (int exampleNumber = 0; exampleNumber < trainingExamples.size(); exampleNumber++) {
@@ -289,67 +285,5 @@ public class AdversaryLearning {
     computationGraph.fit(dataSet);
     
     return computationGraph;
-  }
-
-  protected void evaluateOpeningAnswers(ComputationGraph convolutionalNetwork) {
-
-    INDArray centerFieldOpeningAnswer = convolutionalNetwork.output(generateCenterFieldInputImagesConvolutional())[0];
-    INDArray cornerFieldOpeningAnswer = convolutionalNetwork
-        .output(generateLastCornerFieldInputImagesConvolutional())[0];
-    INDArray fieldOneOpeningAnswer = convolutionalNetwork
-        .output(generateFieldOneInputImagesConvolutional())[0];
-    INDArray fieldOneCenterTwoOpeningAnswer = convolutionalNetwork
-        .output(generateFieldOneCenterAndTwoThreatConvolutional())[0];
-
-    log.info("Answer to center field opening: {}", centerFieldOpeningAnswer);
-    log.info("Answer to last corner field opening: {}", cornerFieldOpeningAnswer);
-    log.info("Answer to field one, center and two threat: {}", fieldOneCenterTwoOpeningAnswer);
-    log.info("Answer to field one opening: {}", fieldOneOpeningAnswer);
-  }
-
-  INDArray generateCenterFieldInputImagesConvolutional() {
-
-    INDArray middleFieldMove = TicTacToeConstants.EMPTY_CONVOLUTIONAL_PLAYGROUND.dup();
-    INDArray emptyImage1 = Nd4j.ones(1, IMAGE_SIZE, IMAGE_SIZE).mul(-1);
-    middleFieldMove.putRow(0, emptyImage1);
-    middleFieldMove.putScalar(1, 1, 1, OCCUPIED_IMAGE_POINT);
-    INDArray graphSingleBatchInput1 = Nd4j.create(1, IMAGE_CHANNELS, IMAGE_SIZE, IMAGE_SIZE);
-    graphSingleBatchInput1.putRow(0, middleFieldMove);
-    return graphSingleBatchInput1;
-  }
-
-  INDArray generateLastCornerFieldInputImagesConvolutional() {
-
-    INDArray cornerFieldMove = TicTacToeConstants.EMPTY_CONVOLUTIONAL_PLAYGROUND.dup();
-    INDArray emptyImage2 = Nd4j.ones(1, IMAGE_SIZE, IMAGE_SIZE).mul(-1);
-    cornerFieldMove.putRow(0, emptyImage2);
-    cornerFieldMove.putScalar(1, 2, 2, OCCUPIED_IMAGE_POINT);
-    INDArray graphSingleBatchInput2 = Nd4j.create(1, IMAGE_CHANNELS, IMAGE_SIZE, IMAGE_SIZE);
-    graphSingleBatchInput2.putRow(0, cornerFieldMove);
-    return graphSingleBatchInput2;
-  }
-
-  INDArray generateFieldOneInputImagesConvolutional() {
-
-    INDArray fieldOneMaxMove = TicTacToeConstants.EMPTY_CONVOLUTIONAL_PLAYGROUND.dup();
-    INDArray emptyImage1 = Nd4j.ones(1, IMAGE_SIZE, IMAGE_SIZE).mul(-1);
-    fieldOneMaxMove.putRow(0, emptyImage1);
-    fieldOneMaxMove.putScalar(1, 0, 0, OCCUPIED_IMAGE_POINT);
-    INDArray graphSingleBatchInput2 = Nd4j.create(1, IMAGE_CHANNELS, IMAGE_SIZE, IMAGE_SIZE);
-    graphSingleBatchInput2.putRow(0, fieldOneMaxMove);
-    return graphSingleBatchInput2;
-  }
-
-  INDArray generateFieldOneCenterAndTwoThreatConvolutional() {
-
-    INDArray fieldOneCenterTwoMoves = TicTacToeConstants.EMPTY_CONVOLUTIONAL_PLAYGROUND.dup();
-    INDArray emptyImage1 = Nd4j.ones(1, IMAGE_SIZE, IMAGE_SIZE).mul(-1);
-    fieldOneCenterTwoMoves.putRow(0, emptyImage1);
-    fieldOneCenterTwoMoves.putScalar(1, 0, 0, OCCUPIED_IMAGE_POINT);
-    fieldOneCenterTwoMoves.putScalar(2, 1, 1, OCCUPIED_IMAGE_POINT);
-    fieldOneCenterTwoMoves.putScalar(1, 0, 1, OCCUPIED_IMAGE_POINT);
-    INDArray graphSingleBatchInput2 = Nd4j.create(1, IMAGE_CHANNELS, IMAGE_SIZE, IMAGE_SIZE);
-    graphSingleBatchInput2.putRow(0, fieldOneCenterTwoMoves);
-    return graphSingleBatchInput2;
   }
 }

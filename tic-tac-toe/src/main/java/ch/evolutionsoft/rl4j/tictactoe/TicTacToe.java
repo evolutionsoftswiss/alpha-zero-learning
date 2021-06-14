@@ -9,17 +9,31 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
+import org.deeplearning4j.nn.graph.ComputationGraph;
 import org.nd4j.linalg.api.ndarray.INDArray;
 import org.nd4j.linalg.factory.Nd4j;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import ch.evolutionsoft.net.game.tictactoe.TicTacToeConstants;
 import ch.evolutionsoft.rl4j.AdversaryTrainingExample;
+import ch.evolutionsoft.rl4j.Game;
 
-public class TicTacToe {
+public class TicTacToe extends Game {
+  
+  private static final Logger log = LoggerFactory.getLogger(TicTacToe.class);
   
   public static final int[] COLUMN_INDICES = new int[] {0, 1, 2, 3, 4, 5, 6, 7, 8};
   
-  public static List<AdversaryTrainingExample> getSymmetries(INDArray playground, INDArray actionProbabilities, int currentPlayer, int iteration) {
+
+  @Override
+  public int getFieldCount() {
+    
+    return TicTacToeConstants.COLUMN_COUNT;
+  }
+
+  @Override  
+  public List<AdversaryTrainingExample> getSymmetries(INDArray playground, INDArray actionProbabilities, int currentPlayer, int iteration) {
     
     List<AdversaryTrainingExample> symmetries = new ArrayList<>();
     
@@ -89,8 +103,58 @@ public class TicTacToe {
     
     return symmetries;
   }
-  
-  public static Set<Integer> getEmptyFields(INDArray playground) {
+
+  @Override  
+  public INDArray getInitialBoard() {
+    
+    return TicTacToeConstants.EMPTY_CONVOLUTIONAL_PLAYGROUND;
+  }
+
+  @Override
+  public INDArray doFirstMove(int index) {
+
+    INDArray emptyBoard = TicTacToeConstants.EMPTY_CONVOLUTIONAL_PLAYGROUND.dup();
+    
+    INDArray newBoard = makeMove(emptyBoard, index, TicTacToeConstants.MAX_PLAYER_CHANNEL);
+    
+    return newBoard;
+  }
+
+  @Override
+  public boolean gameEnded(INDArray board) {
+
+    return getEmptyFields(board).isEmpty() ||
+        hasWon(board, MAX_PLAYER_CHANNEL) ||
+        hasWon(board, MIN_PLAYER_CHANNEL);
+  }
+
+  @Override
+  public boolean hasWon(INDArray board, int player) {
+
+    return horizontalWin(board, player) || verticalWin(board, player) || diagonalWin(board, player);
+  }
+
+  @Override
+  public INDArray makeMove(INDArray board, int flatIndex, int player) {
+
+    int row = flatIndex / IMAGE_CHANNELS;
+    int column = flatIndex % IMAGE_CHANNELS;
+    
+    INDArray newBoard = board.dup();
+    if (MIN_PLAYER_CHANNEL == player) {
+
+      newBoard.putRow(PLAYER_CHANNEL, ONES_PLAYGROUND_IMAGE); 
+    } else {
+
+      newBoard.putRow(PLAYER_CHANNEL, MINUS_ONES_PLAYGROUND_IMAGE);
+    }
+    newBoard.putScalar(player, row, column, OCCUPIED_IMAGE_POINT);
+
+    return newBoard;
+  }
+
+  @Override
+  public Set<Integer> getEmptyFields(INDArray playground) {
     
     Set<Integer> emptyFieldsIndices = new HashSet<>(SMALL_CAPACITY);
     
@@ -111,8 +175,33 @@ public class TicTacToe {
     
     return emptyFieldsIndices;
   }
-  
-  public static INDArray getValidMoves(INDArray playground) {
+
+  @Override
+  public int getOtherPlayer(Set<Integer> emptyFields) {
+    
+    boolean evenOccupiedFields = 0 == (COLUMN_COUNT - emptyFields.size()) % 2;
+    
+    if (evenOccupiedFields) {
+      
+      return MIN_PLAYER_CHANNEL;
+    }
+    
+    return MAX_PLAYER_CHANNEL;
+  }
+
+  @Override
+  public int getOtherPlayer(int color) {
+    
+    if (TicTacToeConstants.MAX_PLAYER_CHANNEL == color) {
+      
+      return MIN_PLAYER_CHANNEL;
+    }
+    
+    return MAX_PLAYER_CHANNEL;
+  }
+
+  @Override
+  public INDArray getValidMoves(INDArray playground) {
     
     INDArray validMoves = Nd4j.zeros(COLUMN_COUNT);
     
@@ -134,7 +223,76 @@ public class TicTacToe {
     return validMoves;
   }
   
-  public static int getCurrentPlayer(Set<Integer> emptyFields) {
+  @Override
+  public void evaluateNetwork(ComputationGraph computationGraph) {
+
+    EvaluationMain.evaluateNetwork(computationGraph);
+  }
+
+  @Override
+  public void evaluateOpeningAnswers(ComputationGraph convolutionalNetwork) {
+
+    INDArray centerFieldOpeningAnswer = convolutionalNetwork.output(generateCenterFieldInputImagesConvolutional())[0];
+    INDArray cornerFieldOpeningAnswer = convolutionalNetwork
+        .output(generateLastCornerFieldInputImagesConvolutional())[0];
+    INDArray fieldOneOpeningAnswer = convolutionalNetwork
+        .output(generateFieldOneInputImagesConvolutional())[0];
+    INDArray fieldOneCenterTwoOpeningAnswer = convolutionalNetwork
+        .output(generateFieldOneCenterAndTwoThreatConvolutional())[0];
+
+    log.info("Answer to center field opening: {}", centerFieldOpeningAnswer);
+    log.info("Answer to last corner field opening: {}", cornerFieldOpeningAnswer);
+    log.info("Answer to field one, center and two threat: {}", fieldOneCenterTwoOpeningAnswer);
+    log.info("Answer to field one opening: {}", fieldOneOpeningAnswer);
+  }
+
+  INDArray generateCenterFieldInputImagesConvolutional() {
+
+    INDArray middleFieldMove = TicTacToeConstants.EMPTY_CONVOLUTIONAL_PLAYGROUND.dup();
+    INDArray emptyImage1 = Nd4j.ones(1, IMAGE_SIZE, IMAGE_SIZE).mul(-1);
+    middleFieldMove.putRow(0, emptyImage1);
+    middleFieldMove.putScalar(1, 1, 1, OCCUPIED_IMAGE_POINT);
+    INDArray graphSingleBatchInput1 = Nd4j.create(1, IMAGE_CHANNELS, IMAGE_SIZE, IMAGE_SIZE);
+    graphSingleBatchInput1.putRow(0, middleFieldMove);
+    return graphSingleBatchInput1;
+  }
+
+  INDArray generateLastCornerFieldInputImagesConvolutional() {
+
+    INDArray cornerFieldMove = TicTacToeConstants.EMPTY_CONVOLUTIONAL_PLAYGROUND.dup();
+    INDArray emptyImage2 = Nd4j.ones(1, IMAGE_SIZE, IMAGE_SIZE).mul(-1);
+    cornerFieldMove.putRow(0, emptyImage2);
+    cornerFieldMove.putScalar(1, 2, 2, OCCUPIED_IMAGE_POINT);
+    INDArray graphSingleBatchInput2 = Nd4j.create(1, IMAGE_CHANNELS, IMAGE_SIZE, IMAGE_SIZE);
+    graphSingleBatchInput2.putRow(0, cornerFieldMove);
+    return graphSingleBatchInput2;
+  }
+
+  INDArray generateFieldOneInputImagesConvolutional() {
+
+    INDArray fieldOneMaxMove = TicTacToeConstants.EMPTY_CONVOLUTIONAL_PLAYGROUND.dup();
+    INDArray emptyImage1 = Nd4j.ones(1, IMAGE_SIZE, IMAGE_SIZE).mul(-1);
+    fieldOneMaxMove.putRow(0, emptyImage1);
+    fieldOneMaxMove.putScalar(1, 0, 0, OCCUPIED_IMAGE_POINT);
+    INDArray graphSingleBatchInput2 = Nd4j.create(1, IMAGE_CHANNELS, IMAGE_SIZE, IMAGE_SIZE);
+    graphSingleBatchInput2.putRow(0, fieldOneMaxMove);
+    return graphSingleBatchInput2;
+  }
+
+  INDArray generateFieldOneCenterAndTwoThreatConvolutional() {
+
+    INDArray fieldOneCenterTwoMoves = TicTacToeConstants.EMPTY_CONVOLUTIONAL_PLAYGROUND.dup();
+    INDArray emptyImage1 = Nd4j.ones(1, IMAGE_SIZE, IMAGE_SIZE).mul(-1);
+    fieldOneCenterTwoMoves.putRow(0, emptyImage1);
+    fieldOneCenterTwoMoves.putScalar(1, 0, 0, OCCUPIED_IMAGE_POINT);
+    fieldOneCenterTwoMoves.putScalar(2, 1, 1, OCCUPIED_IMAGE_POINT);
+    fieldOneCenterTwoMoves.putScalar(1, 0, 1, OCCUPIED_IMAGE_POINT);
+    INDArray graphSingleBatchInput2 = Nd4j.create(1, IMAGE_CHANNELS, IMAGE_SIZE, IMAGE_SIZE);
+    graphSingleBatchInput2.putRow(0, fieldOneCenterTwoMoves);
+    return graphSingleBatchInput2;
+  }
+  
+  public int getCurrentPlayer(Set<Integer> emptyFields) {
     
     boolean oddOccupiedFields = 1 == (COLUMN_COUNT - emptyFields.size()) % 2;
     
@@ -144,58 +302,6 @@ public class TicTacToe {
     }
     
     return MAX_PLAYER_CHANNEL;
-  }
-  
-  public static int getOtherPlayer(Set<Integer> emptyFields) {
-    
-    boolean evenOccupiedFields = 0 == (COLUMN_COUNT - emptyFields.size()) % 2;
-    
-    if (evenOccupiedFields) {
-      
-      return MIN_PLAYER_CHANNEL;
-    }
-    
-    return MAX_PLAYER_CHANNEL;
-  }
-  
-  public static boolean gameEnded(INDArray board) {
-
-    return TicTacToe.getEmptyFields(board).isEmpty() ||
-        TicTacToe.hasWon(board, MAX_PLAYER_CHANNEL) ||
-        TicTacToe.hasWon(board, MIN_PLAYER_CHANNEL);
-  }
-
-  public static boolean hasWon(INDArray board, int player) {
-
-    return horizontalWin(board, player) || verticalWin(board, player) || diagonalWin(board, player);
-  }
-  
-  public static int getOtherColor(int color) {
-    
-    if (TicTacToeConstants.MAX_PLAYER_CHANNEL == color) {
-      
-      return MIN_PLAYER_CHANNEL;
-    }
-    
-    return MAX_PLAYER_CHANNEL;
-  }
-
-  public static INDArray makeMove(INDArray board, int flatIndex, int player) {
-
-    int row = flatIndex / IMAGE_CHANNELS;
-    int column = flatIndex % IMAGE_CHANNELS;
-    
-    INDArray newBoard = board.dup();
-    if (MIN_PLAYER_CHANNEL == player) {
-
-      newBoard.putRow(PLAYER_CHANNEL, ONES_PLAYGROUND_IMAGE); 
-    } else {
-
-      newBoard.putRow(PLAYER_CHANNEL, MINUS_ONES_PLAYGROUND_IMAGE);
-    }
-    newBoard.putScalar(player, row, column, OCCUPIED_IMAGE_POINT);
-
-    return newBoard;
   }
 
   static boolean horizontalWin(INDArray board, int player) {
