@@ -8,6 +8,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import ch.evolutionsoft.rl4j.AdversaryLearning;
+import ch.evolutionsoft.rl4j.AdversaryLearningConfiguration;
 
 public class TicTacToeReinforcementLearningMain {
 
@@ -21,7 +22,7 @@ public class TicTacToeReinforcementLearningMain {
     
     log.info(neuralNet.summary());
     
-    AdversaryLearning adversaryLearning = new AdversaryLearning(new TicTacToe(), neuralNet, 20);
+    AdversaryLearning adversaryLearning = new AdversaryLearning(new TicTacToe(), neuralNet, new AdversaryLearningConfiguration.Builder().build());
     
     adversaryLearning.performLearning();
   }

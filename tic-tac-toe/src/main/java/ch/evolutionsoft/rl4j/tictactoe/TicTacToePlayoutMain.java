@@ -8,6 +8,7 @@ import org.nd4j.linalg.api.ndarray.INDArray;
 import org.nd4j.linalg.factory.Nd4j;
 
 import ch.evolutionsoft.net.game.tictactoe.TicTacToeConstants;
+import ch.evolutionsoft.rl4j.AdversaryLearningConfiguration;
 import ch.evolutionsoft.rl4j.Game;
 import ch.evolutionsoft.rl4j.MonteCarloSearch;
 
@@ -45,7 +46,7 @@ public class TicTacToePlayoutMain {
         
         } else {
 
-          int moveIndex = new MonteCarloSearch(ticTacToe, alphaNet, board).getActionValues(board, 1).argMax(0).getInt(0);
+          int moveIndex = new MonteCarloSearch(ticTacToe, alphaNet, new AdversaryLearningConfiguration.Builder().build(), board).getActionValues(board, 1).argMax(0).getInt(0);
           
           if (!ticTacToe.getEmptyFields(board).contains(moveIndex)) {
             System.out.println("Invalid O move");
@@ -109,7 +110,7 @@ public class TicTacToePlayoutMain {
         
         } else {
 
-          int moveIndex = new MonteCarloSearch(ticTacToe, alphaNet, board).getActionValues(board, 1).argMax(0).getInt(0);
+          int moveIndex = new MonteCarloSearch(ticTacToe, alphaNet, new AdversaryLearningConfiguration.Builder().build(), board).getActionValues(board, 1).argMax(0).getInt(0);
           
           if (!ticTacToe.getEmptyFields(board).contains(moveIndex)) {
             System.out.println("Invalid X move");

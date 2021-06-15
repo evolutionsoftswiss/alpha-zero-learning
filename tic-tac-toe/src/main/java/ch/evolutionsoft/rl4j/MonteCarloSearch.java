@@ -17,17 +17,19 @@ public class MonteCarloSearch {
   TreeNode rootNode;
   TreeNode treeNode;
   
-  public MonteCarloSearch(Game game, ComputationGraph computationGraph) {
+  public MonteCarloSearch(Game game, ComputationGraph computationGraph, AdversaryLearningConfiguration configuration) {
     
-    this(game, computationGraph, game.getInitialBoard());
+    this(game, computationGraph, configuration, game.getInitialBoard());
   }
   
-  public MonteCarloSearch(Game game, ComputationGraph computationGraph, INDArray currentBoard) {
+  public MonteCarloSearch(Game game, ComputationGraph computationGraph, AdversaryLearningConfiguration configuration, INDArray currentBoard) {
     
     this.game = game;
     this.computationGraph = computationGraph;
     int currentPlayer = game.getOtherPlayer(game.getEmptyFields(currentBoard));
     this.rootNode = new TreeNode(-1, currentPlayer, 0, 1.0f, null);
+    this.cUct = configuration.getCpUct();
+    this.numberOfSimulations = configuration.getNummberOfMonteCarloSimulations();
   }
   
   void playout(INDArray board) {
@@ -129,6 +131,22 @@ public class MonteCarloSearch {
     return moveProbabilities;
   }
   
+  public double getcUct() {
+    return cUct;
+  }
+
+  public void setcUct(double cUct) {
+    this.cUct = cUct;
+  }
+
+  public int getNumberOfSimulations() {
+    return numberOfSimulations;
+  }
+
+  public void setNumberOfSimulations(int numberOfSimulations) {
+    this.numberOfSimulations = numberOfSimulations;
+  }
+
   TreeNode updateWithMove(int lastMove) {
     
     if (this.rootNode.children.containsKey(lastMove)) {

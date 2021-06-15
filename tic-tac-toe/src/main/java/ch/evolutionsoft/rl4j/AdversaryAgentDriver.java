@@ -24,10 +24,10 @@ public class AdversaryAgentDriver {
     this.player2Policy = player2;
   }
 
-  public int[] playGames(int numberOfEpisodes, double temperature) {
+  public int[] playGames(AdversaryLearningConfiguration configuration, double temperature) {
     
-    int numberOfEpisodesPlayer1Starts = numberOfEpisodes / 2;
-    int numberOfEpisodesPlayer2Starts = numberOfEpisodes - numberOfEpisodesPlayer1Starts;
+    int numberOfEpisodesPlayer1Starts = configuration.getGamesToGetNewNetworkWinRatio() / 2;
+    int numberOfEpisodesPlayer2Starts = configuration.getGamesToGetNewNetworkWinRatio() - numberOfEpisodesPlayer1Starts;
     
     int player1Wins = 0;
     int player2Wins = 0;
@@ -35,7 +35,7 @@ public class AdversaryAgentDriver {
     
     for (int gameNumber = 1; gameNumber <= numberOfEpisodesPlayer1Starts; gameNumber++) {
       
-      double gameResult = this.playGame(temperature, gameNumber % game.getFieldCount());
+      double gameResult = this.playGame(configuration, temperature, gameNumber % game.getFieldCount());
       
       if (gameResult >= MAX_WIN) {
         
@@ -57,7 +57,7 @@ public class AdversaryAgentDriver {
 
     for (int gameNumber = 1; gameNumber <= numberOfEpisodesPlayer2Starts; gameNumber++) {
       
-      double gameResult = this.playGame(temperature, gameNumber % game.getFieldCount());
+      double gameResult = this.playGame(configuration, temperature, gameNumber % game.getFieldCount());
       
       if (gameResult <= MIN_WIN) {
         
@@ -76,10 +76,10 @@ public class AdversaryAgentDriver {
     return new int[] {player1Wins, player2Wins, draws};
   }
   
-  public double playGame(double temperature, int firstIndex) {
+  public double playGame(AdversaryLearningConfiguration configuration, double temperature, int firstIndex) {
     
-    MonteCarloSearch player1 = new MonteCarloSearch(this.game, this.player1Policy);
-    MonteCarloSearch player2 = new MonteCarloSearch(this.game, this.player2Policy);
+    MonteCarloSearch player1 = new MonteCarloSearch(this.game, this.player1Policy, configuration);
+    MonteCarloSearch player2 = new MonteCarloSearch(this.game, this.player2Policy, configuration);
     
     INDArray currentBoard = game.doFirstMove(firstIndex);
     Set<Integer> emptyFields = game.getEmptyFields(currentBoard);

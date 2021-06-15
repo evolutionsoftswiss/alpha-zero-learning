@@ -38,15 +38,11 @@ public class AdversaryLearning {
   ComputationGraph computationGraph;
   ComputationGraph pComputationGraph;
   
-  int numberOfEpisodesUpdate;
-  
-  int maxTrainExamplesHistory = 5000;
+  AdversaryLearningConfiguration adversaryLearningConfiguration;
   
   MonteCarloSearch mcts;
   
   int iterationStart = 1;
-  
-  int iterationSteps = 5000;
   
   double temperature = 1;
 
@@ -56,11 +52,12 @@ public class AdversaryLearning {
   
   boolean alwaysUpdateNeuralNet = false;
 
-  public AdversaryLearning(Game game, ComputationGraph computationGraph, int numberOfEpisodes) {
+  public AdversaryLearning(Game game, ComputationGraph computationGraph, AdversaryLearningConfiguration configuration) {
 
     this.game = game;
     this.computationGraph = computationGraph;
-    this.numberOfEpisodesUpdate = numberOfEpisodes;
+    this.adversaryLearningConfiguration = configuration;
+    log.info("Using configuration\n{}", configuration);
   }
   
   List<AdversaryTrainingExample> executeEpisode(int iteration) {
@@ -70,7 +67,7 @@ public class AdversaryLearning {
     INDArray currentBoard = game.getInitialBoard();
     int currentPlayer = Game.MAX_PLAYER;
     
-    this.mcts = new MonteCarloSearch(game, computationGraph, currentBoard);
+    this.mcts = new MonteCarloSearch(game, computationGraph, adversaryLearningConfiguration, currentBoard);
     
     while (!game.gameEnded(currentBoard)) {
 
@@ -107,14 +104,14 @@ public class AdversaryLearning {
         }
       }
 
-      double alpha = 0.35;
+      double alpha = adversaryLearningConfiguration.getDirichletAlpha();
       Dirichlet dirichlet = new Dirichlet(
           Nd4j.ones(game.getFieldCount()).mul(validMoves).add(1e-12).
           mul(alpha).toDoubleVector());
       
       INDArray nextDistribution = Nd4j.createFromArray(dirichlet.nextDistribution()); 
-      INDArray noiseActionDistribution = normalizedActionProbabilities.mul(0.65).add(
-          nextDistribution.mul(0.35));
+      INDArray noiseActionDistribution = normalizedActionProbabilities.mul(1 - adversaryLearningConfiguration.getDirichletWeight()).add(
+          nextDistribution.mul(adversaryLearningConfiguration.getDirichletWeight()));
       
       noiseActionDistribution.div(noiseActionDistribution.sum(0));
       
@@ -179,7 +176,9 @@ public class AdversaryLearning {
       loadEarlierTrainingExamples();
     }
       
-      for (int iteration = iterationStart; iteration < iterationStart + iterationSteps; iteration++) {
+      for (int iteration = iterationStart;
+          iteration < iterationStart + adversaryLearningConfiguration.getNumberOfIterations();
+          iteration++) {
           
         List<AdversaryTrainingExample> newExamples = this.executeEpisode(iteration);
           
@@ -189,7 +188,7 @@ public class AdversaryLearning {
           this.trainExamplesHistory.add(trainExample);
         }      
       
-        while (this.trainExamplesHistory.size() > this.maxTrainExamplesHistory) {
+        while (this.trainExamplesHistory.size() > adversaryLearningConfiguration.getMaxTrainExamplesHistory()) {
           this.trainExamplesHistory.remove(0);
         }
         
@@ -203,7 +202,7 @@ public class AdversaryLearning {
         Collections.shuffle(trainExamples);
   
         boolean updateAfterBetterPlayout = false;
-        if (!alwaysUpdateNeuralNet && iteration % this.numberOfEpisodesUpdate == 0 ) {
+        if (!alwaysUpdateNeuralNet && iteration % adversaryLearningConfiguration.getNumberOfEpisodesBeforePotentialUpdate() == 0 ) {
         
           ModelSerializer.writeModel(computationGraph, "tempmodel.bin", true);
           this.pComputationGraph = ModelSerializer.restoreComputationGraph("tempmodel.bin", true);
@@ -211,13 +210,13 @@ public class AdversaryLearning {
           this.computationGraph = this.performTraining(this.computationGraph, trainExamples);
           
           AdversaryAgentDriver adversaryAgentDriver = new AdversaryAgentDriver(this.game, this.pComputationGraph, this.computationGraph);
-          int[] gameResults = adversaryAgentDriver.playGames(36, temperature);
+          int[] gameResults = adversaryAgentDriver.playGames(adversaryLearningConfiguration, temperature);
           
           log.info("New model wins {} / prev model wins {} / draws {}", gameResults[1], gameResults[0], gameResults[2]);
           
           updateAfterBetterPlayout = 
               (gameResults[1] + 0.5 * gameResults[2]) /
-              (double) (gameResults[0] + gameResults[1] + 0.5 * gameResults[2]) > 0.55;
+              (double) (gameResults[0] + gameResults[1] + 0.5 * gameResults[2]) > adversaryLearningConfiguration.getUpdateGamesNewNetworkWinRatioThreshold();
               
            if (!updateAfterBetterPlayout) {
   
@@ -225,12 +224,12 @@ public class AdversaryLearning {
               this.computationGraph = ModelSerializer.restoreComputationGraph("tempmodel.bin", true);  
            } 
           
-        } else if (iteration % this.numberOfEpisodesUpdate == 0) {
+        } else if (iteration % adversaryLearningConfiguration.getNumberOfEpisodesBeforePotentialUpdate() == 0) {
   
           this.computationGraph = this.performTraining(this.computationGraph, trainExamples);
         }
   
-        if ((alwaysUpdateNeuralNet && iteration % this.numberOfEpisodesUpdate == 0 ) || updateAfterBetterPlayout) {
+        if ((alwaysUpdateNeuralNet && iteration % adversaryLearningConfiguration.getNumberOfEpisodesBeforePotentialUpdate() == 0 ) || updateAfterBetterPlayout) {
           
           log.info("Accepting new model");
           ModelSerializer.writeModel(computationGraph, "bestmodel.bin", true);
@@ -246,7 +245,7 @@ public class AdversaryLearning {
       
         if (0 == iteration % 1000) {
           
-          ModelSerializer.writeModel(computationGraph, "2021-06-14-bestmodel0" + iteration + "c.bin", true);
+          ModelSerializer.writeModel(computationGraph, "2021-06-15-bestmodel0" + iteration + "a.bin", true);
         }
       
       }
