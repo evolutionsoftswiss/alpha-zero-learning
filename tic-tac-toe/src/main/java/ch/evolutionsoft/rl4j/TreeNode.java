@@ -8,7 +8,6 @@ import java.util.Map;
 import org.nd4j.linalg.api.ndarray.INDArray;
 
 import ch.evolutionsoft.net.game.NeuralNetConstants;
-import ch.evolutionsoft.rl4j.tictactoe.TicTacToe;
 
 public class TreeNode {
 	
@@ -46,9 +45,9 @@ public class TreeNode {
 	}
 
 
-	void expand(INDArray previousActionProbabilities, INDArray currentBoard) {
+	void expand(Game game, INDArray previousActionProbabilities, INDArray currentBoard) {
 	  
-	  for (int index : TicTacToe.getEmptyFields(currentBoard)) {
+	  for (int index : game.getEmptyFields(currentBoard)) {
 	    
 	    if (!this.children.containsKey(index)) {
 	      
@@ -56,7 +55,7 @@ public class TreeNode {
 	          index,
 	          new TreeNode(
 	              index,
-	              TicTacToe.getOtherColor(this.lastColorMove),
+	              game.getOtherPlayer(this.lastColorMove),
 	              this.depth + 1,
 	              previousActionProbabilities.getDouble(index),
 	              this));

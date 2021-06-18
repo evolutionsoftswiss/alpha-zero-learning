@@ -8,9 +8,11 @@ import org.nd4j.linalg.api.ndarray.INDArray;
 import org.nd4j.linalg.factory.Nd4j;
 
 import ch.evolutionsoft.net.game.tictactoe.TicTacToeConstants;
+import ch.evolutionsoft.rl4j.AdversaryLearningConfiguration;
+import ch.evolutionsoft.rl4j.Game;
 import ch.evolutionsoft.rl4j.MonteCarloSearch;
 
-public class PlayoutMain {
+public class TicTacToePlayoutMain {
 
   public static void main(String[] args) throws IOException {
     
@@ -20,38 +22,38 @@ public class PlayoutMain {
     int draws1 = 0;
     int xWins1 = 0;
     int oWins1 = 0;
+
+    Game ticTacToe = new TicTacToe();
     
     for (int game = 1; game <= 27; game++) {
 
       boolean xPlayer = false;
-      INDArray board = doFirstMove(game % TicTacToeConstants.COLUMN_COUNT);
+      INDArray board = ticTacToe.doFirstMove(game % TicTacToeConstants.COLUMN_COUNT);
       int numberOfMoves = 1;
       
-      while (!TicTacToe.gameEnded(board)) {
+      while (!ticTacToe.gameEnded(board)) {
         
         if (xPlayer) {
 
-          INDArray resNetBoard = board.dup();
-          resNetBoard.putRow(0, Nd4j.ones(3, 3).sub(resNetBoard.slice(1, 0).add(resNetBoard.slice(2, 0))));
-          int moveIndex = getBestMove(perfectResNet, resNetBoard);
+          int moveIndex = getBestMove(perfectResNet, board);
           
-          if (!TicTacToe.getEmptyFields(board).contains(moveIndex)) {
+          if (!ticTacToe.getEmptyFields(board).contains(moveIndex)) {
             System.out.println("Invalid X move");
-            moveIndex = TicTacToe.getEmptyFields(board).iterator().next();
+            moveIndex = ticTacToe.getEmptyFields(board).iterator().next();
           }
           
-          board = TicTacToe.makeMove(board, moveIndex, TicTacToeConstants.MAX_PLAYER_CHANNEL);
+          board = ticTacToe.makeMove(board, moveIndex, TicTacToeConstants.MAX_PLAYER_CHANNEL);
         
         } else {
 
-          int moveIndex = new MonteCarloSearch(alphaNet, board).getActionValues(board, 1).argMax(0).getInt(0);
+          int moveIndex = new MonteCarloSearch(ticTacToe, alphaNet, new AdversaryLearningConfiguration.Builder().build(), board).getActionValues(board, 1).argMax(0).getInt(0);
           
-          if (!TicTacToe.getEmptyFields(board).contains(moveIndex)) {
+          if (!ticTacToe.getEmptyFields(board).contains(moveIndex)) {
             System.out.println("Invalid O move");
-            moveIndex = TicTacToe.getEmptyFields(board).iterator().next();
+            moveIndex = ticTacToe.getEmptyFields(board).iterator().next();
           }
           
-          board = TicTacToe.makeMove(board, moveIndex, TicTacToeConstants.MIN_PLAYER_CHANNEL);
+          board = ticTacToe.makeMove(board, moveIndex, TicTacToeConstants.MIN_PLAYER_CHANNEL);
         }
         
         numberOfMoves++;
@@ -59,17 +61,17 @@ public class PlayoutMain {
         
       }
       
-      if (TicTacToe.hasWon(board, TicTacToeConstants.MAX_PLAYER_CHANNEL)) {
+      if (ticTacToe.hasWon(board, TicTacToeConstants.MAX_PLAYER_CHANNEL)) {
 
         System.out.println("X wins after " + numberOfMoves + " moves");
         xWins1++;
       
-      } else if (TicTacToe.hasWon(board, TicTacToeConstants.MIN_PLAYER_CHANNEL)) {
+      } else if (ticTacToe.hasWon(board, TicTacToeConstants.MIN_PLAYER_CHANNEL)) {
 
         System.out.println("O wins after " + numberOfMoves + " moves");
         oWins1++;
       
-      } else if (TicTacToe.getEmptyFields(board).isEmpty()) {
+      } else if (ticTacToe.getEmptyFields(board).isEmpty()) {
 
         System.out.println("Draw");
         draws1++;
@@ -90,34 +92,32 @@ public class PlayoutMain {
     for (int game = 1; game <= 27; game++) {
       
       boolean xPlayer = false;
-      INDArray board = doFirstMove(game % TicTacToeConstants.COLUMN_COUNT);
+      INDArray board = ticTacToe.doFirstMove(game % TicTacToeConstants.COLUMN_COUNT);
       int numberOfMoves = 1;
       
-      while (!TicTacToe.gameEnded(board)) {
+      while (!ticTacToe.gameEnded(board)) {
         
         if (!xPlayer) {
 
-          INDArray resNetBoard = board.dup();
-          resNetBoard.putRow(0, Nd4j.ones(3, 3).sub(resNetBoard.slice(1, 0).add(resNetBoard.slice(2, 0))));
-          int moveIndex = getBestMove(perfectResNet, resNetBoard);
+          int moveIndex = getBestMove(perfectResNet, board);
 
-          if (!TicTacToe.getEmptyFields(board).contains(moveIndex)) {
+          if (!ticTacToe.getEmptyFields(board).contains(moveIndex)) {
             System.out.println("Invalid O move");
-            moveIndex = TicTacToe.getEmptyFields(board).iterator().next();
+            moveIndex = ticTacToe.getEmptyFields(board).iterator().next();
           }
           
-          board = TicTacToe.makeMove(board, moveIndex, TicTacToeConstants.MIN_PLAYER_CHANNEL);
+          board = ticTacToe.makeMove(board, moveIndex, TicTacToeConstants.MIN_PLAYER_CHANNEL);
         
         } else {
 
-          int moveIndex = new MonteCarloSearch(alphaNet, board).getActionValues(board, 1).argMax(0).getInt(0);
+          int moveIndex = new MonteCarloSearch(ticTacToe, alphaNet, new AdversaryLearningConfiguration.Builder().build(), board).getActionValues(board, 1).argMax(0).getInt(0);
           
-          if (!TicTacToe.getEmptyFields(board).contains(moveIndex)) {
+          if (!ticTacToe.getEmptyFields(board).contains(moveIndex)) {
             System.out.println("Invalid X move");
-            moveIndex = TicTacToe.getEmptyFields(board).iterator().next();
+            moveIndex = ticTacToe.getEmptyFields(board).iterator().next();
           }
           
-          board = TicTacToe.makeMove(board, moveIndex, TicTacToeConstants.MAX_PLAYER_CHANNEL);
+          board = ticTacToe.makeMove(board, moveIndex, TicTacToeConstants.MAX_PLAYER_CHANNEL);
         }
         
         numberOfMoves++;
@@ -125,17 +125,17 @@ public class PlayoutMain {
         
       }
       
-      if (TicTacToe.hasWon(board, TicTacToeConstants.MAX_PLAYER_CHANNEL)) {
+      if (ticTacToe.hasWon(board, TicTacToeConstants.MAX_PLAYER_CHANNEL)) {
 
         System.out.println("X wins after " + numberOfMoves + " moves");
         xWins2++;
       
-      } else if (TicTacToe.hasWon(board, TicTacToeConstants.MIN_PLAYER_CHANNEL)) {
+      } else if (ticTacToe.hasWon(board, TicTacToeConstants.MIN_PLAYER_CHANNEL)) {
 
         System.out.println("O wins after " + numberOfMoves + " moves");
         oWins2++;
       
-      } else if (TicTacToe.getEmptyFields(board).isEmpty()) {
+      } else if (ticTacToe.getEmptyFields(board).isEmpty()) {
 
         System.out.println("Draw");
         draws2++;
@@ -161,15 +161,6 @@ public class PlayoutMain {
     INDArray[] output = computationGraph.output(inputBoardBatch);
     int moveIndex = output[0].argMax(1).getInt(0);
     return moveIndex;
-  }
-
-  public static INDArray doFirstMove(int index) {
-    
-    INDArray emptyBoard = TicTacToeConstants.EMPTY_CONVOLUTIONAL_PLAYGROUND.dup();
-    
-    INDArray newBoard = TicTacToe.makeMove(emptyBoard, index, TicTacToeConstants.MAX_PLAYER_CHANNEL);
-    
-    return newBoard;
   }
   
 }
