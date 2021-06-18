@@ -42,21 +42,19 @@ public class AdversaryLearning {
   
   MonteCarloSearch mcts;
   
-  int iterationStart = 1;
-  
   double temperature = 1;
 
-  boolean restoreTrainingExamples = iterationStart > 1;
+  boolean restoreTrainingExamples;
 
-  boolean restoreTrainedNeuralNet = iterationStart > 1;
-  
-  boolean alwaysUpdateNeuralNet = false;
+  boolean restoreTrainedNeuralNet;
 
   public AdversaryLearning(Game game, ComputationGraph computationGraph, AdversaryLearningConfiguration configuration) {
 
     this.game = game;
     this.computationGraph = computationGraph;
     this.adversaryLearningConfiguration = configuration;
+    this.restoreTrainingExamples = configuration.getIterationStart() > 1;
+    this.restoreTrainedNeuralNet = configuration.getIterationStart() > 1;
     log.info("Using configuration\n{}", configuration);
   }
   
@@ -74,9 +72,13 @@ public class AdversaryLearning {
       INDArray validMoves = game.getValidMoves(currentBoard);
       Set<Integer> emptyFields = game.getEmptyFields(currentBoard);
 
-      INDArray actionProbabilities = this.mcts.getActionValues(currentBoard, temperature);
-      INDArray validActionProbabilities = actionProbabilities.mul(validMoves);
-      INDArray normalizedActionProbabilities = validActionProbabilities.div(Nd4j.sum(actionProbabilities));
+      INDArray normalizedActionProbabilities = Nd4j.zeros(game.getFieldCount());
+      if (hasMoreThanOneMove(emptyFields)) {
+
+        INDArray actionProbabilities = this.mcts.getActionValues(currentBoard, temperature);
+        INDArray validActionProbabilities = actionProbabilities.mul(validMoves);
+        normalizedActionProbabilities = validActionProbabilities.div(Nd4j.sum(actionProbabilities));         
+      }
       
       AdversaryTrainingExample trainingExample = new AdversaryTrainingExample(
           currentBoard,
@@ -104,28 +106,36 @@ public class AdversaryLearning {
         }
       }
 
-      double alpha = adversaryLearningConfiguration.getDirichletAlpha();
-      Dirichlet dirichlet = new Dirichlet(
-          Nd4j.ones(game.getFieldCount()).mul(validMoves).add(1e-12).
-          mul(alpha).toDoubleVector());
+      int moveAction = -1;
+      if (!hasMoreThanOneMove(emptyFields)) {
       
-      INDArray nextDistribution = Nd4j.createFromArray(dirichlet.nextDistribution()); 
-      INDArray noiseActionDistribution = normalizedActionProbabilities.mul(1 - adversaryLearningConfiguration.getDirichletWeight()).add(
-          nextDistribution.mul(adversaryLearningConfiguration.getDirichletWeight()));
+        moveAction = emptyFields.iterator().next();
       
-      noiseActionDistribution.div(noiseActionDistribution.sum(0));
+      } else {
       
-      EnumeratedIntegerDistribution d =
-          new EnumeratedIntegerDistribution(
-              game.getAllIndices(),
-              noiseActionDistribution.toDoubleVector()
-              );
-      
-      int moveAction = d.sample();
- 
-      while (!emptyFields.contains(moveAction)) {
-        log.warn("Resample invalid random choice move.");
+        double alpha = adversaryLearningConfiguration.getDirichletAlpha();
+        Dirichlet dirichlet = new Dirichlet(emptyFields.size(), alpha);
+        
+        INDArray nextDistribution = Nd4j.createFromArray(dirichlet.nextDistribution());
+        int[] validIndices = game.getValidIndices(emptyFields);
+        INDArray reducedValidActionProbabilities = normalizedActionProbabilities.get(Nd4j.createFromArray(validIndices));
+        INDArray noiseActionDistribution = reducedValidActionProbabilities.mul(1 - adversaryLearningConfiguration.getDirichletWeight()).add(
+            nextDistribution.mul(adversaryLearningConfiguration.getDirichletWeight()));
+        
+        noiseActionDistribution.div(noiseActionDistribution.sum(0));
+        
+        EnumeratedIntegerDistribution d =
+            new EnumeratedIntegerDistribution(
+                validIndices,
+                noiseActionDistribution.toDoubleVector()
+                );
+        
         moveAction = d.sample();
+        
+        while (!emptyFields.contains(moveAction)) {
+          log.warn("Resample invalid random choice move.");
+          moveAction = d.sample();
+        }
       }
       
       currentBoard = game.makeMove(currentBoard, moveAction, currentPlayer);
@@ -168,7 +178,7 @@ public class AdversaryLearning {
       
       this.pComputationGraph = ModelSerializer.restoreComputationGraph("tempmodel.bin", true);
       this.computationGraph = ModelSerializer.restoreComputationGraph("bestmodel.bin", true);
-      
+      log.info("restored bestmodel.bin and tempmodel.bin");
     }
  
     if (restoreTrainingExamples) {
@@ -176,8 +186,8 @@ public class AdversaryLearning {
       loadEarlierTrainingExamples();
     }
       
-      for (int iteration = iterationStart;
-          iteration < iterationStart + adversaryLearningConfiguration.getNumberOfIterations();
+      for (int iteration = adversaryLearningConfiguration.getIterationStart();
+          iteration < adversaryLearningConfiguration.getIterationStart() + adversaryLearningConfiguration.getNumberOfIterations();
           iteration++) {
           
         List<AdversaryTrainingExample> newExamples = this.executeEpisode(iteration);
@@ -202,7 +212,7 @@ public class AdversaryLearning {
         Collections.shuffle(trainExamples);
   
         boolean updateAfterBetterPlayout = false;
-        if (!alwaysUpdateNeuralNet && iteration % adversaryLearningConfiguration.getNumberOfEpisodesBeforePotentialUpdate() == 0 ) {
+        if (!adversaryLearningConfiguration.isAlwaysUpdateNeuralNetwork() && iteration % adversaryLearningConfiguration.getNumberOfEpisodesBeforePotentialUpdate() == 0 ) {
         
           ModelSerializer.writeModel(computationGraph, "tempmodel.bin", true);
           this.pComputationGraph = ModelSerializer.restoreComputationGraph("tempmodel.bin", true);
@@ -229,7 +239,7 @@ public class AdversaryLearning {
           this.computationGraph = this.performTraining(this.computationGraph, trainExamples);
         }
   
-        if ((alwaysUpdateNeuralNet && iteration % adversaryLearningConfiguration.getNumberOfEpisodesBeforePotentialUpdate() == 0 ) || updateAfterBetterPlayout) {
+        if ((adversaryLearningConfiguration.isAlwaysUpdateNeuralNetwork() && iteration % adversaryLearningConfiguration.getNumberOfEpisodesBeforePotentialUpdate() == 0 ) || updateAfterBetterPlayout) {
           
           log.info("Accepting new model");
           ModelSerializer.writeModel(computationGraph, "bestmodel.bin", true);
@@ -245,22 +255,29 @@ public class AdversaryLearning {
       
         if (0 == iteration % 1000) {
           
-          ModelSerializer.writeModel(computationGraph, "2021-06-15-bestmodel0" + iteration + "a.bin", true);
+          ModelSerializer.writeModel(computationGraph, "2021-06-17-bestmodel0" + iteration + "a.bin", true);
         }
       
       }
     
   }
 
-  private void loadEarlierTrainingExamples() throws IOException, FileNotFoundException {
+  boolean hasMoreThanOneMove(Set<Integer> emptyFields) {
+
+    return 1 < emptyFields.size();
+  }
+
+  void loadEarlierTrainingExamples() throws IOException, FileNotFoundException {
 
     try (ObjectInputStream trainExamplesInput = new ObjectInputStream(
         new FileInputStream("trainExamples.obj"))) {
       
       this.trainExamplesHistory = (List<AdversaryTrainingExample>) trainExamplesInput.readObject();
-    
+      log.info("Restored train examples from trainEamples.obj with {} train examples",
+          this.trainExamplesHistory.size());
+      
     } catch (ClassNotFoundException e) {
-      e.printStackTrace();
+      log.warn("Train examples from trainExamples.obj could not be restored. Continue with empty train examples history.", e);
     }
   }
   

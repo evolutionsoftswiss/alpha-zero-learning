@@ -11,6 +11,7 @@ public class AdversaryLearningConfiguration {
   int gamesToGetNewNetworkWinRatio;
   double updateGamesNewNetworkWinRatioThreshold;
   int numberOfEpisodesBeforePotentialUpdate;
+  int iterationStart;
   int numberOfIterations;
   int maxTrainExamplesHistory;
 
@@ -21,17 +22,18 @@ public class AdversaryLearningConfiguration {
 
     double neuralNetworkLearningRate = 1e-3;
     
-    double dirichletAlpha = 0.3;
-    double dirichletWeight = 0.45;
-    boolean alwaysUpdateNeuralNetwork = false;
+    double dirichletAlpha = 1.5;
+    double dirichletWeight = 0.55;
+    boolean alwaysUpdateNeuralNetwork = true;
     int gamesToGetNewNetworkWinRatio = 36;
     double updateGamesNewNetworkWinRatioThreshold = 0.55;
     int numberOfEpisodesBeforePotentialUpdate = 20;
-    int numberOfIterations = 5000;
+    int iterationStart = 1;
+    int numberOfIterations = 2500;
     int maxTrainExamplesHistory = 5000;
 
     double cpUct = 1.0;
-    int numberOfMonteCarloSimulations = 50;
+    int numberOfMonteCarloSimulations = 25;
     
     public AdversaryLearningConfiguration build() {
       
@@ -44,6 +46,7 @@ public class AdversaryLearningConfiguration {
       configuration.gamesToGetNewNetworkWinRatio = gamesToGetNewNetworkWinRatio;
       configuration.updateGamesNewNetworkWinRatioThreshold = updateGamesNewNetworkWinRatioThreshold;
       configuration.numberOfEpisodesBeforePotentialUpdate = numberOfEpisodesBeforePotentialUpdate;
+      configuration.iterationStart = iterationStart;
       configuration.numberOfIterations = numberOfIterations;
       configuration.maxTrainExamplesHistory = maxTrainExamplesHistory;
       configuration.cpUct = cpUct;
@@ -86,6 +89,11 @@ public class AdversaryLearningConfiguration {
       this.numberOfEpisodesBeforePotentialUpdate = numberOfEpisodesBeforePotentialUpdate;
       return this;
     }
+    
+    public Builder iterationStart(int iterationStart) {
+      this.iterationStart = iterationStart;
+      return this;
+    }
 
     public Builder numberOfIterations(int totalNumberOfIterations) {
       this.numberOfIterations = totalNumberOfIterations;
@@ -117,10 +125,11 @@ public class AdversaryLearningConfiguration {
         "\n gamesToGetNewNetworkWinRatio: " + (this.alwaysUpdateNeuralNetwork ? "-" : this.gamesToGetNewNetworkWinRatio) +
         "\n updateGamesNewNetworkWinRatioThreshold: " + (this.alwaysUpdateNeuralNetwork ? "-" : this.updateGamesNewNetworkWinRatioThreshold) +
         "\n numberOfEpisodesBeforePotentialUpdate: " + this.numberOfEpisodesBeforePotentialUpdate + 
-        "\n numberOfIterations: " + this.numberOfIterations+
+        "\n iterationStart: " + this.iterationStart + 
+        "\n numberOfIterations: " + this.numberOfIterations +
         "\n maxTrainExamplesHistory: " + this.maxTrainExamplesHistory +
         "\n cpUct: " + this.cpUct +
-        "\\n numberOfMonteCarloSimulations: " + this.nummberOfMonteCarloSimulations;
+        "\n numberOfMonteCarloSimulations: " + this.nummberOfMonteCarloSimulations;
   }
 
   public double getNeuralNetworkLearningRate() {
@@ -177,6 +186,14 @@ public class AdversaryLearningConfiguration {
 
   public void setNumberOfEpisodesBeforePotentialUpdate(int numberOfEpisodesBeforePotentialUpdate) {
     this.numberOfEpisodesBeforePotentialUpdate = numberOfEpisodesBeforePotentialUpdate;
+  }
+  
+  public int getIterationStart() {
+    return this.iterationStart;
+  }
+  
+  public void setIterationStart(int iterationStart) {
+    this.iterationStart = iterationStart;
   }
 
   public int getNumberOfIterations() {

@@ -24,13 +24,17 @@ public abstract class Game {
    * 
    * @return
    */
-  public int[] getAllIndices() {
+  public int[] getValidIndices(Set<Integer> emptyFields) {
     
-    int[] validIndices = new int[getFieldCount()];
+    int[] validIndices = new int[emptyFields.size()];
 
-    for (int index = 0; index < validIndices.length; index++) {
+    int allFieldsSize = getFieldCount();
+    for (int validIndex = 0, index = 0; index < allFieldsSize; index++) {
       
-      validIndices[index] = index;
+      if (emptyFields.contains(index)) {
+        validIndices[validIndex] = index;
+        validIndex++;
+      }
     }
     
     return validIndices;

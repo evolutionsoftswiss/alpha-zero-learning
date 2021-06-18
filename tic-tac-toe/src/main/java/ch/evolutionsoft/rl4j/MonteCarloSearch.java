@@ -3,12 +3,18 @@ package ch.evolutionsoft.rl4j;
 import org.deeplearning4j.nn.graph.ComputationGraph;
 import org.nd4j.linalg.api.ndarray.INDArray;
 import org.nd4j.linalg.factory.Nd4j;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class MonteCarloSearch {
+
+  private static final Logger log = LoggerFactory.getLogger(MonteCarloSearch.class);
 
   double cUct = 1.0;
   
   int numberOfSimulations = 50;
+  
+  int simulationsToEndDone = 0;
   
   Game game;
 
@@ -51,6 +57,8 @@ public class MonteCarloSearch {
     double leafValue = nnOutput[1].getDouble(0);
     
     if (game.gameEnded(currentBoard)) {
+
+      this.simulationsToEndDone++;
       
       leafValue = 0.5f;
       
@@ -73,13 +81,16 @@ public class MonteCarloSearch {
   }
 
   public INDArray getActionValues(INDArray board, double temperature) {
+
+    this.simulationsToEndDone = 0;
     
-    for (int simulationNumber = 1; simulationNumber <= numberOfSimulations; simulationNumber++) {
+    while (this.simulationsToEndDone < numberOfSimulations) {
 
       this.treeNode = rootNode;
       this.playout(board.dup());
     }
 
+    
     int[] visitedCounts = new int[game.getFieldCount()];
     int maxVisitedCounts = 0;
 
