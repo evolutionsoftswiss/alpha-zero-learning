@@ -1,0 +1,43 @@
+package ch.evolutionsoft.rl4j.tictactoe;
+
+import java.io.IOException;
+
+import org.deeplearning4j.nn.conf.ComputationGraphConfiguration;
+import org.deeplearning4j.nn.graph.ComputationGraph;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import ch.evolutionsoft.rl4j.AdversaryLearning;
+import ch.evolutionsoft.rl4j.AdversaryLearningConfiguration;
+
+public class TicTacToeReinforcementLearningMain {
+
+  private static final Logger log = LoggerFactory.getLogger(TicTacToeReinforcementLearningMain.class);
+
+  public static void main(String[] args) throws IOException {
+    
+    TicTacToeReinforcementLearningMain main = new TicTacToeReinforcementLearningMain();
+   
+    ComputationGraph neuralNet = main.createConvolutionalConfiguration();
+    
+    log.info(neuralNet.summary());
+    
+    AdversaryLearning adversaryLearning = new AdversaryLearning(new TicTacToe(), neuralNet, new AdversaryLearningConfiguration.Builder().build());
+    
+    adversaryLearning.performLearning();
+  }
+
+  ComputationGraph createConvolutionalConfiguration() {
+
+    ConvolutionResidualNet convolutionalLayerNet = new ConvolutionResidualNet(1e-3);
+
+    ComputationGraphConfiguration convolutionalLayerNetConfiguration =
+        convolutionalLayerNet.createConvolutionalGraphConfiguration();
+
+    ComputationGraph net = new ComputationGraph(convolutionalLayerNetConfiguration);
+    net.init();
+
+    return net;
+  }
+
+}
