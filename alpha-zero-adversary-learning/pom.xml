@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+  <parent>
+    <artifactId>ch.evolutionsoft.rl.alphazero</artifactId>
+    <groupId>ch.evolutionsoft</groupId>
+    <version>1.0.0-SNAPSHOT</version>
+  </parent>
+
+  <artifactId>ch.evolutionsoft.rl.alphazero.adversary-learning</artifactId>
+  <packaging>jar</packaging>
+
+  <properties>
+    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+  </properties>
+
+	<dependencies>
+		<!-- ND4J backend. You need one in every DL4J project. Normally define 
+			artifactId as either "nd4j-native-platform" or "nd4j-cuda-7.5-platform" -->
+		<dependency>
+			<groupId>org.nd4j</groupId>
+			<artifactId>nd4j-native-platform</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>org.nd4j</groupId>
+			<artifactId>nd4j-native</artifactId>
+			<classifier>linux-x86_64-avx2</classifier>
+		</dependency>
+
+		<!-- Core DL4J functionality -->
+		<dependency>
+			<groupId>org.deeplearning4j</groupId>
+			<artifactId>deeplearning4j-core</artifactId>
+		</dependency>
+
+		<dependency>
+			<groupId>org.deeplearning4j</groupId>
+			<artifactId>deeplearning4j-nn</artifactId>
+		</dependency>
+
+		<dependency>
+		    <groupId>cc.mallet</groupId>
+		    <artifactId>mallet</artifactId>
+		    <version>2.0.8</version>
+		</dependency>
+
+		<dependency>
+			<groupId>ch.evolutionsoft.net</groupId>
+			<artifactId>ch.evolutionsoft.net.game</artifactId>
+		</dependency>
+
+	</dependencies>
+
+	<build>
+		<plugins>
+
+			<plugin>
+				<artifactId>maven-compiler-plugin</artifactId>
+			</plugin>
+
+			<plugin>
+				<artifactId>maven-assembly-plugin</artifactId>
+			</plugin>
+
+		</plugins>
+	</build>
+
+</project>
