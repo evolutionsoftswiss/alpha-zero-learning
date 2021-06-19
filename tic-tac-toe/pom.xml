@@ -9,14 +9,6 @@
 	</parent>
 	<artifactId>ch.evolutionsoft.rl.alphazero.tictactoe</artifactId>
 
-	<properties>
-		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-		<java.version>11</java.version>
-		<nd4j.version>1.0.0-beta7</nd4j.version>
-		<dl4j.version>1.0.0-beta7</dl4j.version>
-		<datavec.version>1.0.0-beta7</datavec.version>
-	</properties>
-
 	<dependencies>
 		<!-- ND4J backend. You need one in every DL4J project. Normally define 
 			artifactId as either "nd4j-native-platform" or "nd4j-cuda-7.5-platform" -->

@@ -1,4 +1,4 @@
-package ch.evolutionsoft.rl4j;
+package ch.evolutionsoft.rl;
 
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;

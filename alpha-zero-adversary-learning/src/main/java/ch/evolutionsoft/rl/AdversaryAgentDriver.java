@@ -1,6 +1,6 @@
-package ch.evolutionsoft.rl4j;
+package ch.evolutionsoft.rl;
 
-import static ch.evolutionsoft.rl4j.AdversaryLearning.*;
+import static ch.evolutionsoft.rl.AdversaryLearning.*;
 
 import java.util.ArrayList;
 import java.util.Set;

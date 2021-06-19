@@ -1,4 +1,4 @@
-package ch.evolutionsoft.rl4j;
+package ch.evolutionsoft.rl;
 
 import org.deeplearning4j.nn.graph.ComputationGraph;
 import org.nd4j.linalg.api.ndarray.INDArray;
