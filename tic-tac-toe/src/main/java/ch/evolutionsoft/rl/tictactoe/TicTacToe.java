@@ -1,4 +1,4 @@
-package ch.evolutionsoft.rl4j.tictactoe;
+package ch.evolutionsoft.rl.tictactoe;
 
 import static ch.evolutionsoft.net.game.NeuralNetConstants.DOUBLE_COMPARISON_EPSILON;
 import static ch.evolutionsoft.net.game.tictactoe.TicTacToeConstants.*;
@@ -16,8 +16,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import ch.evolutionsoft.net.game.tictactoe.TicTacToeConstants;
-import ch.evolutionsoft.rl4j.AdversaryTrainingExample;
-import ch.evolutionsoft.rl4j.Game;
+import ch.evolutionsoft.rl.AdversaryTrainingExample;
+import ch.evolutionsoft.rl.Game;
 
 public class TicTacToe extends Game {
   

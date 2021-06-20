@@ -1,4 +1,4 @@
-package ch.evolutionsoft.rl4j.tictactoe;
+package ch.evolutionsoft.rl.tictactoe;
 
 import static ch.evolutionsoft.net.game.NeuralNetConstants.DEFAULT_OUTPUT_LAYER_NAME;
 import static ch.evolutionsoft.net.game.NeuralNetConstants.DEFAULT_SEED;
