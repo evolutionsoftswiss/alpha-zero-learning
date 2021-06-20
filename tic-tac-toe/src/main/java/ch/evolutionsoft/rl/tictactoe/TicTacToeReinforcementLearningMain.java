@@ -1,4 +1,4 @@
-package ch.evolutionsoft.rl4j.tictactoe;
+package ch.evolutionsoft.rl.tictactoe;
 
 import java.io.IOException;
 
@@ -7,8 +7,8 @@ import org.deeplearning4j.nn.graph.ComputationGraph;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import ch.evolutionsoft.rl4j.AdversaryLearning;
-import ch.evolutionsoft.rl4j.AdversaryLearningConfiguration;
+import ch.evolutionsoft.rl.AdversaryLearning;
+import ch.evolutionsoft.rl.AdversaryLearningConfiguration;
 
 public class TicTacToeReinforcementLearningMain {
 
@@ -22,7 +22,11 @@ public class TicTacToeReinforcementLearningMain {
     
     log.info(neuralNet.summary());
     
-    AdversaryLearning adversaryLearning = new AdversaryLearning(new TicTacToe(), neuralNet, new AdversaryLearningConfiguration.Builder().build());
+    AdversaryLearning adversaryLearning =
+        new AdversaryLearning(
+            new TicTacToe(),
+            neuralNet,
+            new AdversaryLearningConfiguration.Builder().numberOfIterations(20).build());
     
     adversaryLearning.performLearning();
   }

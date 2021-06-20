@@ -1,1 +1,1 @@
-# rl4j
+# Alpha Zero Learning
