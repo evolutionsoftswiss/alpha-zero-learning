@@ -82,9 +82,9 @@ public class AdversaryAgentDriver {
     MonteCarloSearch player2 = new MonteCarloSearch(this.game, this.player2Policy, configuration);
     
     INDArray currentBoard = game.doFirstMove(firstIndex);
-    Set<Integer> emptyFields = game.getEmptyFields(currentBoard);
+    Set<Integer> emptyFields = game.getValidMoveIndices(currentBoard);
     
-    int currentPlayer = game.getCurrentPlayer(emptyFields);
+    int currentPlayer = Game.MIN_PLAYER;
 
     while (!game.gameEnded(currentBoard)) {
     
@@ -105,8 +105,8 @@ public class AdversaryAgentDriver {
       }
       
       currentBoard = game.makeMove(currentBoard, moveAction, currentPlayer);
-      emptyFields = game.getEmptyFields(currentBoard);
-      currentPlayer = game.getCurrentPlayer(emptyFields);
+      emptyFields = game.getValidMoveIndices(currentBoard);
+      currentPlayer = game.getOtherPlayer(currentPlayer);
     }
     
     if (game.hasWon(currentBoard, Game.MAX_PLAYER)) {

@@ -3,12 +3,8 @@ package ch.evolutionsoft.rl;
 import org.deeplearning4j.nn.graph.ComputationGraph;
 import org.nd4j.linalg.api.ndarray.INDArray;
 import org.nd4j.linalg.factory.Nd4j;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 public class MonteCarloSearch {
-
-  private static final Logger log = LoggerFactory.getLogger(MonteCarloSearch.class);
 
   double cUct = 1.0;
   
@@ -32,8 +28,7 @@ public class MonteCarloSearch {
     
     this.game = game;
     this.computationGraph = computationGraph;
-    int currentPlayer = game.getOtherPlayer(game.getEmptyFields(currentBoard));
-    this.rootNode = new TreeNode(-1, currentPlayer, 0, 1.0f, null);
+    this.rootNode = new TreeNode(-1, game.getOtherPlayer(game.currentPlayer), 0, 1.0f, null);
     this.cUct = configuration.getCpUct();
     this.numberOfSimulations = configuration.getNummberOfMonteCarloSimulations();
   }

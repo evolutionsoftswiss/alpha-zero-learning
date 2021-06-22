@@ -19,25 +19,48 @@ public abstract class Game {
    * of the player field stones
    */
   public static final int MIN_PLAYER = 2;
+  
+
+  protected int currentPlayer = MAX_PLAYER;
+  
+  public Game(int currentPlayer) {
+    
+    this.currentPlayer = currentPlayer;
+  }
 
   /**
    * 
    * @return
    */
-  public int[] getValidIndices(Set<Integer> emptyFields) {
+  public int[] getValidIndices(Set<Integer> validIndicesList) {
     
-    int[] validIndices = new int[emptyFields.size()];
+    int[] validIndices = new int[validIndicesList.size()];
 
     int allFieldsSize = getFieldCount();
     for (int validIndex = 0, index = 0; index < allFieldsSize; index++) {
       
-      if (emptyFields.contains(index)) {
+      if (validIndicesList.contains(index)) {
         validIndices[validIndex] = index;
         validIndex++;
       }
     }
     
     return validIndices;
+  }
+
+  /**
+   * 
+   * @param lastColorMove
+   * @return
+   */
+  public int getOtherPlayer(int lastColorMove) {
+    
+    if (MAX_PLAYER == lastColorMove) {
+      
+      return MIN_PLAYER;
+    }
+    
+    return MAX_PLAYER;
   }
 
   /**
@@ -69,7 +92,7 @@ public abstract class Game {
    * @param board
    * @return a set of indices of empty fields
    */
-  public abstract Set<Integer> getEmptyFields(INDArray board);
+  public abstract Set<Integer> getValidMoveIndices(INDArray board);
 
   /**
    * 
@@ -89,32 +112,11 @@ public abstract class Game {
 
   /**
    * 
-   * @param emptyFields
-   * @return
-   */
-  public abstract int getCurrentPlayer(Set<Integer> emptyFields);
-
-  /**
-   * 
    * @param currentBoard
    * @param maxPlayerChannel
    * @return
    */
   public abstract boolean hasWon(INDArray currentBoard, int maxPlayerChannel);
-
-  /**
-   * 
-   * @param emptyFields
-   * @return
-   */
-  public abstract int getOtherPlayer(Set<Integer> emptyFields);
-
-  /**
-   * 
-   * @param lastColorMove
-   * @return
-   */
-  public abstract int getOtherPlayer(int lastColorMove);
 
   /**
    * 

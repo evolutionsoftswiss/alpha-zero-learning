@@ -47,7 +47,7 @@ public class TreeNode {
 
 	void expand(Game game, INDArray previousActionProbabilities, INDArray currentBoard) {
 	  
-	  for (int index : game.getEmptyFields(currentBoard)) {
+	  for (int index : game.getValidMoveIndices(currentBoard)) {
 	    
 	    if (!this.children.containsKey(index)) {
 	      

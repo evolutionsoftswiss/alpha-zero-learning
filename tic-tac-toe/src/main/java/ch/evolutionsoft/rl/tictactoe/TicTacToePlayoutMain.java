@@ -23,7 +23,7 @@ public class TicTacToePlayoutMain {
     int xWins1 = 0;
     int oWins1 = 0;
 
-    Game ticTacToe = new TicTacToe();
+    Game ticTacToe = new TicTacToe(Game.MAX_PLAYER);
     
     for (int game = 1; game <= 27; game++) {
 
@@ -37,9 +37,9 @@ public class TicTacToePlayoutMain {
 
           int moveIndex = getBestMove(perfectResNet, board);
           
-          if (!ticTacToe.getEmptyFields(board).contains(moveIndex)) {
+          if (!ticTacToe.getValidMoveIndices(board).contains(moveIndex)) {
             System.out.println("Invalid X move");
-            moveIndex = ticTacToe.getEmptyFields(board).iterator().next();
+            moveIndex = ticTacToe.getValidMoveIndices(board).iterator().next();
           }
           
           board = ticTacToe.makeMove(board, moveIndex, TicTacToeConstants.MAX_PLAYER_CHANNEL);
@@ -48,9 +48,9 @@ public class TicTacToePlayoutMain {
 
           int moveIndex = new MonteCarloSearch(ticTacToe, alphaNet, new AdversaryLearningConfiguration.Builder().build(), board).getActionValues(board, 1).argMax(0).getInt(0);
           
-          if (!ticTacToe.getEmptyFields(board).contains(moveIndex)) {
+          if (!ticTacToe.getValidMoveIndices(board).contains(moveIndex)) {
             System.out.println("Invalid O move");
-            moveIndex = ticTacToe.getEmptyFields(board).iterator().next();
+            moveIndex = ticTacToe.getValidMoveIndices(board).iterator().next();
           }
           
           board = ticTacToe.makeMove(board, moveIndex, TicTacToeConstants.MIN_PLAYER_CHANNEL);
@@ -71,7 +71,7 @@ public class TicTacToePlayoutMain {
         System.out.println("O wins after " + numberOfMoves + " moves");
         oWins1++;
       
-      } else if (ticTacToe.getEmptyFields(board).isEmpty()) {
+      } else if (ticTacToe.getValidMoveIndices(board).isEmpty()) {
 
         System.out.println("Draw");
         draws1++;
@@ -101,9 +101,9 @@ public class TicTacToePlayoutMain {
 
           int moveIndex = getBestMove(perfectResNet, board);
 
-          if (!ticTacToe.getEmptyFields(board).contains(moveIndex)) {
+          if (!ticTacToe.getValidMoveIndices(board).contains(moveIndex)) {
             System.out.println("Invalid O move");
-            moveIndex = ticTacToe.getEmptyFields(board).iterator().next();
+            moveIndex = ticTacToe.getValidMoveIndices(board).iterator().next();
           }
           
           board = ticTacToe.makeMove(board, moveIndex, TicTacToeConstants.MIN_PLAYER_CHANNEL);
@@ -112,9 +112,9 @@ public class TicTacToePlayoutMain {
 
           int moveIndex = new MonteCarloSearch(ticTacToe, alphaNet, new AdversaryLearningConfiguration.Builder().build(), board).getActionValues(board, 1).argMax(0).getInt(0);
           
-          if (!ticTacToe.getEmptyFields(board).contains(moveIndex)) {
+          if (!ticTacToe.getValidMoveIndices(board).contains(moveIndex)) {
             System.out.println("Invalid X move");
-            moveIndex = ticTacToe.getEmptyFields(board).iterator().next();
+            moveIndex = ticTacToe.getValidMoveIndices(board).iterator().next();
           }
           
           board = ticTacToe.makeMove(board, moveIndex, TicTacToeConstants.MAX_PLAYER_CHANNEL);
@@ -135,7 +135,7 @@ public class TicTacToePlayoutMain {
         System.out.println("O wins after " + numberOfMoves + " moves");
         oWins2++;
       
-      } else if (ticTacToe.getEmptyFields(board).isEmpty()) {
+      } else if (ticTacToe.getValidMoveIndices(board).isEmpty()) {
 
         System.out.println("Draw");
         draws2++;

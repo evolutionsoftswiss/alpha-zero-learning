@@ -21,6 +21,11 @@ import ch.evolutionsoft.rl.Game;
 
 public class TicTacToe extends Game {
   
+  public TicTacToe(int currentPlayer) {
+
+    super(currentPlayer);
+  }
+
   private static final Logger log = LoggerFactory.getLogger(TicTacToe.class);
   
   public static final int[] COLUMN_INDICES = new int[] {0, 1, 2, 3, 4, 5, 6, 7, 8};
@@ -123,7 +128,7 @@ public class TicTacToe extends Game {
   @Override
   public boolean gameEnded(INDArray board) {
 
-    return getEmptyFields(board).isEmpty() ||
+    return getValidMoveIndices(board).isEmpty() ||
         hasWon(board, MAX_PLAYER_CHANNEL) ||
         hasWon(board, MIN_PLAYER_CHANNEL);
   }
@@ -137,8 +142,8 @@ public class TicTacToe extends Game {
   @Override
   public INDArray makeMove(INDArray board, int flatIndex, int player) {
 
-    int row = flatIndex / IMAGE_CHANNELS;
-    int column = flatIndex % IMAGE_CHANNELS;
+    int row = flatIndex / IMAGE_SIZE;
+    int column = flatIndex % IMAGE_SIZE;
     
     INDArray newBoard = board.dup();
     if (MIN_PLAYER_CHANNEL == player) {
@@ -154,7 +159,7 @@ public class TicTacToe extends Game {
   }
 
   @Override
-  public Set<Integer> getEmptyFields(INDArray playground) {
+  public Set<Integer> getValidMoveIndices(INDArray playground) {
     
     Set<Integer> emptyFieldsIndices = new HashSet<>(SMALL_CAPACITY);
     
@@ -174,30 +179,6 @@ public class TicTacToe extends Game {
     }
     
     return emptyFieldsIndices;
-  }
-
-  @Override
-  public int getOtherPlayer(Set<Integer> emptyFields) {
-    
-    boolean evenOccupiedFields = 0 == (COLUMN_COUNT - emptyFields.size()) % 2;
-    
-    if (evenOccupiedFields) {
-      
-      return MIN_PLAYER_CHANNEL;
-    }
-    
-    return MAX_PLAYER_CHANNEL;
-  }
-
-  @Override
-  public int getOtherPlayer(int color) {
-    
-    if (TicTacToeConstants.MAX_PLAYER_CHANNEL == color) {
-      
-      return MIN_PLAYER_CHANNEL;
-    }
-    
-    return MAX_PLAYER_CHANNEL;
   }
 
   @Override

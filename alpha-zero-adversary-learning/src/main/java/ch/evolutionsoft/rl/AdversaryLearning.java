@@ -70,7 +70,7 @@ public class AdversaryLearning {
     while (!game.gameEnded(currentBoard)) {
 
       INDArray validMoves = game.getValidMoves(currentBoard);
-      Set<Integer> emptyFields = game.getEmptyFields(currentBoard);
+      Set<Integer> emptyFields = game.getValidMoveIndices(currentBoard);
 
       INDArray normalizedActionProbabilities = Nd4j.zeros(game.getFieldCount());
       if (hasMoreThanOneMove(emptyFields)) {
