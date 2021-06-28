@@ -31,7 +31,7 @@ public class AdversaryLearning {
 
   private static final Logger log = LoggerFactory.getLogger(AdversaryLearning.class);
 
-  List<AdversaryTrainingExample> trainExamplesHistory = new ArrayList<>();
+  Set<AdversaryTrainingExample> trainExamplesHistory = new HashSet<>();
   
   Game game;
   
@@ -192,13 +192,13 @@ public class AdversaryLearning {
         
         List<AdversaryTrainingExample> newExamples = this.executeEpisode(iteration);
           
-        for (AdversaryTrainingExample trainExample : newExamples) {
-  
-          this.trainExamplesHistory.remove(trainExample);
-          this.trainExamplesHistory.add(trainExample);
-        }      
-      
+        this.trainExamplesHistory.removeAll(newExamples);
+        this.trainExamplesHistory.addAll(newExamples);
+        
         while (this.trainExamplesHistory.size() > adversaryLearningConfiguration.getMaxTrainExamplesHistory()) {
+          // FIXME Make this working for a Set without loop, was a list before
+          // TicTacToe does never reach the configured history entries limit because of
+          // limited unique training examples
           this.trainExamplesHistory.remove(0);
         }
         
@@ -272,7 +272,7 @@ public class AdversaryLearning {
     try (ObjectInputStream trainExamplesInput = new ObjectInputStream(
         new FileInputStream("trainExamples.obj"))) {
       
-      this.trainExamplesHistory = (List<AdversaryTrainingExample>) trainExamplesInput.readObject();
+      this.trainExamplesHistory = new HashSet<>((List<AdversaryTrainingExample>) trainExamplesInput.readObject());
       log.info("Restored train examples from trainEamples.obj with {} train examples",
           this.trainExamplesHistory.size());
       
