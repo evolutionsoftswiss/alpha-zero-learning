@@ -46,17 +46,6 @@ public class TicTacToe extends Game {
     INDArray playgroundRotation = Nd4j.create(IMAGE_CHANNELS, IMAGE_SIZE, IMAGE_SIZE);
     Nd4j.copy(playground, playgroundRotation);
 
-    INDArray actionMirrorVertical = mirrorVertical(twoDimensionalActionProbabilities.dup());
-    actionMirrorVertical = actionMirrorVertical.reshape(COLUMN_COUNT);
-    INDArray boardMirrorVertical = mirrorBoardVertically(playgroundRotation.dup());
-    symmetries.add(
-        new AdversaryTrainingExample(
-            boardMirrorVertical.dup(),
-            currentPlayer,
-            actionMirrorVertical,
-            iteration)
-        );
-    
     INDArray actionMirrorHorizontal = mirrorBoardPartHorizontally(twoDimensionalActionProbabilities);
     actionMirrorHorizontal = actionMirrorHorizontal.reshape(COLUMN_COUNT);
     INDArray newPlaygroundMirrorHorizontal = mirrorBoardHorizontally(playgroundRotation);
@@ -79,17 +68,7 @@ public class TicTacToe extends Game {
               newActionRotation.reshape(COLUMN_COUNT).dup(),
               iteration)
           );
-      
-      INDArray newActionMirrorVertical = mirrorVertical(newActionRotation.dup());
-      INDArray newPlaygroundMirror = mirrorBoardVertically(newPlaygroundRotation.dup());
-      symmetries.add(
-          new AdversaryTrainingExample(
-              newPlaygroundMirror.dup(),
-              currentPlayer,
-              newActionMirrorVertical.reshape(COLUMN_COUNT).dup(),
-              iteration)
-          );
-      
+
       INDArray newActionMirrorHorizontal = mirrorBoardPartHorizontally(newActionRotation.dup());
       newActionMirrorHorizontal = newActionMirrorHorizontal.reshape(COLUMN_COUNT);
       newPlaygroundMirrorHorizontal = mirrorBoardHorizontally(newPlaygroundRotation.dup());
@@ -121,6 +100,8 @@ public class TicTacToe extends Game {
     INDArray emptyBoard = TicTacToeConstants.EMPTY_CONVOLUTIONAL_PLAYGROUND.dup();
     
     INDArray newBoard = makeMove(emptyBoard, index, TicTacToeConstants.MAX_PLAYER_CHANNEL);
+
+    this.currentPlayer = Game.MIN_PLAYER;
     
     return newBoard;
   }
@@ -155,6 +136,8 @@ public class TicTacToe extends Game {
     }
     newBoard.putScalar(player, row, column, OCCUPIED_IMAGE_POINT);
 
+    //this.currentPlayer = getOtherPlayer(player);
+    
     return newBoard;
   }
 
@@ -323,11 +306,11 @@ public class TicTacToe extends Game {
 
   static INDArray mirrorBoardHorizontally(INDArray playgroundRotation) {
 
-    INDArray boardEmptyMirrorHorizontal = playgroundRotation.slice(PLAYER_CHANNEL);
+    INDArray boardPlayerMirrorHorizontal = playgroundRotation.slice(PLAYER_CHANNEL);
     INDArray maxPlayerMirrorHorizontal = mirrorBoardPartHorizontally(playgroundRotation.slice(MAX_PLAYER_CHANNEL));
     INDArray minPlayerMirrorHorizontal = mirrorBoardPartHorizontally(playgroundRotation.slice(MIN_PLAYER_CHANNEL));
     
-    INDArray newPlaygroundMirrorHorizontal = createNewBoard(boardEmptyMirrorHorizontal, maxPlayerMirrorHorizontal,
+    INDArray newPlaygroundMirrorHorizontal = createNewBoard(boardPlayerMirrorHorizontal, maxPlayerMirrorHorizontal,
         minPlayerMirrorHorizontal);
 
     return newPlaygroundMirrorHorizontal;
@@ -341,29 +324,6 @@ public class TicTacToe extends Game {
     mirrorHorizontal.putRow(2, toMirror.slice(0));
     
     return mirrorHorizontal;
-  }
-  
-  static INDArray mirrorBoardVertically(INDArray boardToMirror) {
-
-    INDArray boardEmptyMirror = boardToMirror.slice(PLAYER_CHANNEL);
-    INDArray maxPlayerMirror = mirrorVertical(boardToMirror.slice(MAX_PLAYER_CHANNEL));
-    INDArray minPlayerMirror = mirrorVertical(boardToMirror.slice(MIN_PLAYER_CHANNEL));
-    
-    INDArray boardMirrorVertical = createNewBoard(boardEmptyMirror, maxPlayerMirror, minPlayerMirror);
-    
-    return boardMirrorVertical;
-  }
-  
-  static INDArray mirrorVertical(INDArray toMirror) {
-    
-    INDArray mirroredVertical = Nd4j.ones(toMirror.shape()).neg();
-    
-    for (int row = 0; row < toMirror.shape()[0]; row++) {
-      
-      mirroredVertical.putRow(row, Nd4j.reverse(toMirror.getRow(row)));
-    }
-    
-    return mirroredVertical;
   }
 
   static INDArray rotateBoard90(INDArray playgroundRotation) {
@@ -391,30 +351,20 @@ public class TicTacToe extends Game {
     
     INDArray rotated90 = Nd4j.ones(toRotate.shape()).neg();
     
-    int middle = (int) (toRotate.shape()[0] / 2);
     for (int row = 0; row < toRotate.shape()[0]; row++) {
       
       for (int col = 0; col < toRotate.shape()[1]; col++) {
         
-        if (row != middle && col != middle) {
+        if (row == col) {
           
-          if (row == col) {
-            
-            INDArray slice = toRotate.getColumn(col).dup();
-            rotated90.putRow(row, Nd4j.reverse(slice));
-          
-          } else {
-          
-            INDArray slice = toRotate.getRow(row).dup();
-            rotated90.putColumn(col, slice);
-          }
-        
-        } else if (row == middle && col == middle) {
-          
-          rotated90.putScalar(new int[]{middle, middle}, toRotate.getDouble(middle, middle));
-        }
+          INDArray slice = toRotate.getColumn(col).dup();
+          rotated90.putRow(row, Nd4j.reverse(slice));
+        } 
       }
     }
+
+    int middle = (int) (toRotate.shape()[0] / 2);
+    rotated90.putScalar(new int[]{middle, middle}, toRotate.getDouble(middle, middle));
     
     return rotated90;
   }

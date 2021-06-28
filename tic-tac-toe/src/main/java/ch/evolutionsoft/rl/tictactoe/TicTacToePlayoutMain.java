@@ -27,6 +27,8 @@ public class TicTacToePlayoutMain {
     
     for (int game = 1; game <= 27; game++) {
 
+      ticTacToe = new TicTacToe(Game.MAX_PLAYER);
+
       boolean xPlayer = false;
       INDArray board = ticTacToe.doFirstMove(game % TicTacToeConstants.COLUMN_COUNT);
       int numberOfMoves = 1;
@@ -46,7 +48,7 @@ public class TicTacToePlayoutMain {
         
         } else {
 
-          int moveIndex = new MonteCarloSearch(ticTacToe, alphaNet, new AdversaryLearningConfiguration.Builder().build(), board).getActionValues(board, 1).argMax(0).getInt(0);
+          int moveIndex = new MonteCarloSearch(ticTacToe, alphaNet, new AdversaryLearningConfiguration.Builder().numberOfMonteCarloSimulations(25).build(), board).getActionValues(board, 0).argMax(0).getInt(0);
           
           if (!ticTacToe.getValidMoveIndices(board).contains(moveIndex)) {
             System.out.println("Invalid O move");
@@ -90,6 +92,8 @@ public class TicTacToePlayoutMain {
     int oWins2 = 0;
     
     for (int game = 1; game <= 27; game++) {
+
+      ticTacToe = new TicTacToe(Game.MAX_PLAYER);
       
       boolean xPlayer = false;
       INDArray board = ticTacToe.doFirstMove(game % TicTacToeConstants.COLUMN_COUNT);
@@ -110,7 +114,7 @@ public class TicTacToePlayoutMain {
         
         } else {
 
-          int moveIndex = new MonteCarloSearch(ticTacToe, alphaNet, new AdversaryLearningConfiguration.Builder().build(), board).getActionValues(board, 1).argMax(0).getInt(0);
+          int moveIndex = new MonteCarloSearch(ticTacToe, alphaNet, new AdversaryLearningConfiguration.Builder().numberOfMonteCarloSimulations(25).build(), board).getActionValues(board, 0).argMax(0).getInt(0);
           
           if (!ticTacToe.getValidMoveIndices(board).contains(moveIndex)) {
             System.out.println("Invalid X move");

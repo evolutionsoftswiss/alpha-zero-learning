@@ -41,8 +41,6 @@ public class AdversaryLearning {
   AdversaryLearningConfiguration adversaryLearningConfiguration;
   
   MonteCarloSearch mcts;
-  
-  double temperature = 1;
 
   boolean restoreTrainingExamples;
 
@@ -75,7 +73,10 @@ public class AdversaryLearning {
       INDArray normalizedActionProbabilities = Nd4j.zeros(game.getFieldCount());
       if (hasMoreThanOneMove(emptyFields)) {
 
-        INDArray actionProbabilities = this.mcts.getActionValues(currentBoard, temperature);
+        INDArray actionProbabilities =
+            this.mcts.getActionValues(
+                currentBoard,
+                adversaryLearningConfiguration.getCurrentTemperature(iteration, -1));
         INDArray validActionProbabilities = actionProbabilities.mul(validMoves);
         normalizedActionProbabilities = validActionProbabilities.div(Nd4j.sum(actionProbabilities));         
       }
@@ -122,19 +123,18 @@ public class AdversaryLearning {
         INDArray noiseActionDistribution = reducedValidActionProbabilities.mul(1 - adversaryLearningConfiguration.getDirichletWeight()).add(
             nextDistribution.mul(adversaryLearningConfiguration.getDirichletWeight()));
         
-        noiseActionDistribution.div(noiseActionDistribution.sum(0));
-        
-        EnumeratedIntegerDistribution d =
+        EnumeratedIntegerDistribution distribution =
             new EnumeratedIntegerDistribution(
                 validIndices,
                 noiseActionDistribution.toDoubleVector()
                 );
         
-        moveAction = d.sample();
+        moveAction = distribution.sample();
         
         while (!emptyFields.contains(moveAction)) {
+          // Not possible with reducedValidActionProbabilities above
           log.warn("Resample invalid random choice move.");
-          moveAction = d.sample();
+          moveAction = distribution.sample();
         }
       }
       
@@ -189,7 +189,7 @@ public class AdversaryLearning {
       for (int iteration = adversaryLearningConfiguration.getIterationStart();
           iteration < adversaryLearningConfiguration.getIterationStart() + adversaryLearningConfiguration.getNumberOfIterations();
           iteration++) {
-          
+        
         List<AdversaryTrainingExample> newExamples = this.executeEpisode(iteration);
           
         for (AdversaryTrainingExample trainExample : newExamples) {
@@ -220,7 +220,7 @@ public class AdversaryLearning {
           this.computationGraph = this.performTraining(this.computationGraph, trainExamples);
           
           AdversaryAgentDriver adversaryAgentDriver = new AdversaryAgentDriver(this.game, this.pComputationGraph, this.computationGraph);
-          int[] gameResults = adversaryAgentDriver.playGames(adversaryLearningConfiguration, temperature);
+          int[] gameResults = adversaryAgentDriver.playGames(adversaryLearningConfiguration, iteration);
           
           log.info("New model wins {} / prev model wins {} / draws {}", gameResults[1], gameResults[0], gameResults[2]);
           
@@ -299,6 +299,9 @@ public class AdversaryLearning {
     MultiDataSet dataSet = new org.nd4j.linalg.dataset.MultiDataSet(new INDArray[] {inputBoards}, new INDArray[] {probabilitiesLabels, valueLabels});
     
     computationGraph.fit(dataSet);
+
+    // The outputs from the fitted network will have new action probabilities
+    this.mcts.resetStoredOutputs();
     
     return computationGraph;
   }

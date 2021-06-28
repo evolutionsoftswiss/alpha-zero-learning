@@ -27,7 +27,8 @@ public class TicTacToeReinforcementLearningMain {
         new AdversaryLearning(
             new TicTacToe(Game.MAX_PLAYER),
             neuralNet,
-            new AdversaryLearningConfiguration.Builder().build());
+            new AdversaryLearningConfiguration.Builder().
+            build());
     
     adversaryLearning.performLearning();
   }

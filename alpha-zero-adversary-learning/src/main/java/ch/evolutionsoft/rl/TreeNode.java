@@ -19,7 +19,7 @@ public class TreeNode {
 	
 	int timesVisited = 0;
 	
-	double qValue = 0; 
+	double qValue = AdversaryLearning.DRAW_VALUE; 
 	
 	double uValue = 0;
 	
@@ -35,9 +35,11 @@ public class TreeNode {
 	    int colorToMove,
 	    int depth,
 	    double moveProbability,
+	    double initialQ,
 	    TreeNode parent){
 		
 		this.parent = parent;
+		this.qValue = initialQ;
 		this.depth = depth;
 		this.move = move;
 		this.moveProbability = moveProbability;
@@ -58,6 +60,7 @@ public class TreeNode {
 	              game.getOtherPlayer(this.lastColorMove),
 	              this.depth + 1,
 	              previousActionProbabilities.getDouble(index),
+	              1 - this.qValue,
 	              this));
 	    }
 	  }

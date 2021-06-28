@@ -1,5 +1,8 @@
 package ch.evolutionsoft.rl;
 
+import java.util.HashMap;
+import java.util.Map;
+
 import org.deeplearning4j.nn.graph.ComputationGraph;
 import org.nd4j.linalg.api.ndarray.INDArray;
 import org.nd4j.linalg.factory.Nd4j;
@@ -19,6 +22,8 @@ public class MonteCarloSearch {
   TreeNode rootNode;
   TreeNode treeNode;
   
+  Map<INDArray, INDArray[]> neuralNetOutputsByBoardInputs = new HashMap<INDArray, INDArray[]>();
+  
   public MonteCarloSearch(Game game, ComputationGraph computationGraph, AdversaryLearningConfiguration configuration) {
     
     this(game, computationGraph, configuration, game.getInitialBoard());
@@ -28,7 +33,7 @@ public class MonteCarloSearch {
     
     this.game = game;
     this.computationGraph = computationGraph;
-    this.rootNode = new TreeNode(-1, game.getOtherPlayer(game.currentPlayer), 0, 1.0f, null);
+    this.rootNode = new TreeNode(-1, game.getOtherPlayer(game.currentPlayer), 0, 1.0, 0.5, null);
     this.cUct = configuration.getCpUct();
     this.numberOfSimulations = configuration.getNummberOfMonteCarloSimulations();
   }
@@ -42,14 +47,24 @@ public class MonteCarloSearch {
       treeNode = treeNode.selectMove(this.cUct);
       currentBoard = game.makeMove(currentBoard, treeNode.move, treeNode.lastColorMove);
     }
+ 
+    INDArray[] neuralNetOutput;
+    if (this.neuralNetOutputsByBoardInputs.containsKey(currentBoard)) {
+
+      neuralNetOutput = this.neuralNetOutputsByBoardInputs.get(currentBoard);
+      
+    } else {
+      
+      long[] newShape = new long[currentBoard.shape().length + 1];
+      System.arraycopy(currentBoard.shape(), 0, newShape, 1, currentBoard.shape().length);
+      newShape[0] = 1;
+      INDArray oneBatchBoard = currentBoard.reshape(newShape);
+      neuralNetOutput = this.computationGraph.output(oneBatchBoard);
+      this.neuralNetOutputsByBoardInputs.put(currentBoard, neuralNetOutput);
+    }
     
-
-    INDArray oneBatchBoard = Nd4j.zeros(1, 3, 3, 3);
-    oneBatchBoard.putRow(0, currentBoard);
-
-    INDArray[] nnOutput = this.computationGraph.output(oneBatchBoard);      
-    INDArray actionProbabilities = nnOutput[0];
-    double leafValue = nnOutput[1].getDouble(0);
+    INDArray actionProbabilities = neuralNetOutput[0];
+    double leafValue = neuralNetOutput[1].getDouble(0);
     
     if (game.gameEnded(currentBoard)) {
 
@@ -118,23 +133,27 @@ public class MonteCarloSearch {
       return moveProbabilities;
     }
     
+    INDArray softmaxParameters = Nd4j.zeros(game.getFieldCount());
     for (int index = 0; index < game.getFieldCount(); index++) {
 
-      double softmaxProbability = 0;
-      
-      if (maxVisitedCounts == visitedCounts[index]) {
-        
-        softmaxProbability = 1;
-      
-      } else if (visitedCounts[index] > 0) {
+      softmaxParameters.putScalar(index, (1 / temperature) * Math.log(visitedCounts[index]) + 1e-8);
+    }
 
-        softmaxProbability = Math.exp((1 / temperature) * Math.log(visitedCounts[index]) - maxVisitedCounts);
-      }
-      
-      moveProbabilities.putScalar(index, softmaxProbability);
+    double maxSoftmaxParameter = softmaxParameters.getDouble(softmaxParameters.argMax(0).getInt(0));
+    
+    for (int index = 0; index < game.getFieldCount(); index++) {
+
+      moveProbabilities.putScalar(index, Math.exp(softmaxParameters.getDouble(index) - maxSoftmaxParameter)); 
     }
     
+    moveProbabilities = moveProbabilities.div(moveProbabilities.sumNumber());
+    
     return moveProbabilities;
+  }
+
+  public void resetStoredOutputs() {
+    
+    this.neuralNetOutputsByBoardInputs.clear();
   }
   
   public double getcUct() {

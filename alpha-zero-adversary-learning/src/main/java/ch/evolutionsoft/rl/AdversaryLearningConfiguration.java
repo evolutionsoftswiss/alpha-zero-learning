@@ -1,5 +1,7 @@
 package ch.evolutionsoft.rl;
 
+import ch.evolutionsoft.net.game.NeuralNetConstants;
+
 public class AdversaryLearningConfiguration {
   
   double neuralNetworkLearningRate;
@@ -13,6 +15,8 @@ public class AdversaryLearningConfiguration {
   int numberOfEpisodesBeforePotentialUpdate;
   int iterationStart;
   int numberOfIterations;
+  int fromNumberOfIterationsTemperatureZero;
+  int fromNumberOfMovesTemperatureZero;
   int maxTrainExamplesHistory;
 
   double cpUct;
@@ -29,7 +33,9 @@ public class AdversaryLearningConfiguration {
     double updateGamesNewNetworkWinRatioThreshold = 0.55;
     int numberOfEpisodesBeforePotentialUpdate = 20;
     int iterationStart = 1;
-    int numberOfIterations = 2500;
+    int numberOfIterations = 2000;
+    int fromNumberOfIterationsTemperatureZero = 0;
+    int fromNumberOfMovesTemperatureZero = 0;
     int maxTrainExamplesHistory = 5000;
 
     double cpUct = 1.0;
@@ -48,6 +54,8 @@ public class AdversaryLearningConfiguration {
       configuration.numberOfEpisodesBeforePotentialUpdate = numberOfEpisodesBeforePotentialUpdate;
       configuration.iterationStart = iterationStart;
       configuration.numberOfIterations = numberOfIterations;
+      configuration.fromNumberOfIterationsTemperatureZero = fromNumberOfIterationsTemperatureZero;
+      configuration.fromNumberOfMovesTemperatureZero = fromNumberOfMovesTemperatureZero;
       configuration.maxTrainExamplesHistory = maxTrainExamplesHistory;
       configuration.cpUct = cpUct;
       configuration.nummberOfMonteCarloSimulations = numberOfMonteCarloSimulations;
@@ -127,6 +135,8 @@ public class AdversaryLearningConfiguration {
         "\n numberOfEpisodesBeforePotentialUpdate: " + this.numberOfEpisodesBeforePotentialUpdate + 
         "\n iterationStart: " + this.iterationStart + 
         "\n numberOfIterations: " + this.numberOfIterations +
+        "\n fromNumberOfIterationsTemperatureZero: " + this.fromNumberOfIterationsTemperatureZero +
+        "\n fromNumberOfMovesTemperatureZero: " + this.fromNumberOfMovesTemperatureZero +
         "\n maxTrainExamplesHistory: " + this.maxTrainExamplesHistory +
         "\n cpUct: " + this.cpUct +
         "\n numberOfMonteCarloSimulations: " + this.nummberOfMonteCarloSimulations;
@@ -202,6 +212,32 @@ public class AdversaryLearningConfiguration {
 
   public void setNumberOfIterations(int numberOfIterations) {
     this.numberOfIterations = numberOfIterations;
+  }
+  
+  public double getCurrentTemperature(int iteration, int moveNumber) {
+    
+    if (iteration >= getFromNumberOfIterationsTemperatureZero() ||
+        moveNumber >= getFromNumberOfMovesTemperatureZero()) {
+      return NeuralNetConstants.ZERO;
+    }
+    
+    return NeuralNetConstants.ONE;
+  }
+ 
+  public int getFromNumberOfIterationsTemperatureZero() {
+    return fromNumberOfIterationsTemperatureZero;
+  }
+
+  public void setFromNumberOfIterationsTemperatureZero(int fromNumberOfIterationsTemperatureZero) {
+    this.fromNumberOfIterationsTemperatureZero = fromNumberOfIterationsTemperatureZero;
+  }
+  
+  public int getFromNumberOfMovesTemperatureZero() {
+    return fromNumberOfMovesTemperatureZero;
+  }
+
+  public void setFromNumberOfMovesTemperatureZero(int fromNumberOfMovesTemperatureZero) {
+    this.fromNumberOfMovesTemperatureZero = fromNumberOfMovesTemperatureZero;
   }
 
   public int getMaxTrainExamplesHistory() {

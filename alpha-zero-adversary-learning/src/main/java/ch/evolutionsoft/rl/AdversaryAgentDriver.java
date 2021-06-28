@@ -24,7 +24,7 @@ public class AdversaryAgentDriver {
     this.player2Policy = player2;
   }
 
-  public int[] playGames(AdversaryLearningConfiguration configuration, double temperature) {
+  public int[] playGames(AdversaryLearningConfiguration configuration, int iteration) {
     
     int numberOfEpisodesPlayer1Starts = configuration.getGamesToGetNewNetworkWinRatio() / 2;
     int numberOfEpisodesPlayer2Starts = configuration.getGamesToGetNewNetworkWinRatio() - numberOfEpisodesPlayer1Starts;
@@ -35,7 +35,7 @@ public class AdversaryAgentDriver {
     
     for (int gameNumber = 1; gameNumber <= numberOfEpisodesPlayer1Starts; gameNumber++) {
       
-      double gameResult = this.playGame(configuration, temperature, gameNumber % game.getFieldCount());
+      double gameResult = this.playGame(configuration, configuration.getCurrentTemperature(iteration, -1), gameNumber % game.getFieldCount());
       
       if (gameResult >= MAX_WIN) {
         
@@ -57,7 +57,7 @@ public class AdversaryAgentDriver {
 
     for (int gameNumber = 1; gameNumber <= numberOfEpisodesPlayer2Starts; gameNumber++) {
       
-      double gameResult = this.playGame(configuration, temperature, gameNumber % game.getFieldCount());
+      double gameResult = this.playGame(configuration, configuration.getCurrentTemperature(iteration, -1), gameNumber % game.getFieldCount());
       
       if (gameResult <= MIN_WIN) {
         
