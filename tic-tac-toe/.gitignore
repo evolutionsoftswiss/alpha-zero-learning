@@ -3,5 +3,6 @@
 /.project
 /logs/
 /output/
-/trainExamples.obj
 /*-bestmodel*.bin
+/trainExamples0*.obj
+/bestmodel0*.bin

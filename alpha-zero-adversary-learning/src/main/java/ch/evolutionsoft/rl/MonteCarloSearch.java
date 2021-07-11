@@ -6,14 +6,16 @@ import java.util.Map;
 import org.deeplearning4j.nn.graph.ComputationGraph;
 import org.nd4j.linalg.api.ndarray.INDArray;
 import org.nd4j.linalg.factory.Nd4j;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class MonteCarloSearch {
+  
+  Logger logger = LoggerFactory.getLogger(MonteCarloSearch.class);
 
   double cUct = 1.0;
   
   int numberOfSimulations = 50;
-  
-  int simulationsToEndDone = 0;
   
   Game game;
 
@@ -42,33 +44,22 @@ public class MonteCarloSearch {
     
     INDArray currentBoard = board.dup();
     
-    while (!treeNode.children.isEmpty()) {
+    while (treeNode.isExpanded()) {
       
       treeNode = treeNode.selectMove(this.cUct);
       currentBoard = game.makeMove(currentBoard, treeNode.move, treeNode.lastColorMove);
     }
- 
-    INDArray[] neuralNetOutput;
-    if (this.neuralNetOutputsByBoardInputs.containsKey(currentBoard)) {
-
-      neuralNetOutput = this.neuralNetOutputsByBoardInputs.get(currentBoard);
       
-    } else {
-      
-      long[] newShape = new long[currentBoard.shape().length + 1];
-      System.arraycopy(currentBoard.shape(), 0, newShape, 1, currentBoard.shape().length);
-      newShape[0] = 1;
-      INDArray oneBatchBoard = currentBoard.reshape(newShape);
-      neuralNetOutput = this.computationGraph.output(oneBatchBoard);
-      this.neuralNetOutputsByBoardInputs.put(currentBoard, neuralNetOutput);
-    }
+    long[] newShape = new long[currentBoard.shape().length + 1];
+    System.arraycopy(currentBoard.shape(), 0, newShape, 1, currentBoard.shape().length);
+    newShape[0] = 1;
+    INDArray oneBatchBoard = currentBoard.reshape(newShape);
+    INDArray[] neuralNetOutput = this.computationGraph.output(oneBatchBoard);
     
     INDArray actionProbabilities = neuralNetOutput[0];
     double leafValue = neuralNetOutput[1].getDouble(0);
     
     if (game.gameEnded(currentBoard)) {
-
-      this.simulationsToEndDone++;
       
       leafValue = 0.5f;
       
@@ -91,36 +82,34 @@ public class MonteCarloSearch {
   }
 
   public INDArray getActionValues(INDArray board, double temperature) {
-
-    this.simulationsToEndDone = 0;
     
-    while (this.simulationsToEndDone < numberOfSimulations) {
+    int playouts = 0;
+
+    while (playouts < numberOfSimulations) {
 
       this.treeNode = rootNode;
+      Object savedPositionBeforePlayout = game.savePosition();
       this.playout(board.dup());
+      game.restorePosition(savedPositionBeforePlayout);
+      playouts++;
     }
-
     
-    int[] visitedCounts = new int[game.getFieldCount()];
+    int[] visitedCounts = new int[game.getNumberOfCurrentMoves()];
     int maxVisitedCounts = 0;
 
     for (int index = 0; index < game.getFieldCount(); index++) {
       
-      if (this.rootNode.children.containsKey(index)) {
+      if (this.rootNode.containsChildMoveIndex(index)) {
         
-        visitedCounts[index] = this.rootNode.children.get(index).timesVisited;
+        visitedCounts[index] = this.rootNode.getChildWithMoveIndex(index).timesVisited;
         if (visitedCounts[index] > maxVisitedCounts) {
           
           maxVisitedCounts = visitedCounts[index];
         }
-      
-      } else {
-        
-        visitedCounts[index] = 0;
       }
     }
     
-    INDArray moveProbabilities = Nd4j.zeros(game.getFieldCount());
+    INDArray moveProbabilities = Nd4j.zeros(game.getNumberOfCurrentMoves());
 
     if (0 == temperature) {
       
@@ -174,14 +163,14 @@ public class MonteCarloSearch {
 
   TreeNode updateWithMove(int lastMove) {
     
-    if (this.rootNode.children.containsKey(lastMove)) {
+    if (this.rootNode.containsChildMoveIndex(lastMove)) {
       
-      this.rootNode = this.rootNode.children.get(lastMove);
+      this.rootNode = this.rootNode.getChildWithMoveIndex(lastMove);
       return this.rootNode;
     }
     else {
       
-      throw new IllegalArgumentException("no lastMove here.");
+      throw new IllegalArgumentException("no lastMove here: " + lastMove);
     }
   }
 }

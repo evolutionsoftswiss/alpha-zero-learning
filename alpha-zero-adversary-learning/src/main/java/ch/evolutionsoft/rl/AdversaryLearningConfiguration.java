@@ -1,11 +1,19 @@
 package ch.evolutionsoft.rl;
 
+import org.nd4j.linalg.schedule.ISchedule;
+
 import ch.evolutionsoft.net.game.NeuralNetConstants;
 
+/**
+ * 
+ * 
+ * @author evolutionsoft
+ */
 public class AdversaryLearningConfiguration {
   
-  double neuralNetworkLearningRate;
-  
+  double learningRate;
+  ISchedule learningRateSchedule;
+
   double dirichletAlpha;
 
   double dirichletWeight;
@@ -15,6 +23,7 @@ public class AdversaryLearningConfiguration {
   int numberOfEpisodesBeforePotentialUpdate;
   int iterationStart;
   int numberOfIterations;
+  int checkPointIterationsFrequency;
   int fromNumberOfIterationsTemperatureZero;
   int fromNumberOfMovesTemperatureZero;
   int maxTrainExamplesHistory;
@@ -24,28 +33,31 @@ public class AdversaryLearningConfiguration {
 
   public static class Builder {
 
-    double neuralNetworkLearningRate = 1e-3;
-    
-    double dirichletAlpha = 1.5;
-    double dirichletWeight = 0.55;
+    double learningRate = 1e-4;
+    ISchedule learningRateSchedule;
+
+    double dirichletAlpha = 1.0;
+    double dirichletWeight = 0.45;
     boolean alwaysUpdateNeuralNetwork = true;
     int gamesToGetNewNetworkWinRatio = 36;
     double updateGamesNewNetworkWinRatioThreshold = 0.55;
-    int numberOfEpisodesBeforePotentialUpdate = 20;
+    int numberOfEpisodesBeforePotentialUpdate = 5;
     int iterationStart = 1;
-    int numberOfIterations = 2000;
-    int fromNumberOfIterationsTemperatureZero = 0;
-    int fromNumberOfMovesTemperatureZero = 0;
+    int numberOfIterations = 5000;
+    int checkPointIterationsFrequency = 1000;
+    int fromNumberOfIterationsTemperatureZero = 2000;
+    int fromNumberOfMovesTemperatureZero = -1;
     int maxTrainExamplesHistory = 5000;
 
     double cpUct = 1.0;
-    int numberOfMonteCarloSimulations = 25;
+    int numberOfMonteCarloSimulations = 50;
     
     public AdversaryLearningConfiguration build() {
       
       AdversaryLearningConfiguration configuration = new AdversaryLearningConfiguration();
       
-      configuration.neuralNetworkLearningRate = neuralNetworkLearningRate;
+      configuration.learningRate = learningRate;
+      configuration.learningRateSchedule = learningRateSchedule;
       configuration.dirichletAlpha = dirichletAlpha;
       configuration.dirichletWeight = dirichletWeight;
       configuration.alwaysUpdateNeuralNetwork = alwaysUpdateNeuralNetwork;
@@ -54,6 +66,7 @@ public class AdversaryLearningConfiguration {
       configuration.numberOfEpisodesBeforePotentialUpdate = numberOfEpisodesBeforePotentialUpdate;
       configuration.iterationStart = iterationStart;
       configuration.numberOfIterations = numberOfIterations;
+      configuration.checkPointIterationsFrequency = checkPointIterationsFrequency;
       configuration.fromNumberOfIterationsTemperatureZero = fromNumberOfIterationsTemperatureZero;
       configuration.fromNumberOfMovesTemperatureZero = fromNumberOfMovesTemperatureZero;
       configuration.maxTrainExamplesHistory = maxTrainExamplesHistory;
@@ -63,9 +76,22 @@ public class AdversaryLearningConfiguration {
       return configuration;
     }
  
-    public Builder neuralNetworkLearningRate(double neuralNetworkLearningRate) {
-      this.neuralNetworkLearningRate = neuralNetworkLearningRate;
+    public Builder learningRate(double neuralNetworkLearningRate) {
+      this.learningRate = neuralNetworkLearningRate;
       return this;
+    }
+
+    public Builder learningRateSchedule(ISchedule learningRateSchedule) {
+      this.learningRateSchedule = learningRateSchedule;
+      return this;
+    }
+    
+    public ISchedule getLearningRateSchedule() {
+      return learningRateSchedule;
+    }
+
+    public void setLearningRateSchedule(ISchedule learningRateSchedule) {
+      this.learningRateSchedule = learningRateSchedule;
     }
 
     public Builder dirichletAlpha(double dirichletAlpha) {
@@ -78,6 +104,16 @@ public class AdversaryLearningConfiguration {
       return this;
     }
 
+    public Builder fromNumberOfIterationsTemperatureZero(int fromNumberOfIterationsTemperatureZero) {
+      this.fromNumberOfIterationsTemperatureZero = fromNumberOfIterationsTemperatureZero;
+      return this;
+    }
+
+    public Builder fromNumberOfMovesTemperatureZero(int fromNumberOfMovesTemperatureZero) {
+      this.fromNumberOfMovesTemperatureZero = fromNumberOfMovesTemperatureZero;
+      return this;
+    }
+    
     public Builder alwaysUpdateNeuralNetwork(boolean alwaysUpdateNeuralNetwork) {
       this.alwaysUpdateNeuralNetwork = alwaysUpdateNeuralNetwork;
       return this;
@@ -107,6 +143,12 @@ public class AdversaryLearningConfiguration {
       this.numberOfIterations = totalNumberOfIterations;
       return this;
     }
+
+    public Builder checkPointIterationsFrequency(int checkPointIterationsFrequency) {
+      
+      this.checkPointIterationsFrequency = checkPointIterationsFrequency;
+      return this;
+    }
     
     public Builder maxTrainExamplesHistory(int maxTrainExamplesHistory) {
       this.maxTrainExamplesHistory = maxTrainExamplesHistory;
@@ -126,7 +168,7 @@ public class AdversaryLearningConfiguration {
   
   public String toString() {
     
-    return " neuralNetworkLearningRate: " + this.neuralNetworkLearningRate + 
+    return " learningRate: " + (null == this.learningRateSchedule ? "-" : this.learningRate) +
         "\n dirichletAlpha: " + this.dirichletAlpha + 
         "\n dirichletWeight: " + this.dirichletWeight +
         "\n alwaysUpdateNeuralNetwork: " + this.alwaysUpdateNeuralNetwork +
@@ -142,12 +184,20 @@ public class AdversaryLearningConfiguration {
         "\n numberOfMonteCarloSimulations: " + this.nummberOfMonteCarloSimulations;
   }
 
-  public double getNeuralNetworkLearningRate() {
-    return neuralNetworkLearningRate;
+  public double getLearningRate() {
+    return learningRate;
   }
 
-  public void setNeuralNetworkLearningRate(double neuralNetworkLearningRate) {
-    this.neuralNetworkLearningRate = neuralNetworkLearningRate;
+  public void setLearningRate(double neuralNetworkLearningRate) {
+    this.learningRate = neuralNetworkLearningRate;
+  }
+  
+  public ISchedule getLearningRateSchedule() {
+    return learningRateSchedule;
+  }
+
+  public void setLearningRateSchedule(ISchedule learningRateSchedule) {
+    this.learningRateSchedule = learningRateSchedule;
   }
 
   public double getDirichletAlpha() {
@@ -213,12 +263,21 @@ public class AdversaryLearningConfiguration {
   public void setNumberOfIterations(int numberOfIterations) {
     this.numberOfIterations = numberOfIterations;
   }
+
+  public int getCheckPointIterationsFrequency() {
+    return checkPointIterationsFrequency;
+  }
+
+  public void setCheckPointIterationsFrequency(int checkPointIterationsFrequency) {
+    this.checkPointIterationsFrequency = checkPointIterationsFrequency;
+  }
+
   
   public double getCurrentTemperature(int iteration, int moveNumber) {
     
     if (iteration >= getFromNumberOfIterationsTemperatureZero() ||
-        moveNumber >= getFromNumberOfMovesTemperatureZero()) {
-      return NeuralNetConstants.ZERO;
+        moveNumber > getFromNumberOfMovesTemperatureZero()) {
+      return 0;
     }
     
     return NeuralNetConstants.ONE;

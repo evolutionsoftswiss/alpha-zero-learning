@@ -20,6 +20,7 @@ import org.deeplearning4j.nn.weights.WeightInit;
 import org.nd4j.linalg.activations.Activation;
 import org.nd4j.linalg.learning.config.Adam;
 import org.nd4j.linalg.lossfunctions.LossFunctions.LossFunction;
+import org.nd4j.linalg.schedule.ISchedule;
 
 public class ConvolutionResidualNet {
 
@@ -58,13 +59,29 @@ public class ConvolutionResidualNet {
   public static final int CNN_OUTPUT_CHANNELS = 3;
   
   private double learningRate = 1e-3;
+  
+  private ISchedule learningRateSchedule;
 
   public ConvolutionResidualNet(double learningRate) {
 
     this.learningRate = learningRate;
   }
+
+  public ConvolutionResidualNet(ISchedule learningRateSchedule) {
+
+    this.learningRateSchedule = learningRateSchedule;
+  }
   
   NeuralNetConfiguration.Builder createGeneralConfiguration() {
+    
+    if (null != this.learningRateSchedule) {
+
+      return new NeuralNetConfiguration.Builder()
+          .seed(DEFAULT_SEED)
+          .updater(new Adam(learningRateSchedule))
+          .convolutionMode(ConvolutionMode.Strict)
+          .weightInit(WeightInit.RELU); 
+    }
 
     return new NeuralNetConfiguration.Builder()
         .seed(DEFAULT_SEED)

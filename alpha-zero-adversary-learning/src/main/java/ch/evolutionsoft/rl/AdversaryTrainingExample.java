@@ -59,7 +59,7 @@ public class AdversaryTrainingExample implements Serializable {
   
   public int hashCode() {
     
-    return 7 * this.board.hashCode();
+    return this.board.hashCode();
   }
   
   public String toString() {

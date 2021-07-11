@@ -4,6 +4,7 @@ import java.io.IOException;
 
 import org.deeplearning4j.nn.conf.ComputationGraphConfiguration;
 import org.deeplearning4j.nn.graph.ComputationGraph;
+import org.nd4j.linalg.schedule.ISchedule;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -18,8 +19,12 @@ public class TicTacToeReinforcementLearningMain {
   public static void main(String[] args) throws IOException {
     
     TicTacToeReinforcementLearningMain main = new TicTacToeReinforcementLearningMain();
+    
+    AdversaryLearningConfiguration adversaryLearningConfiguration =
+        new AdversaryLearningConfiguration.Builder().
+        build();
    
-    ComputationGraph neuralNet = main.createConvolutionalConfiguration();
+    ComputationGraph neuralNet = main.createConvolutionalConfiguration(adversaryLearningConfiguration);
     
     log.info(neuralNet.summary());
     
@@ -27,15 +32,15 @@ public class TicTacToeReinforcementLearningMain {
         new AdversaryLearning(
             new TicTacToe(Game.MAX_PLAYER),
             neuralNet,
-            new AdversaryLearningConfiguration.Builder().
-            build());
+            adversaryLearningConfiguration);
     
     adversaryLearning.performLearning();
   }
 
-  ComputationGraph createConvolutionalConfiguration() {
+  ComputationGraph createConvolutionalConfiguration(AdversaryLearningConfiguration adversaryLearningConfiguration) {
 
-    ConvolutionResidualNet convolutionalLayerNet = new ConvolutionResidualNet(1e-3);
+    ConvolutionResidualNet convolutionalLayerNet =
+        new ConvolutionResidualNet(adversaryLearningConfiguration.getLearningRate());
 
     ComputationGraphConfiguration convolutionalLayerNetConfiguration =
         convolutionalLayerNet.createConvolutionalGraphConfiguration();
@@ -45,5 +50,23 @@ public class TicTacToeReinforcementLearningMain {
 
     return net;
   }
+  
+  static class TicTacToeLearningShedule implements ISchedule {
+    
+    @Override
+    public double valueAt(int iteration, int epoch) {
 
+      if (iteration <= 600) {
+        return 8e-4;
+      }
+      
+      return 1e-4;
+    }
+
+    @Override
+    public ISchedule clone() {
+      return new TicTacToeLearningShedule();
+    }
+    
+  }
 }

@@ -36,8 +36,8 @@ public abstract class Game {
     
     int[] validIndices = new int[validIndicesList.size()];
 
-    int allFieldsSize = getFieldCount();
-    for (int validIndex = 0, index = 0; index < allFieldsSize; index++) {
+    int allMovesSize = getNumberOfCurrentMoves();
+    for (int validIndex = 0, index = 0; index < allMovesSize; index++) {
       
       if (validIndicesList.contains(index)) {
         validIndices[validIndex] = index;
@@ -73,6 +73,33 @@ public abstract class Game {
     
   }
 
+  public Object savePosition() {
+    
+    return null;
+  }
+  
+  public void restorePosition(Object savedPosition) { }
+  
+  /**
+   * 
+   * @return boardSize as default, boardsize + 1 for Go with additional pass move, other
+   * number of possible actions would be present for chess
+   */
+  public int getNumberOfAllAvailableMoves() {
+    
+    return getFieldCount();
+  }
+  
+  /**
+   * 
+   * @return boardSize as default, boardsize + 1 for Go with additional pass move
+   * after some number of stones present threshold
+   */
+  public int getNumberOfCurrentMoves() {
+    
+    return getFieldCount();
+  }
+  
   /**
    * 
    * @return board size of the game
@@ -87,12 +114,19 @@ public abstract class Game {
   public abstract INDArray doFirstMove(int index);
   
   /**
-   * Returns indices of empty fields with the given board
+   * Returns indices of valid move fields with the given board
    * 
    * @param board
-   * @return a set of indices of empty fields
+   * @return a set of indices of valid move fields
    */
   public abstract Set<Integer> getValidMoveIndices(INDArray board);
+
+  /**
+   * 
+   * @param currentBoard
+   * @return
+   */
+  public abstract INDArray getValidMoves(INDArray currentBoard);
 
   /**
    * 
@@ -129,13 +163,6 @@ public abstract class Game {
    * @param computationGraph
    */
   public abstract void evaluateOpeningAnswers(ComputationGraph computationGraph);
-
-  /**
-   * 
-   * @param currentBoard
-   * @return
-   */
-  public abstract INDArray getValidMoves(INDArray currentBoard);
 
   /**
    * 

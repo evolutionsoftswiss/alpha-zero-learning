@@ -1,15 +1,22 @@
 package ch.evolutionsoft.rl;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import org.nd4j.linalg.api.ndarray.INDArray;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import ch.evolutionsoft.net.game.NeuralNetConstants;
 
 public class TreeNode {
+
+    Logger logger = LoggerFactory.getLogger(TreeNode.class);
 	
 	int move;
 
@@ -27,7 +34,7 @@ public class TreeNode {
 	
 	TreeNode parent;
 	
-	Map<Integer, TreeNode> children = new HashMap<>();
+	private Map<Integer, TreeNode> children = new HashMap<>();
 	
 	
 	public TreeNode(
@@ -49,28 +56,35 @@ public class TreeNode {
 
 	void expand(Game game, INDArray previousActionProbabilities, INDArray currentBoard) {
 	  
-	  for (int index : game.getValidMoveIndices(currentBoard)) {
-	    
-	    if (!this.children.containsKey(index)) {
+	  Set<Integer> validMoveIndices = game.getValidMoveIndices(currentBoard);
+ 
+	  for (int moveIndex : validMoveIndices) {
 	      
-	      this.children.put(
-	          index,
-	          new TreeNode(
-	              index,
-	              game.getOtherPlayer(this.lastColorMove),
-	              this.depth + 1,
-	              previousActionProbabilities.getDouble(index),
-	              1 - this.qValue,
-	              this));
+	    this.children.put(
+	        moveIndex,
+	        new TreeNode(
+	            moveIndex,
+	            game.getOtherPlayer(this.lastColorMove),
+	            this.depth + 1,
+	            previousActionProbabilities.getDouble(moveIndex),
+	            1 - this.qValue,
+	            this));
 	    }
-	  }
+	}
+
+	public boolean isExpanded() {
+	  
+	  return !this.children.isEmpty();
 	}
 	
 	protected TreeNode selectMove(double cpUct) {
 
 	  // Handle never visited children
 	  List<TreeNode> neverVisitedChildren = new ArrayList<>();
-      for (TreeNode treeNode : this.children.values()) {
+      List<TreeNode> childNodes = new LinkedList<>(this.children.values());
+      Collections.shuffle(childNodes);
+      
+      for (TreeNode treeNode : childNodes) {
         
         if (0 >= treeNode.timesVisited) {
           neverVisitedChildren.add(treeNode);
@@ -88,7 +102,7 @@ public class TreeNode {
       double bestValue = Integer.MIN_VALUE;
       TreeNode bestNode = null;
       
-      for (TreeNode treeNode : this.children.values()) {
+      for (TreeNode treeNode : childNodes) {
         	
         double currentValue = treeNode.getValue(cpUct);
           
@@ -129,5 +143,15 @@ public class TreeNode {
 	  }
 	  
 	  this.update(newValue);
+	}
+
+	public TreeNode getChildWithMoveIndex(int moveIndex) {
+	  
+	  return this.children.get(moveIndex);
+	}
+	
+	public boolean containsChildMoveIndex(int moveIndex) {
+	  
+	  return this.children.containsKey(moveIndex);
 	}
 }
