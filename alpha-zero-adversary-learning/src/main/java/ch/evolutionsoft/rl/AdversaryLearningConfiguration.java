@@ -36,16 +36,16 @@ public class AdversaryLearningConfiguration {
     double learningRate = 1e-4;
     ISchedule learningRateSchedule;
 
-    double dirichletAlpha = 1.0;
+    double dirichletAlpha = 1.1;
     double dirichletWeight = 0.45;
     boolean alwaysUpdateNeuralNetwork = true;
     int gamesToGetNewNetworkWinRatio = 36;
     double updateGamesNewNetworkWinRatioThreshold = 0.55;
     int numberOfEpisodesBeforePotentialUpdate = 5;
     int iterationStart = 1;
-    int numberOfIterations = 5000;
+    int numberOfIterations = 4000;
     int checkPointIterationsFrequency = 1000;
-    int fromNumberOfIterationsTemperatureZero = 2000;
+    int fromNumberOfIterationsTemperatureZero = 2500;
     int fromNumberOfMovesTemperatureZero = -1;
     int maxTrainExamplesHistory = 5000;
 

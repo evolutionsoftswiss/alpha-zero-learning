@@ -1,10 +1,13 @@
 package ch.evolutionsoft.rl.tictactoe;
 
 import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
 
 import org.deeplearning4j.nn.conf.ComputationGraphConfiguration;
 import org.deeplearning4j.nn.graph.ComputationGraph;
-import org.nd4j.linalg.schedule.ISchedule;
+import org.nd4j.linalg.schedule.MapSchedule;
+import org.nd4j.linalg.schedule.ScheduleType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -20,8 +23,12 @@ public class TicTacToeReinforcementLearningMain {
     
     TicTacToeReinforcementLearningMain main = new TicTacToeReinforcementLearningMain();
     
+    Map<Integer, Double> learningRatesByIterations = new HashMap<>();
+    learningRatesByIterations.put(0, 8e-4);
+    learningRatesByIterations.put(500, 1e-4);
+    MapSchedule learningRateMapSchedule = new MapSchedule(ScheduleType.ITERATION, learningRatesByIterations);
     AdversaryLearningConfiguration adversaryLearningConfiguration =
-        new AdversaryLearningConfiguration.Builder().
+        new AdversaryLearningConfiguration.Builder().learningRateSchedule(learningRateMapSchedule).
         build();
    
     ComputationGraph neuralNet = main.createConvolutionalConfiguration(adversaryLearningConfiguration);
@@ -42,6 +49,12 @@ public class TicTacToeReinforcementLearningMain {
     ConvolutionResidualNet convolutionalLayerNet =
         new ConvolutionResidualNet(adversaryLearningConfiguration.getLearningRate());
 
+    if (null != adversaryLearningConfiguration.getLearningRateSchedule()) {
+
+      convolutionalLayerNet =
+          new ConvolutionResidualNet(adversaryLearningConfiguration.getLearningRateSchedule());
+    }
+    
     ComputationGraphConfiguration convolutionalLayerNetConfiguration =
         convolutionalLayerNet.createConvolutionalGraphConfiguration();
 
@@ -49,24 +62,5 @@ public class TicTacToeReinforcementLearningMain {
     net.init();
 
     return net;
-  }
-  
-  static class TicTacToeLearningShedule implements ISchedule {
-    
-    @Override
-    public double valueAt(int iteration, int epoch) {
-
-      if (iteration <= 600) {
-        return 8e-4;
-      }
-      
-      return 1e-4;
-    }
-
-    @Override
-    public ISchedule clone() {
-      return new TicTacToeLearningShedule();
-    }
-    
   }
 }
