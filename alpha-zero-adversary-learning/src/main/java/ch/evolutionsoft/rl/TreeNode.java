@@ -3,7 +3,6 @@ package ch.evolutionsoft.rl;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -11,8 +10,6 @@ import java.util.Set;
 import org.nd4j.linalg.api.ndarray.INDArray;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import ch.evolutionsoft.net.game.NeuralNetConstants;
 
 public class TreeNode {
 
@@ -79,26 +76,9 @@ public class TreeNode {
 	
 	protected TreeNode selectMove(double cpUct) {
 
-	  // Handle never visited children
-	  List<TreeNode> neverVisitedChildren = new ArrayList<>();
-      List<TreeNode> childNodes = new LinkedList<>(this.children.values());
+      List<TreeNode> childNodes = new ArrayList<>(this.children.values());
       Collections.shuffle(childNodes);
-      
-      for (TreeNode treeNode : childNodes) {
-        
-        if (0 >= treeNode.timesVisited) {
-          neverVisitedChildren.add(treeNode);
-        }
-      }
-      
-      if (!neverVisitedChildren.isEmpty()) {
-        
-        return neverVisitedChildren.get(
-            NeuralNetConstants.randomGenerator.nextInt(
-                neverVisitedChildren.size())
-            );
-      }
-	  
+
       double bestValue = Integer.MIN_VALUE;
       TreeNode bestNode = null;
       

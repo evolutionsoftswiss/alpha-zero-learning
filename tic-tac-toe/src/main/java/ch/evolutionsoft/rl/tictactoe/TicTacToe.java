@@ -27,11 +27,17 @@ public class TicTacToe extends Game {
   }
 
   private static final Logger log = LoggerFactory.getLogger(TicTacToe.class);
-  
+
 
   @Override
-  public int getFieldCount() {
-    
+  public int getNumberOfAllAvailableMoves() {
+
+    return TicTacToeConstants.COLUMN_COUNT;
+  }
+
+  @Override
+  public int getNumberOfCurrentMoves() {
+
     return TicTacToeConstants.COLUMN_COUNT;
   }
 
@@ -93,11 +99,13 @@ public class TicTacToe extends Game {
   }
 
   @Override
-  public INDArray doFirstMove(int index) {
+  public INDArray doFirstMove(int gameNumber) {
 
+    int moveIndex = gameNumber % COLUMN_COUNT;
+    
     INDArray emptyBoard = TicTacToeConstants.EMPTY_CONVOLUTIONAL_PLAYGROUND.dup();
     
-    INDArray newBoard = makeMove(emptyBoard, index, TicTacToeConstants.MAX_PLAYER_CHANNEL);
+    INDArray newBoard = makeMove(emptyBoard, moveIndex, TicTacToeConstants.MAX_PLAYER_CHANNEL);
 
     this.currentPlayer = Game.MIN_PLAYER;
     
@@ -190,7 +198,7 @@ public class TicTacToe extends Game {
   }
 
   @Override
-  public void evaluateOpeningAnswers(ComputationGraph convolutionalNetwork) {
+  public void evaluateBoardActionExamples(ComputationGraph convolutionalNetwork) {
 
     INDArray centerFieldOpeningAnswer = convolutionalNetwork.output(generateCenterFieldInputImagesConvolutional())[0];
     INDArray cornerFieldOpeningAnswer = convolutionalNetwork

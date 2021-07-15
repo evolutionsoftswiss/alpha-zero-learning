@@ -37,7 +37,7 @@ public class MonteCarloSearch {
     this.computationGraph = computationGraph;
     this.rootNode = new TreeNode(-1, game.getOtherPlayer(game.currentPlayer), 0, 1.0, 0.5, null);
     this.cUct = configuration.getCpUct();
-    this.numberOfSimulations = configuration.getNummberOfMonteCarloSimulations();
+    this.numberOfSimulations = configuration.getNumberOfMonteCarloSimulations();
   }
   
   void playout(INDArray board) {
@@ -97,7 +97,7 @@ public class MonteCarloSearch {
     int[] visitedCounts = new int[game.getNumberOfCurrentMoves()];
     int maxVisitedCounts = 0;
 
-    for (int index = 0; index < game.getFieldCount(); index++) {
+    for (int index = 0; index < game.getNumberOfCurrentMoves(); index++) {
       
       if (this.rootNode.containsChildMoveIndex(index)) {
         
@@ -122,15 +122,15 @@ public class MonteCarloSearch {
       return moveProbabilities;
     }
     
-    INDArray softmaxParameters = Nd4j.zeros(game.getFieldCount());
-    for (int index = 0; index < game.getFieldCount(); index++) {
+    INDArray softmaxParameters = Nd4j.zeros(game.getNumberOfCurrentMoves());
+    for (int index = 0; index < game.getNumberOfCurrentMoves(); index++) {
 
       softmaxParameters.putScalar(index, (1 / temperature) * Math.log(visitedCounts[index]) + 1e-8);
     }
 
     double maxSoftmaxParameter = softmaxParameters.getDouble(softmaxParameters.argMax(0).getInt(0));
     
-    for (int index = 0; index < game.getFieldCount(); index++) {
+    for (int index = 0; index < game.getNumberOfCurrentMoves(); index++) {
 
       moveProbabilities.putScalar(index, Math.exp(softmaxParameters.getDouble(index) - maxSoftmaxParameter)); 
     }

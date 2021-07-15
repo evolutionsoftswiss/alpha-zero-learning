@@ -1,36 +1,153 @@
 package ch.evolutionsoft.rl;
 
+import org.deeplearning4j.nn.graph.ComputationGraph;
 import org.nd4j.linalg.schedule.ISchedule;
 
 import ch.evolutionsoft.net.game.NeuralNetConstants;
 
 /**
- * 
+ * {@link AdversaryLearningConfiguration} defines several configuration parameters
+ * affecting the behavior of alpha zero learning.
  * 
  * @author evolutionsoft
  */
 public class AdversaryLearningConfiguration {
-  
+
+  /**
+   * Fixed {@link ComputationGraph} learning rate, currently the save option between
+   * restored tempmodel.bin or bestmodel.bin from files. See also comment for
+   * learningRateSchedule.
+   */
   double learningRate;
+  
+  /**
+   * A learningRateSchedule defining different learning rates in function of the
+   * number of performed net iterations meaning calls to {@link ComputationGraph} fit method here.
+   * 
+   * Be careful when {@link ComputationGraph} gets restored from files tempmodel.bin or bestmodel.bin.
+   * Double.NaN values were observed after restoring with learningRateSchedule.
+   * 
+   * The iterations deciding the learning rate for ISchedule is not directly related to alpha zero 
+   * numberOfIterations. With alwaysUpdateNeuralNetwork = true it is also dependent of 
+   * numberOfEpisodesBeforePotentialUpdate. For the default TicTacToe {@link AdversaryLearningConfiguration} 
+   * with numberOfEpisodesBeforePotentialUpdate = 5. The relation between ISchedule iterations and Alpha Zero
+   * numberOfIterations is then: 5 * learningRateIterations = numberOfIterations.
+   * 
+   * If alwaysUpdateNeuralNetwork = false the learningRateSchedule iterations depend on the number of 
+   * performed {@link ComputationGraph} updates using the fit method.
+   * 
+   */
   ISchedule learningRateSchedule;
 
+  /**
+   * Value of the dirichlet alpha used to add noise to move probability distributions.
+   * TicTacToe uses a rather high default value compared to other games known values from Alpha Zero.
+   */
   double dirichletAlpha;
 
+  /**
+   * Weight of the dirichlet noise added to currently known move probabilities.
+   * The higher default TicTacToe value helped to generate more unique training examples.
+   * The known unique 4520 training examples (from dl4j supervised leanring project) is not
+   * completely generated after the current numberOfIterations.
+   */
   double dirichletWeight;
+
+  /**
+   * True means Alpha Zero approach to update the neural net without games comparing the
+   * win rate of different neural net versions. After numberOfEpisodesBeforePotentialUpdate
+   * the Alpha Zero net gets always updated. gamesToGetNewNetworkWinRatio and 
+   * updateGamesNewNetworkWinRatioThreshold are irrelevant with this configuration.
+   * 
+   * False means the AlphaGo Zero approach by running games with different neural net versions.
+   * gamesToGetNewNetworkWinRatio and updateGamesNewNetworkWinRatioThreshold are used to
+   * decide if the neural net gets updated or not.
+   */
   boolean alwaysUpdateNeuralNetwork;
+
+  /**
+   * Number of total games to perform before deciding to update neural net or not.
+   * Only relevant with alwaysUpdateNeuralNetwork = false.
+   */
   int gamesToGetNewNetworkWinRatio;
+
+  /**
+   * Win ratio minimum to perform an update of the neural network.
+   * 
+   *  updateAfterBetterPlayout = 
+   *    (newNeuralNetVersionWins + 0.5 * draws) /
+   *    (double) (newNeuralNetVersionWins + oldNeuralNetVersionWins + 0.5 * draws) > updateGamesNewNetworkWinRatioThreshold;
+   */
   double updateGamesNewNetworkWinRatioThreshold;
-  int numberOfEpisodesBeforePotentialUpdate;
+
+  /**
+   * An Alpha Zero iteration is the one game from start to end. Each iteration or episode generates potentially new
+   * training examples used to train the neural net. numberOfIterationsBeforePotentialUpdate defines 
+   * how much iterations will be run to gather training examples before a potential neural net update.
+   */
+  int numberOfIterationsBeforePotentialUpdate;
+
+  /**
+   * Mainly used to continue training after program termination.
+   * Only iterationStart > 1 causes a restore of saved tempmodel.bin, bestmodel.bin and trainexamples.obj.
+   * If you decide to run additional 1000 iterations after 4000 performed iterations with
+   * saved latest values after program termination,
+   * you can use iterationStart = 4001 and numberOfIterations = 1000.
+   */
   int iterationStart;
+
+  /**
+   * numberOfIterations here means the total number of Alpha Zero iterations.
+   */
   int numberOfIterations;
+
+  /**
+   * After checkPointIterationsFrequency store additional files containing the current
+   * model and training examples.
+   */
   int checkPointIterationsFrequency;
+
+  /**
+   * When the temperature used in {@link MonteCarloSearch} getActionValues() should become 0.
+   * Currently only 1 or 0 are used. Too small values > 0 can cause overflows.
+   * A temperature == 0 will lead to move action probabilities all zero, expect
+   * one being one. Temperatures > 0 keep probabilities > 0 for all move actions
+   * in function of the number of visits during {@link MonteCarloSearch}.
+   */
   int fromNumberOfIterationsTemperatureZero;
+  
+  /**
+   * Currently unused in TicTacToe example implementation.
+   * Also in early iterations use zero temperature after having reached the
+   * specified number of moves in an alpha zero iteration.
+   */
   int fromNumberOfMovesTemperatureZero;
+
+  /**
+   * The maximum number of train examples to keep in history and reuse for neural net fit.
+   * TicTacToe never exceeds the used value of 5000.
+   * Typical values for Go 19x19 are 1 or 2 million.
+   */
   int maxTrainExamplesHistory;
 
+  /**
+   * {@link MonteCarloSearch} parameter influencing exploration / exploitation of
+   * different move actions. Currently 1 is used.
+   */
   double cpUct;
-  int nummberOfMonteCarloSimulations;
 
+  /**
+   * How much single playout steps should {@link MonteCarloSearch} perform.
+   * TicTacToe example implementation uses 30.
+   * Typical values for Go 9x9 and Go 19x19 would be 400 and 1600.
+   */
+  int numberOfMonteCarloSimulations;
+
+  /**
+   * Default initial values for TicTacToe example implementation.
+   * 
+   * @author evolutionsoft
+   */
   public static class Builder {
 
     double learningRate = 1e-4;
@@ -41,16 +158,16 @@ public class AdversaryLearningConfiguration {
     boolean alwaysUpdateNeuralNetwork = true;
     int gamesToGetNewNetworkWinRatio = 36;
     double updateGamesNewNetworkWinRatioThreshold = 0.55;
-    int numberOfEpisodesBeforePotentialUpdate = 5;
+    int numberOfIterationsBeforePotentialUpdate = 5;
     int iterationStart = 1;
-    int numberOfIterations = 4000;
-    int checkPointIterationsFrequency = 1000;
-    int fromNumberOfIterationsTemperatureZero = 2500;
+    int numberOfIterations = 2000;
+    int checkPointIterationsFrequency = 500;
+    int fromNumberOfIterationsTemperatureZero = 1000;
     int fromNumberOfMovesTemperatureZero = -1;
     int maxTrainExamplesHistory = 5000;
 
     double cpUct = 1.0;
-    int numberOfMonteCarloSimulations = 50;
+    int numberOfMonteCarloSimulations = 30;
     
     public AdversaryLearningConfiguration build() {
       
@@ -63,7 +180,7 @@ public class AdversaryLearningConfiguration {
       configuration.alwaysUpdateNeuralNetwork = alwaysUpdateNeuralNetwork;
       configuration.gamesToGetNewNetworkWinRatio = gamesToGetNewNetworkWinRatio;
       configuration.updateGamesNewNetworkWinRatioThreshold = updateGamesNewNetworkWinRatioThreshold;
-      configuration.numberOfEpisodesBeforePotentialUpdate = numberOfEpisodesBeforePotentialUpdate;
+      configuration.numberOfIterationsBeforePotentialUpdate = numberOfIterationsBeforePotentialUpdate;
       configuration.iterationStart = iterationStart;
       configuration.numberOfIterations = numberOfIterations;
       configuration.checkPointIterationsFrequency = checkPointIterationsFrequency;
@@ -71,7 +188,7 @@ public class AdversaryLearningConfiguration {
       configuration.fromNumberOfMovesTemperatureZero = fromNumberOfMovesTemperatureZero;
       configuration.maxTrainExamplesHistory = maxTrainExamplesHistory;
       configuration.cpUct = cpUct;
-      configuration.nummberOfMonteCarloSimulations = numberOfMonteCarloSimulations;
+      configuration.numberOfMonteCarloSimulations = numberOfMonteCarloSimulations;
       
       return configuration;
     }
@@ -129,8 +246,8 @@ public class AdversaryLearningConfiguration {
       return this;
     }
 
-    public Builder numberOfEpisodesBeforePotentialUpdate(int numberOfEpisodesBeforePotentialUpdate) {
-      this.numberOfEpisodesBeforePotentialUpdate = numberOfEpisodesBeforePotentialUpdate;
+    public Builder numberOfIterationsBeforePotentialUpdate(int numberOfEpisodesBeforePotentialUpdate) {
+      this.numberOfIterationsBeforePotentialUpdate = numberOfEpisodesBeforePotentialUpdate;
       return this;
     }
     
@@ -174,14 +291,14 @@ public class AdversaryLearningConfiguration {
         "\n alwaysUpdateNeuralNetwork: " + this.alwaysUpdateNeuralNetwork +
         "\n gamesToGetNewNetworkWinRatio: " + (this.alwaysUpdateNeuralNetwork ? "-" : this.gamesToGetNewNetworkWinRatio) +
         "\n updateGamesNewNetworkWinRatioThreshold: " + (this.alwaysUpdateNeuralNetwork ? "-" : this.updateGamesNewNetworkWinRatioThreshold) +
-        "\n numberOfEpisodesBeforePotentialUpdate: " + this.numberOfEpisodesBeforePotentialUpdate + 
+        "\n numberOfEpisodesBeforePotentialUpdate: " + this.numberOfIterationsBeforePotentialUpdate + 
         "\n iterationStart: " + this.iterationStart + 
         "\n numberOfIterations: " + this.numberOfIterations +
         "\n fromNumberOfIterationsTemperatureZero: " + this.fromNumberOfIterationsTemperatureZero +
         "\n fromNumberOfMovesTemperatureZero: " + this.fromNumberOfMovesTemperatureZero +
         "\n maxTrainExamplesHistory: " + this.maxTrainExamplesHistory +
         "\n cpUct: " + this.cpUct +
-        "\n numberOfMonteCarloSimulations: " + this.nummberOfMonteCarloSimulations;
+        "\n numberOfMonteCarloSimulations: " + this.numberOfMonteCarloSimulations;
   }
 
   public double getLearningRate() {
@@ -240,12 +357,12 @@ public class AdversaryLearningConfiguration {
     this.updateGamesNewNetworkWinRatioThreshold = updateNeuralNetworkThreshold;
   }
 
-  public int getNumberOfEpisodesBeforePotentialUpdate() {
-    return numberOfEpisodesBeforePotentialUpdate;
+  public int getNumberOfIterationsBeforePotentialUpdate() {
+    return numberOfIterationsBeforePotentialUpdate;
   }
 
-  public void setNumberOfEpisodesBeforePotentialUpdate(int numberOfEpisodesBeforePotentialUpdate) {
-    this.numberOfEpisodesBeforePotentialUpdate = numberOfEpisodesBeforePotentialUpdate;
+  public void setNumberOfIterationsBeforePotentialUpdate(int numberOfEpisodesBeforePotentialUpdate) {
+    this.numberOfIterationsBeforePotentialUpdate = numberOfEpisodesBeforePotentialUpdate;
   }
   
   public int getIterationStart() {
@@ -315,11 +432,11 @@ public class AdversaryLearningConfiguration {
     this.cpUct = cpUct;
   }
 
-  public int getNummberOfMonteCarloSimulations() {
-    return nummberOfMonteCarloSimulations;
+  public int getNumberOfMonteCarloSimulations() {
+    return numberOfMonteCarloSimulations;
   }
 
-  public void setNummberOfMonteCarloSimulations(int nummberOfMonteCarloSimulations) {
-    this.nummberOfMonteCarloSimulations = nummberOfMonteCarloSimulations;
+  public void setNumberOfMonteCarloSimulations(int nummberOfMonteCarloSimulations) {
+    this.numberOfMonteCarloSimulations = nummberOfMonteCarloSimulations;
   }
 }

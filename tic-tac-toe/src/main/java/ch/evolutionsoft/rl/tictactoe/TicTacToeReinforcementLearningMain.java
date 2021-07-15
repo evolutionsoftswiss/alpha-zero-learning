@@ -24,11 +24,12 @@ public class TicTacToeReinforcementLearningMain {
     TicTacToeReinforcementLearningMain main = new TicTacToeReinforcementLearningMain();
     
     Map<Integer, Double> learningRatesByIterations = new HashMap<>();
-    learningRatesByIterations.put(0, 8e-4);
-    learningRatesByIterations.put(500, 1e-4);
+    learningRatesByIterations.put(0, 2e-3);
+    learningRatesByIterations.put(200, 5e-4);
     MapSchedule learningRateMapSchedule = new MapSchedule(ScheduleType.ITERATION, learningRatesByIterations);
     AdversaryLearningConfiguration adversaryLearningConfiguration =
-        new AdversaryLearningConfiguration.Builder().learningRateSchedule(learningRateMapSchedule).
+        new AdversaryLearningConfiguration.Builder().
+        learningRateSchedule(learningRateMapSchedule).
         build();
    
     ComputationGraph neuralNet = main.createConvolutionalConfiguration(adversaryLearningConfiguration);

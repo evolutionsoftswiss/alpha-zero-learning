@@ -11,6 +11,13 @@ import org.nd4j.linalg.factory.Nd4j;
 
 import ch.evolutionsoft.net.game.NeuralNetConstants;
 
+/**
+ * {@link AdversaryAgentDriver} is only relevant if {@link AdversaryLearningConfiguration} has alwaysUpdateNeuralNetwork = false.
+ * In that case, a configured number of games and win rate decide if the alpha zero network gets updated with newest version of
+ * the neural net, a {@link ComputationGraph} here.
+ * 
+ * @author evolutionsoft
+ */
 public class AdversaryAgentDriver {
 
   ComputationGraph player1Policy, player2Policy;
@@ -35,7 +42,7 @@ public class AdversaryAgentDriver {
     
     for (int gameNumber = 1; gameNumber <= numberOfEpisodesPlayer1Starts; gameNumber++) {
       
-      double gameResult = this.playGame(configuration, configuration.getCurrentTemperature(iteration, -1), gameNumber % game.getFieldCount());
+      double gameResult = this.playGame(configuration, gameNumber);
       
       if (gameResult >= MAX_WIN) {
         
@@ -57,7 +64,7 @@ public class AdversaryAgentDriver {
 
     for (int gameNumber = 1; gameNumber <= numberOfEpisodesPlayer2Starts; gameNumber++) {
       
-      double gameResult = this.playGame(configuration, configuration.getCurrentTemperature(iteration, -1), gameNumber % game.getFieldCount());
+      double gameResult = this.playGame(configuration, gameNumber);
       
       if (gameResult <= MIN_WIN) {
         
@@ -76,26 +83,26 @@ public class AdversaryAgentDriver {
     return new int[] {player1Wins, player2Wins, draws};
   }
   
-  public double playGame(AdversaryLearningConfiguration configuration, double temperature, int firstIndex) {
+  public double playGame(AdversaryLearningConfiguration configuration, int gameNumber) {
     
     MonteCarloSearch player1 = new MonteCarloSearch(this.game, this.player1Policy, configuration);
     MonteCarloSearch player2 = new MonteCarloSearch(this.game, this.player2Policy, configuration);
     
-    INDArray currentBoard = game.doFirstMove(firstIndex);
+    INDArray currentBoard = game.doFirstMove(gameNumber);
     Set<Integer> emptyFields = game.getValidMoveIndices(currentBoard);
     
     int currentPlayer = Game.MIN_PLAYER;
 
     while (!game.gameEnded(currentBoard)) {
     
-      INDArray moveActionValues = Nd4j.zeros(game.getFieldCount());
+      INDArray moveActionValues = Nd4j.zeros(game.getNumberOfAllAvailableMoves());
       if (currentPlayer == Game.MAX_PLAYER) {
         
-        moveActionValues = player1.getActionValues(currentBoard, temperature);
+        moveActionValues = player1.getActionValues(currentBoard, 0);
         
       } else if (currentPlayer == Game.MIN_PLAYER) {
         
-        moveActionValues = player2.getActionValues(currentBoard, temperature);
+        moveActionValues = player2.getActionValues(currentBoard, 0);
       }
       
       int moveAction = moveActionValues.argMax(0).getInt(0);

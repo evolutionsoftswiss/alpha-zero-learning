@@ -14,25 +14,25 @@ import ch.evolutionsoft.rl.AdversaryLearningConfiguration;
 import ch.evolutionsoft.rl.Game;
 import ch.evolutionsoft.rl.MonteCarloSearch;
 
-public class TicTacToePlayoutMain {
+public class TicTacToeGamesMain {
 
-  private static final Logger log = LoggerFactory.getLogger(TicTacToePlayoutMain.class);
+  private static final Logger log = LoggerFactory.getLogger(TicTacToeGamesMain.class);
 
   public static void main(String[] args) throws IOException {
     
     ComputationGraph perfectResNet = ModelSerializer.restoreComputationGraph("TicTacToePerfectResidualNet.bin");
     ComputationGraph alphaNet = ModelSerializer.restoreComputationGraph("bestmodel.bin");
     
-    playGamesSupervisedNetVsAlphaZeroNet(perfectResNet, alphaNet);
-    playGamesAlphaNetVsSupervisedResidualNet(perfectResNet, alphaNet);
+    int[] results1 = playGamesSupervisedNetVsAlphaZeroNet(perfectResNet, alphaNet);
+    int[] results2 = playGamesAlphaNetVsSupervisedResidualNet(perfectResNet, alphaNet);
 
+    log.info("Alpha O: loss {} draws {} wins {}", results1[0], results1[1], results1[2]);
+    log.info("Alpha X: loss {} draws {} wins {}", results2[2], results2[1], results2[0]);
   }
 
-  static void playGamesSupervisedNetVsAlphaZeroNet(ComputationGraph perfectResNet, ComputationGraph alphaNet) {
+  static int[] playGamesSupervisedNetVsAlphaZeroNet(ComputationGraph perfectResNet, ComputationGraph alphaNet) {
 
-    int draws1 = 0;
-    int xWins1 = 0;
-    int oWins1 = 0;
+    int[] results = new int[3];
     
     for (int game = 1; game <= 27; game++) {
 
@@ -62,30 +62,28 @@ public class TicTacToePlayoutMain {
       if (ticTacToe.hasWon(board, TicTacToeConstants.MAX_PLAYER_CHANNEL)) {
 
         log.info("X wins after {} moves", numberOfMoves);
-        xWins1++;
+        results[0]++;
       
       } else if (ticTacToe.hasWon(board, TicTacToeConstants.MIN_PLAYER_CHANNEL)) {
 
         log.info("O wins after {} moves", numberOfMoves);
-        oWins1++;
+        results[2]++;
       
       } else if (ticTacToe.getValidMoveIndices(board).isEmpty()) {
 
         log.info("Draw");
-        draws1++;
-        
+        results[1]++;
       }
 
       log.info("Playout finished with first move index {}\nGame ended with board {}", firstMoveIndex, board);
     }
-    log.info("Alpha O: loss {} draws {} wins {}", xWins1, draws1, oWins1);
+    
+    return results;
   }
 
-  static void playGamesAlphaNetVsSupervisedResidualNet(ComputationGraph perfectResNet, ComputationGraph alphaNet) {
+  static int[] playGamesAlphaNetVsSupervisedResidualNet(ComputationGraph perfectResNet, ComputationGraph alphaNet) {
 
-    int draws2 = 0;
-    int xWins2 = 0;
-    int oWins2 = 0;
+    int[] results = new int[3];
     
     for (int game = 1; game <= 27; game++) {
 
@@ -115,23 +113,24 @@ public class TicTacToePlayoutMain {
       if (ticTacToe.hasWon(board, TicTacToeConstants.MAX_PLAYER_CHANNEL)) {
 
         log.info("X wins after {} moves", numberOfMoves);
-        xWins2++;
+        results[0]++;
       
       } else if (ticTacToe.hasWon(board, TicTacToeConstants.MIN_PLAYER_CHANNEL)) {
 
         log.info("O wins after {} moves", numberOfMoves);
-        oWins2++;
+        results[2]++;
       
       } else if (ticTacToe.getValidMoveIndices(board).isEmpty()) {
 
         log.info("Draw");
-        draws2++;
+        results[1]++;
         
       }
 
       log.info("Playout finished with first move index {}\nGame ended with board {}", firstMoveIndex, board);
     }
-    log.info("Alpha X: loss {} draws {} wins {}", oWins2, draws2, xWins2);
+    
+    return results;
   }
 
   static INDArray doMoveFromAlphaZeroNet(ComputationGraph alphaNet, Game ticTacToe, INDArray board, boolean xPlayer) {
