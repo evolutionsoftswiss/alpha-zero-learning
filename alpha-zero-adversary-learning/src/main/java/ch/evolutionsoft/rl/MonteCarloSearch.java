@@ -9,13 +9,15 @@ import org.nd4j.linalg.factory.Nd4j;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import ch.evolutionsoft.net.game.NeuralNetConstants;
+
 public class MonteCarloSearch {
   
   Logger logger = LoggerFactory.getLogger(MonteCarloSearch.class);
 
   double cUct = 1.0;
   
-  int numberOfSimulations = 50;
+  int numberOfSimulations;
   
   Game game;
 
@@ -114,10 +116,13 @@ public class MonteCarloSearch {
     if (0 == temperature) {
       
       INDArray visitedCountsArray = Nd4j.createFromArray(visitedCounts);
+  
+      INDArray visitedCountsMaximums = Nd4j.where(visitedCountsArray.gte(visitedCountsArray.amax(0).getNumber(0)), null, null)[0];
       
-      INDArray visitedCountsMax = visitedCountsArray.argMax(0);// Lower index is taken on equal max values
-      
-      moveProbabilities.putScalar(visitedCountsMax.getInt(0), 1);
+      moveProbabilities.putScalar(
+          visitedCountsMaximums.getInt(
+              NeuralNetConstants.randomGenerator.nextInt((int) visitedCountsMaximums.length())),
+          NeuralNetConstants.ONE);
       
       return moveProbabilities;
     }
@@ -128,7 +133,7 @@ public class MonteCarloSearch {
       softmaxParameters.putScalar(index, (1 / temperature) * Math.log(visitedCounts[index]) + 1e-8);
     }
 
-    double maxSoftmaxParameter = softmaxParameters.getDouble(softmaxParameters.argMax(0).getInt(0));
+    double maxSoftmaxParameter = softmaxParameters.amaxNumber().doubleValue();
     
     for (int index = 0; index < game.getNumberOfCurrentMoves(); index++) {
 
