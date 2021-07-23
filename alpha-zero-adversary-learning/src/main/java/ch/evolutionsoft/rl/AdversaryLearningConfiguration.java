@@ -39,6 +39,8 @@ public class AdversaryLearningConfiguration {
    */
   ISchedule learningRateSchedule;
 
+  int batchSize;
+
   /**
    * Value of the dirichlet alpha used to add noise to move probability distributions.
    * TicTacToe uses a rather high default value compared to other games known values from Alpha Zero.
@@ -57,7 +59,7 @@ public class AdversaryLearningConfiguration {
    * True means Alpha Zero approach to update the neural net without games comparing the
    * win rate of different neural net versions. After numberOfEpisodesBeforePotentialUpdate
    * the Alpha Zero net gets always updated. gamesToGetNewNetworkWinRatio and 
-   * updateGamesNewNetworkWinRatioThreshold are irrelevant with this configuration.
+   * updateGamesNewNetworkWinRatioThreshold are irrelevant with this configuration set to true.
    * 
    * False means the AlphaGo Zero approach by running games with different neural net versions.
    * gamesToGetNewNetworkWinRatio and updateGamesNewNetworkWinRatioThreshold are used to
@@ -132,7 +134,7 @@ public class AdversaryLearningConfiguration {
 
   /**
    * {@link MonteCarloSearch} parameter influencing exploration / exploitation of
-   * different move actions. Currently 1 is used.
+   * different move actions. Currently 1.5 is used.
    */
   double cpUct;
 
@@ -152,6 +154,7 @@ public class AdversaryLearningConfiguration {
 
     double learningRate = 1e-4;
     ISchedule learningRateSchedule;
+    int batchSize = 8192;
 
     double dirichletAlpha = 1.1;
     double dirichletWeight = 0.45;
@@ -160,13 +163,13 @@ public class AdversaryLearningConfiguration {
     double updateGamesNewNetworkWinRatioThreshold = 0.55;
     int numberOfIterationsBeforePotentialUpdate = 5;
     int iterationStart = 1;
-    int numberOfIterations = 2000;
+    int numberOfIterations = 1250;
     int checkPointIterationsFrequency = 500;
-    int fromNumberOfIterationsTemperatureZero = 1000;
+    int fromNumberOfIterationsTemperatureZero = 750;
     int fromNumberOfMovesTemperatureZero = -1;
     int maxTrainExamplesHistory = 5000;
 
-    double cpUct = 1.0;
+    double cpUct = 1.5;
     int numberOfMonteCarloSimulations = 30;
     
     public AdversaryLearningConfiguration build() {
@@ -175,6 +178,7 @@ public class AdversaryLearningConfiguration {
       
       configuration.learningRate = learningRate;
       configuration.learningRateSchedule = learningRateSchedule;
+      configuration.batchSize = batchSize;
       configuration.dirichletAlpha = dirichletAlpha;
       configuration.dirichletWeight = dirichletWeight;
       configuration.alwaysUpdateNeuralNetwork = alwaysUpdateNeuralNetwork;
@@ -203,12 +207,9 @@ public class AdversaryLearningConfiguration {
       return this;
     }
     
-    public ISchedule getLearningRateSchedule() {
-      return learningRateSchedule;
-    }
-
-    public void setLearningRateSchedule(ISchedule learningRateSchedule) {
-      this.learningRateSchedule = learningRateSchedule;
+    public Builder batchSize(int batchSize) {
+      this.batchSize = batchSize;
+      return this;
     }
 
     public Builder dirichletAlpha(double dirichletAlpha) {
@@ -286,6 +287,7 @@ public class AdversaryLearningConfiguration {
   public String toString() {
     
     return " learningRate: " + (null == this.learningRateSchedule ? "-" : this.learningRate) +
+        "\n batch size: " + this.batchSize +
         "\n dirichletAlpha: " + this.dirichletAlpha + 
         "\n dirichletWeight: " + this.dirichletWeight +
         "\n alwaysUpdateNeuralNetwork: " + this.alwaysUpdateNeuralNetwork +
@@ -315,6 +317,14 @@ public class AdversaryLearningConfiguration {
 
   public void setLearningRateSchedule(ISchedule learningRateSchedule) {
     this.learningRateSchedule = learningRateSchedule;
+  }
+  
+  public int getBatchSize() {
+    return batchSize;
+  }
+
+  public void setBatchSize(int batchSize) {
+    this.batchSize = batchSize;
   }
 
   public double getDirichletAlpha() {
@@ -391,7 +401,7 @@ public class AdversaryLearningConfiguration {
 
   
   public double getCurrentTemperature(int iteration, int moveNumber) {
-    
+    // TODO clean up different gte / gt
     if (iteration >= getFromNumberOfIterationsTemperatureZero() ||
         moveNumber > getFromNumberOfMovesTemperatureZero()) {
       return 0;

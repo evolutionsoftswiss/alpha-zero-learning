@@ -73,6 +73,11 @@ public abstract class Game {
   public void evaluateNetwork(ComputationGraph computationGraph) {
     
   }
+  
+  public Game createNewInstance() {
+    
+    return null;
+  }
 
   public Object savePosition() {
     

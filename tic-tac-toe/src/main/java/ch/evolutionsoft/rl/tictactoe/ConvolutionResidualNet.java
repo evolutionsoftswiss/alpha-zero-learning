@@ -61,6 +61,10 @@ public class ConvolutionResidualNet {
   private double learningRate = 1e-3;
   
   private ISchedule learningRateSchedule;
+  
+  public ConvolutionResidualNet() {
+    
+  }
 
   public ConvolutionResidualNet(double learningRate) {
 
@@ -90,7 +94,7 @@ public class ConvolutionResidualNet {
         .weightInit(WeightInit.RELU);
   }
 
-  ComputationGraphConfiguration createConvolutionalGraphConfiguration() {
+  public ComputationGraphConfiguration createConvolutionalGraphConfiguration() {
 
     return new ComputationGraphConfiguration.GraphBuilder(createGeneralConfiguration())
         .addInputs(INPUT).setInputTypes(InputType.convolutional(3, 3, 3))

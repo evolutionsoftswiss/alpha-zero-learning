@@ -135,7 +135,7 @@ public class TicTacToeGamesMain {
 
   static INDArray doMoveFromAlphaZeroNet(ComputationGraph alphaNet, Game ticTacToe, INDArray board, boolean xPlayer) {
     int moveIndex = new MonteCarloSearch(ticTacToe, alphaNet, new AdversaryLearningConfiguration.
-        Builder().build(), board).getActionValues(board, 0).argMax(0).getInt(0);
+        Builder().build()).getActionValues(board, 0).argMax(0).getInt(0);
     
     if (!ticTacToe.getValidMoveIndices(board).contains(moveIndex)) {
       log.warn("Invalid O move from alpha zero net.");

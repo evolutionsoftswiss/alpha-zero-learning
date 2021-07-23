@@ -9,12 +9,14 @@ import java.io.ObjectOutputStream;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
 
 import org.apache.commons.math3.distribution.EnumeratedIntegerDistribution;
 import org.deeplearning4j.nn.graph.ComputationGraph;
 import org.deeplearning4j.util.ModelSerializer;
+import org.deeplearning4j.util.NetworkUtils;
 import org.nd4j.linalg.api.ndarray.INDArray;
 import org.nd4j.linalg.dataset.api.MultiDataSet;
 import org.nd4j.linalg.factory.Nd4j;
@@ -40,6 +42,8 @@ public class AdversaryLearning {
   public static final double MIN_WIN = NeuralNetConstants.ZERO;
 
   public static final int NO_MOVE = -2;
+  
+  public static final int SEVEN_DIGITS = 7;
 
   private static final Logger log = LoggerFactory.getLogger(AdversaryLearning.class);
 
@@ -73,8 +77,10 @@ public class AdversaryLearning {
     loadComputationGraphs();
     loadEarlierTrainingExamples();
 
-    for (int iteration = adversaryLearningConfiguration.getIterationStart(); iteration < adversaryLearningConfiguration
-        .getIterationStart() + adversaryLearningConfiguration.getNumberOfIterations(); iteration++) {
+    for (int iteration = adversaryLearningConfiguration.getIterationStart();
+        iteration < adversaryLearningConfiguration.getIterationStart() + 
+        adversaryLearningConfiguration.getNumberOfIterations();
+        iteration++) {
 
       List<AdversaryTrainingExample> newExamples = this.executeEpisode(iteration);
 
@@ -112,7 +118,7 @@ public class AdversaryLearning {
     INDArray currentBoard = game.getInitialBoard();
     int currentPlayer = Game.MAX_PLAYER;
 
-    this.mcts = new MonteCarloSearch(game, computationGraph, adversaryLearningConfiguration, currentBoard);
+    this.mcts = new MonteCarloSearch(game, computationGraph, adversaryLearningConfiguration);
 
     while (!game.gameEnded(currentBoard)) {
 
@@ -229,9 +235,16 @@ public class AdversaryLearning {
 
   private void createCheckpoint(int iteration) throws IOException, FileNotFoundException {
 
+    int prependingZeros = SEVEN_DIGITS - String.valueOf(iteration).length();
+    
+    String prependedZeros = "";
+    for (int n = 1; n <= prependingZeros; n++) {
+      prependedZeros += "0";
+    }
+    
     if (0 == iteration % adversaryLearningConfiguration.getCheckPointIterationsFrequency()) {
 
-      ModelSerializer.writeModel(computationGraph, "bestmodel000" + iteration + ".bin", true);
+      ModelSerializer.writeModel(computationGraph, "bestmodel" + prependedZeros + iteration + ".bin", true);
       saveTrainExamplesHistory(iteration);
     }
   }
@@ -358,48 +371,75 @@ public class AdversaryLearning {
 
   ComputationGraph fitNeuralNet(ComputationGraph computationGraph, List<AdversaryTrainingExample> trainingExamples) {
 
+    int batchSize = adversaryLearningConfiguration.getBatchSize();
+    int trainingExamplesSize = trainingExamples.size();
+    int batchNumber = 1 + trainingExamplesSize / batchSize;
+    
     long[] gameInputBoardStackShape = game.getInitialBoard().shape();
-    INDArray inputBoards = Nd4j.zeros(trainingExamples.size(), gameInputBoardStackShape[0], gameInputBoardStackShape[1],
+    
+    List<MultiDataSet> batchedMultiDataSet = new LinkedList<MultiDataSet>();
+
+    for (int currentBatch = 0; currentBatch < batchNumber; currentBatch++) {
+
+      INDArray inputBoards = Nd4j.zeros(batchSize, gameInputBoardStackShape[0], gameInputBoardStackShape[1],
+          gameInputBoardStackShape[2]);
+      INDArray probabilitiesLabels = Nd4j.zeros(batchSize, game.getNumberOfAllAvailableMoves());
+      INDArray valueLabels = Nd4j.zeros(batchSize, 1);
+      
+      if (currentBatch >= batchNumber - 1) {
+
+        int lastBatchSize = trainingExamplesSize % batchSize;
+        inputBoards = Nd4j.zeros(lastBatchSize, gameInputBoardStackShape[0], gameInputBoardStackShape[1],
         gameInputBoardStackShape[2]);
-    INDArray probabilitiesLabels = Nd4j.zeros(trainingExamples.size(), game.getNumberOfAllAvailableMoves());
-    INDArray valueLabels = Nd4j.zeros(trainingExamples.size(), 1);
-
-    for (int exampleNumber = 0; exampleNumber < trainingExamples.size(); exampleNumber++) {
-
-      AdversaryTrainingExample currentTrainingExample = trainingExamples.get(exampleNumber);
-      inputBoards.putRow(exampleNumber, currentTrainingExample.getBoard());
-
-      INDArray actionIndexProbabilities = Nd4j.zeros(game.getNumberOfAllAvailableMoves());
-      INDArray trainingExampleActionProbabilities = currentTrainingExample.getActionIndexProbabilities();
-      if (actionIndexProbabilities.shape()[0] > trainingExampleActionProbabilities.shape()[0]) {
-
-        for (int i = 0; i < trainingExampleActionProbabilities.shape()[0]; i++) {
-          actionIndexProbabilities.putScalar(i, trainingExampleActionProbabilities.getDouble(i));
-        }
-
-      } else if (actionIndexProbabilities.shape()[0] < currentTrainingExample.getActionIndexProbabilities()
-          .shape()[0]) {
-
-        throw new IllegalArgumentException(
-            "Training example has more action than maximally specified by game.getNumberOfAllAvailableMoves()\n"
-                + "Max specified shape is " + actionIndexProbabilities.shape()[0] + " versus training example "
-                + currentTrainingExample.getActionIndexProbabilities());
-
-      } else {
-
-        actionIndexProbabilities = trainingExampleActionProbabilities;
+        probabilitiesLabels = Nd4j.zeros(lastBatchSize, game.getNumberOfAllAvailableMoves());
+        valueLabels = Nd4j.zeros(lastBatchSize, 1);
       }
 
-      probabilitiesLabels.putRow(exampleNumber, actionIndexProbabilities);
-
-      valueLabels.putRow(exampleNumber, Nd4j.create(1).putScalar(0, currentTrainingExample.getCurrentPlayerValue()));
+      for (int batchExample = 0, exampleNumber = currentBatch * batchSize;
+          exampleNumber < (currentBatch + 1) * batchSize && exampleNumber < trainingExamplesSize;
+          exampleNumber++, batchExample++) {
+        
+        AdversaryTrainingExample currentTrainingExample = trainingExamples.get(exampleNumber);
+        inputBoards.putRow(batchExample, currentTrainingExample.getBoard());
+  
+        INDArray actionIndexProbabilities = Nd4j.zeros(game.getNumberOfAllAvailableMoves());
+        INDArray trainingExampleActionProbabilities = currentTrainingExample.getActionIndexProbabilities();
+        if (actionIndexProbabilities.shape()[0] > trainingExampleActionProbabilities.shape()[0]) {
+  
+          for (int i = 0; i < trainingExampleActionProbabilities.shape()[0]; i++) {
+            actionIndexProbabilities.putScalar(i, trainingExampleActionProbabilities.getDouble(i));
+          }
+  
+        } else if (actionIndexProbabilities.shape()[0] < currentTrainingExample.getActionIndexProbabilities()
+            .shape()[0]) {
+  
+          throw new IllegalArgumentException(
+              "Training example has more action than maximally specified by game.getNumberOfAllAvailableMoves()\n"
+                  + "Max specified shape is " + actionIndexProbabilities.shape()[0] + " versus training example "
+                  + currentTrainingExample.getActionIndexProbabilities());
+  
+        } else {
+  
+          actionIndexProbabilities = trainingExampleActionProbabilities;
+        }
+  
+        probabilitiesLabels.putRow(batchExample, actionIndexProbabilities);
+  
+        valueLabels.putRow(batchExample, Nd4j.create(1).putScalar(0, currentTrainingExample.getCurrentPlayerValue()));
+      }
+      
+      batchedMultiDataSet.add( new org.nd4j.linalg.dataset.MultiDataSet(new INDArray[] { inputBoards },
+      new INDArray[] { probabilitiesLabels, valueLabels }));
     }
 
-    MultiDataSet dataSet = new org.nd4j.linalg.dataset.MultiDataSet(new INDArray[] { inputBoards },
-        new INDArray[] { probabilitiesLabels, valueLabels });
+    for (int batchIteration = 0; batchIteration < batchNumber; batchIteration++) {
+      computationGraph.fit(batchedMultiDataSet.get(batchIteration));
+      log.info("Batch size from computation graph model {}", computationGraph.batchSize());
+    }
 
-    computationGraph.fit(dataSet);
-
+    log.info("Learning rate from computation graph model layer 'OutputLayer': {}",
+        NetworkUtils.getLearningRate(computationGraph, "OutputLayer"));
+    
     // The outputs from the fitted network will have new action probabilities
     this.mcts.resetStoredOutputs();
 

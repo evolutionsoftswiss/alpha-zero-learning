@@ -31,7 +31,7 @@ public class TreeNode {
 	
 	TreeNode parent;
 	
-	private Map<Integer, TreeNode> children = new HashMap<>();
+	Map<Integer, TreeNode> children = new HashMap<>();
 	
 	
 	public TreeNode(
@@ -49,10 +49,9 @@ public class TreeNode {
 		this.moveProbability = moveProbability;
 		this.lastColorMove = colorToMove;
 	}
-
-
+	
 	void expand(Game game, INDArray previousActionProbabilities, INDArray currentBoard) {
-	  
+
 	  Set<Integer> validMoveIndices = game.getValidMoveIndices(currentBoard);
  
 	  for (int moveIndex : validMoveIndices) {
@@ -67,6 +66,7 @@ public class TreeNode {
 	            1 - this.qValue,
 	            this));
 	    }
+	  
 	}
 
 	public boolean isExpanded() {
@@ -107,15 +107,17 @@ public class TreeNode {
 	}
 	
 	
-	public void update(double newValue){
-	  
+	public void update(double newValue) {
+
 	  this.timesVisited++;
 	  
-	  this.qValue += (newValue - this.qValue) / this.timesVisited; 
+	  this.qValue += (newValue - this.qValue) / (1 + this.timesVisited); 
+      
 	}
 	
 	
 	public void updateRecursiv(double newValue) {
+	  
 
 	  if (null != this.parent) {
 	    
@@ -123,6 +125,7 @@ public class TreeNode {
 	  }
 	  
 	  this.update(newValue);
+	  
 	}
 
 	public TreeNode getChildWithMoveIndex(int moveIndex) {

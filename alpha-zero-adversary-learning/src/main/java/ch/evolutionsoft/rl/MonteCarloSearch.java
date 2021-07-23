@@ -15,7 +15,7 @@ public class MonteCarloSearch {
   
   Logger logger = LoggerFactory.getLogger(MonteCarloSearch.class);
 
-  double cUct = 1.0;
+  double cUct = 1.5;
   
   int numberOfSimulations;
   
@@ -24,7 +24,6 @@ public class MonteCarloSearch {
   ComputationGraph computationGraph;
   
   TreeNode rootNode;
-  TreeNode treeNode;
   
   Map<INDArray, INDArray[]> neuralNetOutputsByBoardInputs = new HashMap<INDArray, INDArray[]>();
   
@@ -42,7 +41,7 @@ public class MonteCarloSearch {
     this.numberOfSimulations = configuration.getNumberOfMonteCarloSimulations();
   }
   
-  void playout(INDArray board) {
+  void playout(TreeNode treeNode, Game game, INDArray board) {
     
     INDArray currentBoard = board.dup();
     
@@ -62,7 +61,7 @@ public class MonteCarloSearch {
     double leafValue = neuralNetOutput[1].getDouble(0);
     
     if (game.gameEnded(currentBoard)) {
-      
+
       leafValue = 0.5f;
       
       if (game.hasWon(currentBoard, treeNode.lastColorMove)) {
@@ -76,7 +75,7 @@ public class MonteCarloSearch {
       }
     
     } else {
-      
+
       treeNode.expand(game, actionProbabilities, currentBoard);
     }
 
@@ -89,10 +88,9 @@ public class MonteCarloSearch {
 
     while (playouts < numberOfSimulations) {
 
-      this.treeNode = rootNode;
-      Object savedPositionBeforePlayout = game.savePosition();
-      this.playout(board.dup());
-      game.restorePosition(savedPositionBeforePlayout);
+      TreeNode treeNode = rootNode;
+      Game newGameInstance = game.createNewInstance();
+      this.playout(treeNode, newGameInstance, board.dup());
       playouts++;
     }
     
@@ -128,14 +126,14 @@ public class MonteCarloSearch {
     }
     
     INDArray softmaxParameters = Nd4j.zeros(game.getNumberOfCurrentMoves());
-    for (int index = 0; index < game.getNumberOfCurrentMoves(); index++) {
+    for (int index : game.getValidMoveIndices(board)) {
 
       softmaxParameters.putScalar(index, (1 / temperature) * Math.log(visitedCounts[index]) + 1e-8);
     }
 
-    double maxSoftmaxParameter = softmaxParameters.amaxNumber().doubleValue();
+    double maxSoftmaxParameter = softmaxParameters.maxNumber().doubleValue();
     
-    for (int index = 0; index < game.getNumberOfCurrentMoves(); index++) {
+    for (int index : game.getValidMoveIndices(board)) {
 
       moveProbabilities.putScalar(index, Math.exp(softmaxParameters.getDouble(index) - maxSoftmaxParameter)); 
     }

@@ -20,15 +20,20 @@ import ch.evolutionsoft.rl.AdversaryTrainingExample;
 import ch.evolutionsoft.rl.Game;
 
 public class TicTacToe extends Game {
+
+  private static final Logger log = LoggerFactory.getLogger(TicTacToe.class);
   
   public TicTacToe(int currentPlayer) {
 
     super(currentPlayer);
   }
 
-  private static final Logger log = LoggerFactory.getLogger(TicTacToe.class);
-
-
+  @Override
+  public Game createNewInstance() {
+    
+    return new TicTacToe(currentPlayer);
+  }
+  
   @Override
   public int getNumberOfAllAvailableMoves() {
 
