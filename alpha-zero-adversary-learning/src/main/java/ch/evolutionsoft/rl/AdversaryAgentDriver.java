@@ -116,13 +116,12 @@ public class AdversaryAgentDriver {
       currentPlayer = game.getOtherPlayer(currentPlayer);
     }
     
-    if (game.hasWon(currentBoard, Game.MAX_PLAYER)) {
-      
-      return MAX_WIN;
-    
-    }
-    
-    if (game.hasWon(currentBoard, Game.MIN_PLAYER)) {
+    double endResult = game.getEndResult(currentBoard, currentPlayer);
+    if (endResult > 0.5) {
+
+      return MAX_WIN;    
+
+    } else if (endResult < 0.5) {
       
       return MIN_WIN;
     }

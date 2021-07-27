@@ -111,7 +111,7 @@ public class TreeNode {
 
 	  this.timesVisited++;
 	  
-	  this.qValue += (newValue - this.qValue) / (1 + this.timesVisited); 
+	  this.qValue += (newValue - this.qValue) / (this.timesVisited); 
       
 	}
 	

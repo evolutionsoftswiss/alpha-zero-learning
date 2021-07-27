@@ -12,6 +12,7 @@
 		<nd4j.version>1.0.0-beta7</nd4j.version>
 		<dl4j.version>1.0.0-beta7</dl4j.version>
 		<datavec.version>1.0.0-beta7</datavec.version>
+		<nd4j.backend>linux-x86_64-avx2</nd4j.backend>
 	</properties>
 	
 	<modules>
@@ -32,7 +33,7 @@
 				<groupId>org.nd4j</groupId>
 				<artifactId>nd4j-native</artifactId>
 				<version>${nd4j.version}</version>
-				<classifier>linux-x86_64-avx2</classifier>
+				<classifier>${nd4j.backend}</classifier>
 			</dependency>
 	
 			<!-- Core DL4J functionality -->

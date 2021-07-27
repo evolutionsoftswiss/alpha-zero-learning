@@ -163,9 +163,9 @@ public class AdversaryLearningConfiguration {
     double updateGamesNewNetworkWinRatioThreshold = 0.55;
     int numberOfIterationsBeforePotentialUpdate = 5;
     int iterationStart = 1;
-    int numberOfIterations = 1250;
-    int checkPointIterationsFrequency = 500;
-    int fromNumberOfIterationsTemperatureZero = 750;
+    int numberOfIterations = 1000;
+    int checkPointIterationsFrequency = 200;
+    int fromNumberOfIterationsTemperatureZero = 600;
     int fromNumberOfMovesTemperatureZero = -1;
     int maxTrainExamplesHistory = 5000;
 
@@ -286,7 +286,7 @@ public class AdversaryLearningConfiguration {
   
   public String toString() {
     
-    return " learningRate: " + (null == this.learningRateSchedule ? "-" : this.learningRate) +
+    return " learningRate: " + (null != this.learningRateSchedule ? this.learningRateSchedule : this.learningRate) +
         "\n batch size: " + this.batchSize +
         "\n dirichletAlpha: " + this.dirichletAlpha + 
         "\n dirichletWeight: " + this.dirichletWeight +

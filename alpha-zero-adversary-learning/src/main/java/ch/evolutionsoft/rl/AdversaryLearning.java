@@ -114,7 +114,7 @@ public class AdversaryLearning {
 
     List<AdversaryTrainingExample> trainExamples = new ArrayList<>();
 
-    Object savedPosition = game.savePosition();
+    Game game = this.game.createNewInstance();
     INDArray currentBoard = game.getInitialBoard();
     int currentPlayer = Game.MAX_PLAYER;
 
@@ -143,12 +143,11 @@ public class AdversaryLearning {
 
       updateMonteCarloSearchRoot(currentBoard, moveAction);
 
-      handleGameEnded(trainExamples, currentBoard, currentPlayer);
-
       currentPlayer = currentPlayer == Game.MAX_PLAYER ? Game.MIN_PLAYER : Game.MAX_PLAYER;
+
+      handleGameEnded(trainExamples, currentBoard, currentPlayer);
     }
 
-    game.restorePosition(savedPosition);
 
     return trainExamples;
   }
@@ -159,12 +158,18 @@ public class AdversaryLearning {
 
       this.computationGraph = ModelSerializer.restoreComputationGraph("bestmodel.bin", false);
       this.computationGraph.setLearningRate(this.adversaryLearningConfiguration.getLearningRate());
+      if (null != this.adversaryLearningConfiguration.getLearningRateSchedule()) {
+        this.computationGraph.setLearningRate(this.adversaryLearningConfiguration.getLearningRateSchedule());
+      }
       log.info("restored bestmodel.bin");
 
       if (!this.adversaryLearningConfiguration.isAlwaysUpdateNeuralNetwork()) {
 
         this.previousComputationGraph = ModelSerializer.restoreComputationGraph("tempmodel.bin", false);
         this.previousComputationGraph.setLearningRate(this.adversaryLearningConfiguration.getLearningRate());
+        if (null != this.adversaryLearningConfiguration.getLearningRateSchedule()) {
+          this.computationGraph.setLearningRate(this.adversaryLearningConfiguration.getLearningRateSchedule());
+        }
         log.info("restored tempmodel.bin");
       }
     }
@@ -300,9 +305,9 @@ public class AdversaryLearning {
       moveAction = distribution.sample();
 
       while (!validMoveIndices.contains(moveAction)) {
-        // Not possible with correctly reducedValidActionProbabilities above
-        log.warn("Resample invalid random choice move: {} \nvalidIndices {}\nreducedActionProbs{}", moveAction,
-            validIndices, reducedValidActionProbabilities);
+        // Should not occur with correctly reducedValidActionProbabilities above
+        log.warn("Resample invalid random choice move: {} \nvalidIndices = {}\nreducedActionProbs = {}\ngame = \n{}", moveAction,
+            validIndices, reducedValidActionProbabilities, game);
         moveAction = distribution.sample();
       }
     }
@@ -312,18 +317,20 @@ public class AdversaryLearning {
   private void handleGameEnded(List<AdversaryTrainingExample> trainExamples, INDArray currentBoard, int currentPlayer) {
 
     if (game.gameEnded(currentBoard)) {
+      
+      double gameResult = game.getEndResult(currentBoard, currentPlayer);
+      
+      if (gameResult != 0.5) {
 
-      // Now the currentPlayer has moved, clarify with previousPlayer for clarifying
-      // gameResult
-      int previousPlayer = currentPlayer;
-      if (game.hasWon(currentBoard, previousPlayer)) {
-
-        double gameResult = 0;
-
+        if (currentPlayer == Game.MIN_PLAYER) {
+          
+          gameResult = 1 - gameResult;
+        }
+        
         for (AdversaryTrainingExample trainExample : trainExamples) {
 
           trainExample.setCurrentPlayerValue(
-              (float) (trainExample.getCurrentPlayer() == previousPlayer ? gameResult : 1 - gameResult));
+              (float) (trainExample.getCurrentPlayer() == currentPlayer ? 1 - gameResult : gameResult));
         }
       } else {
 

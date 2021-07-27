@@ -121,14 +121,32 @@ public class TicTacToe extends Game {
   public boolean gameEnded(INDArray board) {
 
     return getValidMoveIndices(board).isEmpty() ||
-        hasWon(board, MAX_PLAYER_CHANNEL) ||
-        hasWon(board, MIN_PLAYER_CHANNEL);
+        getEndResult(board, Game.MAX_PLAYER) != 0.5;
   }
 
   @Override
-  public boolean hasWon(INDArray board, int player) {
+  public double getEndResult(INDArray board, int lastPlayerMove) {
 
-    return horizontalWin(board, player) || verticalWin(board, player) || diagonalWin(board, player);
+    boolean maxWin = horizontalWin(board, Game.MAX_PLAYER) || 
+        verticalWin(board, Game.MAX_PLAYER) || 
+        diagonalWin(board, Game.MAX_PLAYER);
+    
+    if (maxWin) {
+      
+      return 1.0;
+    }
+    
+    boolean minWin = horizontalWin(board, Game.MIN_PLAYER) || 
+        verticalWin(board, Game.MIN_PLAYER) || 
+        diagonalWin(board, Game.MIN_PLAYER);
+    
+    if (minWin) {
+      
+      return 0.0;
+    
+    }
+    
+    return 0.5;
   }
 
   @Override
@@ -354,23 +372,13 @@ public class TicTacToe extends Game {
   
   static INDArray rotate90(INDArray toRotate) {
     
-    INDArray rotated90 = Nd4j.ones(toRotate.shape()).neg();
+    INDArray rotated90 = Nd4j.ones(toRotate.shape());
     
-    for (int row = 0; row < toRotate.shape()[0]; row++) {
-      
-      for (int col = 0; col < toRotate.shape()[1]; col++) {
-        
-        if (row == col) {
-          
-          INDArray slice = toRotate.getColumn(col).dup();
-          rotated90.putRow(row, Nd4j.reverse(slice));
-        } 
-      }
-    }
-
-    int middle = (int) (toRotate.shape()[0] / 2);
-    rotated90.putScalar(new int[]{middle, middle}, toRotate.getDouble(middle, middle));
-    
+    for (int col = 0; col < toRotate.shape()[1]; col++) {
+     
+      INDArray slice = toRotate.getColumn(col).dup();
+      rotated90.putRow(col, Nd4j.reverse(slice));
+    } 
     return rotated90;
   }
 }

@@ -24,11 +24,24 @@ public abstract class Game {
 
   protected int currentPlayer = MAX_PLAYER;
   
+  protected INDArray currentBoard;
+  
   public Game(int currentPlayer) {
     
     this.currentPlayer = currentPlayer;
+    this.currentBoard = this.getInitialBoard();
   }
 
+  public INDArray getCurrentBoard() {
+    
+    return this.currentBoard;
+  }
+  
+  public int getCurrentPlayer() {
+    
+    return this.currentPlayer;
+  }
+  
   /**
    * 
    * @return
@@ -78,13 +91,6 @@ public abstract class Game {
     
     return null;
   }
-
-  public Object savePosition() {
-    
-    return null;
-  }
-  
-  public void restorePosition(Object savedPosition) { }
 
   /**
    * Can be used to track action probabilities to specific board actions during
@@ -186,5 +192,5 @@ public abstract class Game {
    * @param player
    * @return
    */
-  public abstract boolean hasWon(INDArray currentBoard, int player);
+  public abstract double getEndResult(INDArray currentBoard, int player);
 }

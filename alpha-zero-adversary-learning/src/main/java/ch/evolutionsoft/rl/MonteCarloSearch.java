@@ -62,18 +62,14 @@ public class MonteCarloSearch {
     
     if (game.gameEnded(currentBoard)) {
 
-      leafValue = 0.5f;
+      double endResult = game.getEndResult(currentBoard, treeNode.lastColorMove);
+
+      leafValue = endResult;
+      if (Game.MIN_PLAYER == treeNode.lastColorMove) {
       
-      if (game.hasWon(currentBoard, treeNode.lastColorMove)) {
-        
-        leafValue = 1f;
-      
-      // Not possible in TicTacToe, connect four, chess and so an, but in Go
-      } else if (game.hasWon(currentBoard, game.getOtherPlayer(treeNode.lastColorMove))) {
-        
-        leafValue = 0f;
+        leafValue = 1 - leafValue;
       }
-    
+      
     } else {
 
       treeNode.expand(game, actionProbabilities, currentBoard);

@@ -58,13 +58,15 @@ public class TicTacToeGamesMain {
         xPlayer = !xPlayer;
         
       }
+
+      double endResult = ticTacToe.getEndResult(board, xPlayer ? Game.MAX_PLAYER : Game.MIN_PLAYER);
       
-      if (ticTacToe.hasWon(board, TicTacToeConstants.MAX_PLAYER_CHANNEL)) {
+      if (endResult > 0.5) {
 
         log.info("X wins after {} moves", numberOfMoves);
         results[0]++;
       
-      } else if (ticTacToe.hasWon(board, TicTacToeConstants.MIN_PLAYER_CHANNEL)) {
+      } else if (endResult < 0.5) {
 
         log.info("O wins after {} moves", numberOfMoves);
         results[2]++;
@@ -109,13 +111,14 @@ public class TicTacToeGamesMain {
         xPlayer = !xPlayer;
         
       }
-      
-      if (ticTacToe.hasWon(board, TicTacToeConstants.MAX_PLAYER_CHANNEL)) {
+
+      double endResult = ticTacToe.getEndResult(board, xPlayer ? Game.MAX_PLAYER : Game.MIN_PLAYER);      
+      if (endResult > 0.5) {
 
         log.info("X wins after {} moves", numberOfMoves);
         results[0]++;
       
-      } else if (ticTacToe.hasWon(board, TicTacToeConstants.MIN_PLAYER_CHANNEL)) {
+      } else if (endResult < 0.5) {
 
         log.info("O wins after {} moves", numberOfMoves);
         results[2]++;

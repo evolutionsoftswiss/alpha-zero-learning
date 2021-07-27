@@ -25,7 +25,7 @@ public class TicTacToeReinforcementLearningMain {
     
     Map<Integer, Double> learningRatesByIterations = new HashMap<>();
     learningRatesByIterations.put(0, 2e-3);
-    learningRatesByIterations.put(150, 8e-4);
+    learningRatesByIterations.put(120, 8e-4);
     MapSchedule learningRateMapSchedule = new MapSchedule(ScheduleType.ITERATION, learningRatesByIterations);
     AdversaryLearningConfiguration adversaryLearningConfiguration =
         new AdversaryLearningConfiguration.Builder().
