@@ -10,12 +10,14 @@ import org.nd4j.linalg.api.ndarray.INDArray;
 public abstract class Game {
 
   /**
+   * Constant denoting the first or max player.
    * The value corresponds currently also to the channel
    * of the player field stones in TicTacToe
    */
   public static final int MAX_PLAYER = 1;
 
   /**
+   * Constant denoting the second or min player.
    * The value corresponds currently also to the channel
    * of the player field stones in TicTacToe
    */
@@ -25,11 +27,22 @@ public abstract class Game {
   protected int currentPlayer = MAX_PLAYER;
   
   protected INDArray currentBoard;
+
+  public Game() {
+    
+    this(Game.MAX_PLAYER);
+  }
   
   public Game(int currentPlayer) {
     
     this.currentPlayer = currentPlayer;
-    this.currentBoard = this.getInitialBoard();
+    this.currentBoard = getInitialBoard();
+  }
+  
+  public Game(int currentPlayer, INDArray currentBoard) {
+    
+    this.currentPlayer = currentPlayer;
+    this.currentBoard = currentBoard.dup();
   }
 
   public INDArray getCurrentBoard() {
@@ -44,14 +57,15 @@ public abstract class Game {
   
   /**
    * 
-   * @return
+   * @return int[] array with the given Set of valid move indices.
    */
   public int[] getValidIndices(Set<Integer> validIndicesList) {
     
     int[] validIndices = new int[validIndicesList.size()];
 
     int allMovesSize = getNumberOfCurrentMoves();
-    for (int validIndex = 0, index = 0; index < allMovesSize; index++) {
+    int validIndex = 0;
+    for (int index = 0; index < allMovesSize; index++) {
       
       if (validIndicesList.contains(index)) {
         validIndices[validIndex] = index;
@@ -64,12 +78,12 @@ public abstract class Game {
 
   /**
    * 
-   * @param lastColorMove
+   * @param player
    * @return
    */
-  public int getOtherPlayer(int lastColorMove) {
+  public int getOtherPlayer(int player) {
     
-    if (MAX_PLAYER == lastColorMove) {
+    if (MAX_PLAYER == player) {
       
       return MIN_PLAYER;
     }
@@ -108,10 +122,10 @@ public abstract class Game {
    * If you don't want to generate additional symmetry examples from an training example,
    * you can also return an empty list here.
    * 
-   * @param board
-   * @param actionProbabilities
-   * @param currentPlayer
-   * @param iteration
+   * @param board the board input for neural net to create symmetries for
+   * @param actionProbabilities the actionProbabilities to create symmetries for
+   * @param currentPlayer the player to move next
+   * @param iteration iteration as additional info
    * @return
    */
   public List<AdversaryTrainingExample> getSymmetries(INDArray board, INDArray actionProbabilities, int currentPlayer,
@@ -121,17 +135,17 @@ public abstract class Game {
   }
   
   /**
-   * Here boardSize can be used for som games, boardsize + 1 for Go with additional pass move, other
+   * Here boardSize can be used for some games, boardsize + 1 for Go with additional pass move, other
    * number of possible actions would be present for chess
    * 
-   * @return number of all available moves corresponding to the number of action probabilites output
-   * number of the neural net
+   * @return number of all available moves corresponding to the number of action probabilities output
+   * number of the neural net.
    */
   public abstract int getNumberOfAllAvailableMoves();
   
   /**
    * For some games also identical to boardSize, boardsize + 1 for Go with additional pass move
-   * after some number of stones present threshold
+   * after some number of stones present threshold.
    * 
    * @return a number smaller or equal than getNumberOfAllAvailableMoves()
    */
@@ -151,46 +165,46 @@ public abstract class Game {
    * 
    * @return Board after first move
    */
-  public abstract INDArray doFirstMove(int gameNumber);
+  public abstract INDArray doFirstMove(int moveIndex);
   
   /**
-   * Returns indices of valid move fields with the given board
+   * Returns indices of valid move fields with the current board
+   * state and potentially currentPlayer.
    * 
-   * @param board
-   * @return a set of indices of valid move fields
+   * @return a Set of indices of valid move fields
    */
-  public abstract Set<Integer> getValidMoveIndices(INDArray board);
+  public abstract Set<Integer> getValidMoveIndices();
 
   /**
-   * Returns a INDArray mask containing the valid moves at a given board state.
+   * Returns an INDArray mask containing the valid moves at a given board state.
    * This INDArray is used to mask out invalid moves with a probability > zero.
    * 
-   * @param currentBoard
-   * @return INDArray with valid move indices ones, zero for other indices
+   * @return one dimensional INDArray with valid move indices ones, zero for other indices
    */
-  public abstract INDArray getValidMoves(INDArray currentBoard);
+  public abstract INDArray getValidMoves();
 
   /**
    * 
-   * @param board
    * @return true if the game ended, false otherwise
    */
-  public abstract boolean gameEnded(INDArray board);
+  public abstract boolean gameEnded();
 
   /**
+   * Perform the given move and return the new board state.
    * 
-   * @param board
    * @param moveIndex
    * @param player
-   * @return
+   * @return new board after move
    */
-  public abstract INDArray makeMove(INDArray board, int moveIndex, int player);
+  public abstract INDArray makeMove(int moveIndex, int player);
 
   /**
+   * Get the end result of a game. This should be a value between 0 and 1.
+   * Here the current player to move does not inverse the result.
    * 
-   * @param currentBoard
-   * @param player
-   * @return
+   * the lastPlayerMove is max or min and potentially usable in go. It has no effect for TicTacToe.
+   * 
+   * @return a value between 0 and 1, currently 1 for max win, 0 for min win and 0.5 for a draw
    */
-  public abstract double getEndResult(INDArray currentBoard, int player);
+  public abstract double getEndResult(int lastPlayer);
 }

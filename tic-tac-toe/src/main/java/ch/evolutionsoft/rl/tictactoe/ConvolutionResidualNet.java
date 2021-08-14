@@ -6,7 +6,6 @@ import static ch.evolutionsoft.net.game.NeuralNetConstants.DEFAULT_SEED;
 import org.deeplearning4j.nn.conf.ComputationGraphConfiguration;
 import org.deeplearning4j.nn.conf.ConvolutionMode;
 import org.deeplearning4j.nn.conf.NeuralNetConfiguration;
-import org.deeplearning4j.nn.conf.distribution.ConstantDistribution;
 import org.deeplearning4j.nn.conf.graph.ElementWiseVertex;
 import org.deeplearning4j.nn.conf.inputs.InputType;
 import org.deeplearning4j.nn.conf.layers.ActivationLayer;
@@ -137,27 +136,33 @@ public class ConvolutionResidualNet {
             BLOCK2_SEPARABLE_CONVOLUTION2_BATCH_NORNMALIZATION)
         
         .addVertex(ADD1, new ElementWiseVertex(ElementWiseVertex.Op.Add), BLOCK2_POOL, RESIDUAL1)
+
+        .addLayer("policy_conv",
+            new SeparableConvolution2D.Builder(1, 1).nOut(8).hasBias(false).convolutionMode(ConvolutionMode.Same)
+            .build(), ADD1)
         
         .addLayer("dense1", new DenseLayer.Builder().
             nOut(32).
             activation(Activation.LEAKYRELU).
-            build(), ADD1)
+            build(), "policy_conv")
+
+        .addLayer("value_conv",
+            new SeparableConvolution2D.Builder(1, 1).nOut(2).hasBias(false).convolutionMode(ConvolutionMode.Same)
+            .build(), ADD1)
         
         .addLayer("dense2", new DenseLayer.Builder().
             nOut(16).
             activation(Activation.LEAKYRELU).
-            build(), ADD1)
+            build(), "value_conv")
         
         .addLayer(DEFAULT_OUTPUT_LAYER_NAME, new OutputLayer.Builder()
             .nOut(9)
             .activation(Activation.SOFTMAX)
-            .weightInit(new ConstantDistribution(0.01))
             .build(), "dense1")
         
         .addLayer(DEFAULT_OUTPUT_LAYER_NAME + "_value", new OutputLayer.Builder()
             .nOut(1)
             .activation(Activation.SIGMOID)
-            .weightInit(new ConstantDistribution(0.01))
             .lossFunction(LossFunction.MSE)
             .build(), "dense2")
  

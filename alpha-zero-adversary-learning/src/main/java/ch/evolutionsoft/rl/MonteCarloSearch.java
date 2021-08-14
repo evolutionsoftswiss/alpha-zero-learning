@@ -1,7 +1,9 @@
 package ch.evolutionsoft.rl;
 
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
 
 import org.deeplearning4j.nn.graph.ComputationGraph;
 import org.nd4j.linalg.api.ndarray.INDArray;
@@ -15,41 +17,35 @@ public class MonteCarloSearch {
   
   Logger logger = LoggerFactory.getLogger(MonteCarloSearch.class);
 
-  double cUct = 1.5;
+  /**
+   * Use constant cUct at the moment.
+   */
+  double currentUctConstant = 1.5;
   
   int numberOfSimulations;
-  
-  Game game;
 
   ComputationGraph computationGraph;
   
   TreeNode rootNode;
   
-  Map<INDArray, INDArray[]> neuralNetOutputsByBoardInputs = new HashMap<INDArray, INDArray[]>();
+  Map<INDArray, INDArray[]> neuralNetOutputsByBoardInputs = new HashMap<>();
   
-  public MonteCarloSearch(Game game, ComputationGraph computationGraph, AdversaryLearningConfiguration configuration) {
+  public MonteCarloSearch(ComputationGraph computationGraph, AdversaryLearningConfiguration configuration) {
     
-    this(game, computationGraph, configuration, game.getInitialBoard());
-  }
-  
-  public MonteCarloSearch(Game game, ComputationGraph computationGraph, AdversaryLearningConfiguration configuration, INDArray currentBoard) {
-    
-    this.game = game;
     this.computationGraph = computationGraph;
-    this.rootNode = new TreeNode(-1, game.getOtherPlayer(game.currentPlayer), 0, 1.0, 0.5, null);
-    this.cUct = configuration.getCpUct();
+    this.currentUctConstant = configuration.getuctConstantFactor();
     this.numberOfSimulations = configuration.getNumberOfMonteCarloSimulations();
   }
   
-  void playout(TreeNode treeNode, Game game, INDArray board) {
-    
-    INDArray currentBoard = board.dup();
+  void playout(TreeNode treeNode, Game game) {
     
     while (treeNode.isExpanded()) {
       
-      treeNode = treeNode.selectMove(this.cUct);
-      currentBoard = game.makeMove(currentBoard, treeNode.move, treeNode.lastColorMove);
+      treeNode = treeNode.selectMove(this.currentUctConstant);
+      game.makeMove(treeNode.lastMove, treeNode.lastMoveColor);
     }
+    
+    INDArray currentBoard = game.getCurrentBoard();
       
     long[] newShape = new long[currentBoard.shape().length + 1];
     System.arraycopy(currentBoard.shape(), 0, newShape, 1, currentBoard.shape().length);
@@ -59,41 +55,47 @@ public class MonteCarloSearch {
     
     INDArray actionProbabilities = neuralNetOutput[0];
     double leafValue = neuralNetOutput[1].getDouble(0);
-    
-    if (game.gameEnded(currentBoard)) {
 
-      double endResult = game.getEndResult(currentBoard, treeNode.lastColorMove);
+    INDArray validActionProbabilities = actionProbabilities.mul(game.getValidMoves());
+    validActionProbabilities = validActionProbabilities.div(validActionProbabilities.sumNumber());
+    
+    boolean gameEnded = game.gameEnded();
+    if (gameEnded) {
+
+      double endResult = game.getEndResult(treeNode.lastMoveColor);
 
       leafValue = endResult;
-      if (Game.MIN_PLAYER == treeNode.lastColorMove) {
-      
+      if (Game.MAX_PLAYER == treeNode.lastMoveColor) {
+
         leafValue = 1 - leafValue;
       }
-      
-    } else {
-
-      treeNode.expand(game, actionProbabilities, currentBoard);
     }
+    
+    treeNode.updateRecursiv(1 - leafValue);
+    
+    if (!gameEnded) {
 
-    treeNode.updateRecursiv(leafValue);
+      treeNode.expand(game, validActionProbabilities);
+    }
   }
 
-  public INDArray getActionValues(INDArray board, double temperature) {
+  public INDArray getActionValues(Game currentGame, double temperature) {
     
     int playouts = 0;
+    this.rootNode = new TreeNode(-1, currentGame.getOtherPlayer(currentGame.currentPlayer), 0, 1.0, 0.5, null);
 
     while (playouts < numberOfSimulations) {
 
       TreeNode treeNode = rootNode;
-      Game newGameInstance = game.createNewInstance();
-      this.playout(treeNode, newGameInstance, board.dup());
+      Game newGameInstance = currentGame.createNewInstance();
+      this.playout(treeNode, newGameInstance);
       playouts++;
     }
     
-    int[] visitedCounts = new int[game.getNumberOfCurrentMoves()];
+    int[] visitedCounts = new int[currentGame.getNumberOfCurrentMoves()];
     int maxVisitedCounts = 0;
 
-    for (int index = 0; index < game.getNumberOfCurrentMoves(); index++) {
+    for (int index = 0; index < currentGame.getNumberOfCurrentMoves(); index++) {
       
       if (this.rootNode.containsChildMoveIndex(index)) {
         
@@ -105,13 +107,15 @@ public class MonteCarloSearch {
       }
     }
     
-    INDArray moveProbabilities = Nd4j.zeros(game.getNumberOfCurrentMoves());
+    INDArray moveProbabilities = Nd4j.zeros(currentGame.getNumberOfCurrentMoves());
 
     if (0 == temperature) {
       
       INDArray visitedCountsArray = Nd4j.createFromArray(visitedCounts);
   
       INDArray visitedCountsMaximums = Nd4j.where(visitedCountsArray.gte(visitedCountsArray.amax(0).getNumber(0)), null, null)[0];
+
+      visitedCountsArray.close();
       
       moveProbabilities.putScalar(
           visitedCountsMaximums.getInt(
@@ -121,17 +125,30 @@ public class MonteCarloSearch {
       return moveProbabilities;
     }
     
-    INDArray softmaxParameters = Nd4j.zeros(game.getNumberOfCurrentMoves());
-    for (int index : game.getValidMoveIndices(board)) {
+    INDArray softmaxParameters = Nd4j.zeros(currentGame.getNumberOfCurrentMoves());
+    Set<Integer> validMoveIndices = currentGame.getValidMoveIndices();
+    for (int index : validMoveIndices) {
 
-      softmaxParameters.putScalar(index, (1 / temperature) * Math.log(visitedCounts[index]) + 1e-8);
+      softmaxParameters.putScalar(index, (1 / temperature) * Math.log(visitedCounts[index] + 1e-8));
     }
 
     double maxSoftmaxParameter = softmaxParameters.maxNumber().doubleValue();
     
-    for (int index : game.getValidMoveIndices(board)) {
+    for (int index : validMoveIndices) {
 
-      moveProbabilities.putScalar(index, Math.exp(softmaxParameters.getDouble(index) - maxSoftmaxParameter)); 
+      double softmaxParameter = softmaxParameters.getDouble(index);
+      if (Double.isInfinite(softmaxParameter)) {
+        // TODO remove, should no more occur with if's below and above
+        logger.warn("Infinite softmax param {} for valid move index {}, NaN results expected."
+            + " Is {} and getValidMoveIndices() OK ?"
+            + "getValidMoveIndices() had {}, but visitedCounts {}",
+            softmaxParameter,
+            index,
+            currentGame,
+            Arrays.toString(visitedCounts));
+      }
+
+      moveProbabilities.putScalar(index, Math.exp(softmaxParameter - maxSoftmaxParameter));
     }
     
     moveProbabilities = moveProbabilities.div(moveProbabilities.sumNumber());
@@ -143,22 +160,6 @@ public class MonteCarloSearch {
     
     this.neuralNetOutputsByBoardInputs.clear();
   }
-  
-  public double getcUct() {
-    return cUct;
-  }
-
-  public void setcUct(double cUct) {
-    this.cUct = cUct;
-  }
-
-  public int getNumberOfSimulations() {
-    return numberOfSimulations;
-  }
-
-  public void setNumberOfSimulations(int numberOfSimulations) {
-    this.numberOfSimulations = numberOfSimulations;
-  }
 
   TreeNode updateWithMove(int lastMove) {
     
@@ -169,7 +170,8 @@ public class MonteCarloSearch {
     }
     else {
       
-      throw new IllegalArgumentException("no lastMove here: " + lastMove);
+      throw new IllegalArgumentException("no child with move " + lastMove +
+          "found for current root node with last move" + this.rootNode.lastMove);
     }
   }
 }

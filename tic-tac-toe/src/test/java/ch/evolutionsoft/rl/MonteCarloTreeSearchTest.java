@@ -9,7 +9,6 @@ import org.nd4j.linalg.api.ndarray.INDArray;
 import org.nd4j.linalg.factory.Nd4j;
 
 import ch.evolutionsoft.net.game.NeuralNetConstants;
-import ch.evolutionsoft.rl.tictactoe.TicTacToe;
 
 public class MonteCarloTreeSearchTest {
 
@@ -18,27 +17,26 @@ public class MonteCarloTreeSearchTest {
   @BeforeEach
   void initMonteCarloTreeSearch() {
 
-    TicTacToe game = new TicTacToe(Game.MIN_PLAYER);
     ComputationGraph computationGraph = TestHelper.createConvolutionalConfiguration();
     AdversaryLearningConfiguration adversaryLearningConfiguration =
         new AdversaryLearningConfiguration.Builder().numberOfMonteCarloSimulations(1000).build();
     
-    this.mcts = new MonteCarloSearch(game, computationGraph, adversaryLearningConfiguration);
+    this.mcts = new MonteCarloSearch(computationGraph, adversaryLearningConfiguration);
   }
 
   @Test
-  void checkGetActionValuesTreeLateTicTacToePositionWithThreat() {
+  void checkMonteCarloMoveValidityAndTreeVisitCounts() {
     
-    INDArray board = TestHelper.createMiddlePositionBoardWithThreat();
+    Game game = TestHelper.createMiddlePositionBoardWithThreat();
     
-    INDArray actionProbabilities = this.mcts.getActionValues(board, NeuralNetConstants.ONE);
+    INDArray actionProbabilities = this.mcts.getActionValues(game, NeuralNetConstants.ONE);
     
     TreeNode currentNode = this.mcts.rootNode;
     
-    INDArray zeroIndices = actionProbabilities.lte(0);
+    INDArray nonZeroIndices = actionProbabilities.lte(0);
 
     assertEquals(Nd4j.createFromArray(
-        new boolean[] {true, false, true, true, true, false, true, false, false}), zeroIndices);
+        new boolean[] {true, false, true, true, true, false, true, false, false}), nonZeroIndices);
     
     int visitedCountsChildren = 0;
     for (TreeNode rootChildEntry : currentNode.children.values()) {

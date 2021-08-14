@@ -10,6 +10,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import ch.evolutionsoft.net.game.tictactoe.TicTacToeConstants;
+import ch.evolutionsoft.rl.AdversaryLearning;
 import ch.evolutionsoft.rl.AdversaryLearningConfiguration;
 import ch.evolutionsoft.rl.Game;
 import ch.evolutionsoft.rl.MonteCarloSearch;
@@ -39,19 +40,19 @@ public class TicTacToeGamesMain {
       Game ticTacToe = new TicTacToe(Game.MAX_PLAYER);
 
       int firstMoveIndex = game % TicTacToeConstants.COLUMN_COUNT;
-      INDArray board = ticTacToe.doFirstMove(firstMoveIndex);
+      ticTacToe.doFirstMove(firstMoveIndex);
       boolean xPlayer = false;
       int numberOfMoves = 1;
       
-      while (!ticTacToe.gameEnded(board)) {
+      while (!ticTacToe.gameEnded()) {
         
         if (xPlayer) {
 
-          board = doMoveFromSupervisedResidualNet(perfectResNet, ticTacToe, board, xPlayer);
+          doMoveFromSupervisedResidualNet(perfectResNet, ticTacToe, xPlayer);
         
         } else {
 
-          board = doMoveFromAlphaZeroNet(alphaNet, ticTacToe, board, xPlayer);
+          doMoveFromAlphaZeroNet(alphaNet, ticTacToe, xPlayer);
         }
         
         numberOfMoves++;
@@ -59,25 +60,25 @@ public class TicTacToeGamesMain {
         
       }
 
-      double endResult = ticTacToe.getEndResult(board, xPlayer ? Game.MAX_PLAYER : Game.MIN_PLAYER);
+      double endResult = ticTacToe.getEndResult(-1);
       
-      if (endResult > 0.5) {
+      if (endResult > AdversaryLearning.DRAW_VALUE) {
 
         log.info("X wins after {} moves", numberOfMoves);
         results[0]++;
       
-      } else if (endResult < 0.5) {
+      } else if (endResult < AdversaryLearning.DRAW_VALUE) {
 
         log.info("O wins after {} moves", numberOfMoves);
         results[2]++;
       
-      } else if (ticTacToe.getValidMoveIndices(board).isEmpty()) {
+      } else if (ticTacToe.getValidMoveIndices().isEmpty()) {
 
         log.info("Draw");
         results[1]++;
       }
 
-      log.info("Playout finished with first move index {}\nGame ended with board {}", firstMoveIndex, board);
+      log.info("Playout finished with first move index {}\nGame ended with board {}", firstMoveIndex, ticTacToe.getCurrentBoard());
     }
     
     return results;
@@ -92,19 +93,19 @@ public class TicTacToeGamesMain {
       Game ticTacToe = new TicTacToe(Game.MAX_PLAYER);
       
       int firstMoveIndex = game % TicTacToeConstants.COLUMN_COUNT;
-      INDArray board = ticTacToe.doFirstMove(firstMoveIndex);
+      ticTacToe.doFirstMove(firstMoveIndex);
       boolean xPlayer = false;
       int numberOfMoves = 1;
       
-      while (!ticTacToe.gameEnded(board)) {
+      while (!ticTacToe.gameEnded()) {
         
         if (!xPlayer) {
 
-          board = doMoveFromSupervisedResidualNet(perfectResNet, ticTacToe, board, xPlayer);
+          doMoveFromSupervisedResidualNet(perfectResNet, ticTacToe, xPlayer);
         
         } else {
 
-          board = doMoveFromAlphaZeroNet(alphaNet, ticTacToe, board, xPlayer);
+          doMoveFromAlphaZeroNet(alphaNet, ticTacToe, xPlayer);
         }
         
         numberOfMoves++;
@@ -112,54 +113,52 @@ public class TicTacToeGamesMain {
         
       }
 
-      double endResult = ticTacToe.getEndResult(board, xPlayer ? Game.MAX_PLAYER : Game.MIN_PLAYER);      
-      if (endResult > 0.5) {
+      double endResult = ticTacToe.getEndResult(-1);      
+      if (endResult > AdversaryLearning.DRAW_VALUE) {
 
         log.info("X wins after {} moves", numberOfMoves);
         results[0]++;
       
-      } else if (endResult < 0.5) {
+      } else if (endResult < AdversaryLearning.DRAW_VALUE) {
 
         log.info("O wins after {} moves", numberOfMoves);
         results[2]++;
       
-      } else if (ticTacToe.getValidMoveIndices(board).isEmpty()) {
+      } else if (ticTacToe.getValidMoveIndices().isEmpty()) {
 
         log.info("Draw");
         results[1]++;
         
       }
 
-      log.info("Playout finished with first move index {}\nGame ended with board {}", firstMoveIndex, board);
+      log.info("Playout finished with first move index {}\nGame ended with board {}", firstMoveIndex, ticTacToe.getCurrentBoard());
     }
     
     return results;
   }
 
-  static INDArray doMoveFromAlphaZeroNet(ComputationGraph alphaNet, Game ticTacToe, INDArray board, boolean xPlayer) {
-    int moveIndex = new MonteCarloSearch(ticTacToe, alphaNet, new AdversaryLearningConfiguration.
-        Builder().build()).getActionValues(board, 0).argMax(0).getInt(0);
+  static INDArray doMoveFromAlphaZeroNet(ComputationGraph alphaNet, Game ticTacToe, boolean xPlayer) {
+    int moveIndex = new MonteCarloSearch(alphaNet, new AdversaryLearningConfiguration.
+        Builder().build()).getActionValues(ticTacToe, 0).argMax(0).getInt(0);
     
-    if (!ticTacToe.getValidMoveIndices(board).contains(moveIndex)) {
+    if (!ticTacToe.getValidMoveIndices().contains(moveIndex)) {
       log.warn("Invalid O move from alpha zero net.");
-      moveIndex = ticTacToe.getValidMoveIndices(board).iterator().next();
+      moveIndex = ticTacToe.getValidMoveIndices().iterator().next();
     }
     
-    board = ticTacToe.makeMove(board, moveIndex, xPlayer ? TicTacToeConstants.MAX_PLAYER_CHANNEL : TicTacToeConstants.MIN_PLAYER_CHANNEL);
-    return board;
+    return ticTacToe.makeMove(moveIndex, xPlayer ? TicTacToeConstants.MAX_PLAYER_CHANNEL : TicTacToeConstants.MIN_PLAYER_CHANNEL);
   }
 
-  static INDArray doMoveFromSupervisedResidualNet(ComputationGraph perfectResNet, Game ticTacToe, INDArray board,
+  static INDArray doMoveFromSupervisedResidualNet(ComputationGraph perfectResNet, Game ticTacToe,
       boolean xPlayer) {
-    int moveIndex = getBestMove(perfectResNet, board);
+    int moveIndex = getBestMove(perfectResNet, ticTacToe.getCurrentBoard());
 
-    if (!ticTacToe.getValidMoveIndices(board).contains(moveIndex)) {
+    if (!ticTacToe.getValidMoveIndices().contains(moveIndex)) {
       log.warn("Invalid O move from potentially perfect residual net.");
-      moveIndex = ticTacToe.getValidMoveIndices(board).iterator().next();
+      moveIndex = ticTacToe.getValidMoveIndices().iterator().next();
     }
     
-    board = ticTacToe.makeMove(board, moveIndex, xPlayer ? TicTacToeConstants.MAX_PLAYER_CHANNEL : TicTacToeConstants.MIN_PLAYER_CHANNEL);
-    return board;
+    return ticTacToe.makeMove(moveIndex, xPlayer ? TicTacToeConstants.MAX_PLAYER_CHANNEL : TicTacToeConstants.MIN_PLAYER_CHANNEL);
   }
 
   public static int getBestMove(ComputationGraph computationGraph, INDArray board) {

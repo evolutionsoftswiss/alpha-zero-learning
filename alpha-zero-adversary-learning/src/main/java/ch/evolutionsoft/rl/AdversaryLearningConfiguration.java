@@ -83,11 +83,11 @@ public class AdversaryLearningConfiguration {
   double updateGamesNewNetworkWinRatioThreshold;
 
   /**
-   * An Alpha Zero iteration is the one game from start to end. Each iteration or episode generates potentially new
-   * training examples used to train the neural net. numberOfIterationsBeforePotentialUpdate defines 
-   * how much iterations will be run to gather training examples before a potential neural net update.
+   * An Alpha Zero episode is one game from start to end. Each episode generates potentially new
+   * training examples used to train the neural net. numberOfEpisodes defines how much times a game 
+   * will be run from start to end to gather training examples before a potential neural net update.
    */
-  int numberOfIterationsBeforePotentialUpdate;
+  int numberOfEpisodes;
 
   /**
    * Mainly used to continue training after program termination.
@@ -136,7 +136,7 @@ public class AdversaryLearningConfiguration {
    * {@link MonteCarloSearch} parameter influencing exploration / exploitation of
    * different move actions. Currently 1.5 is used.
    */
-  double cpUct;
+  double uctConstantFactor;
 
   /**
    * How much single playout steps should {@link MonteCarloSearch} perform.
@@ -161,15 +161,15 @@ public class AdversaryLearningConfiguration {
     boolean alwaysUpdateNeuralNetwork = true;
     int gamesToGetNewNetworkWinRatio = 36;
     double updateGamesNewNetworkWinRatioThreshold = 0.55;
-    int numberOfIterationsBeforePotentialUpdate = 5;
+    int numberEpisodes = 10;
     int iterationStart = 1;
-    int numberOfIterations = 1000;
-    int checkPointIterationsFrequency = 200;
-    int fromNumberOfIterationsTemperatureZero = 600;
-    int fromNumberOfMovesTemperatureZero = -1;
+    int numberOfIterations = 250;
+    int checkPointIterationsFrequency = 50;
+    int fromNumberOfIterationsTemperatureZero = -1;
+    int fromNumberOfMovesTemperatureZero = 3;
     int maxTrainExamplesHistory = 5000;
 
-    double cpUct = 1.5;
+    double uctConstantFactor = 0.8;
     int numberOfMonteCarloSimulations = 30;
     
     public AdversaryLearningConfiguration build() {
@@ -184,14 +184,14 @@ public class AdversaryLearningConfiguration {
       configuration.alwaysUpdateNeuralNetwork = alwaysUpdateNeuralNetwork;
       configuration.gamesToGetNewNetworkWinRatio = gamesToGetNewNetworkWinRatio;
       configuration.updateGamesNewNetworkWinRatioThreshold = updateGamesNewNetworkWinRatioThreshold;
-      configuration.numberOfIterationsBeforePotentialUpdate = numberOfIterationsBeforePotentialUpdate;
+      configuration.numberOfEpisodes = numberEpisodes;
       configuration.iterationStart = iterationStart;
       configuration.numberOfIterations = numberOfIterations;
       configuration.checkPointIterationsFrequency = checkPointIterationsFrequency;
       configuration.fromNumberOfIterationsTemperatureZero = fromNumberOfIterationsTemperatureZero;
       configuration.fromNumberOfMovesTemperatureZero = fromNumberOfMovesTemperatureZero;
       configuration.maxTrainExamplesHistory = maxTrainExamplesHistory;
-      configuration.cpUct = cpUct;
+      configuration.uctConstantFactor = uctConstantFactor;
       configuration.numberOfMonteCarloSimulations = numberOfMonteCarloSimulations;
       
       return configuration;
@@ -248,7 +248,7 @@ public class AdversaryLearningConfiguration {
     }
 
     public Builder numberOfIterationsBeforePotentialUpdate(int numberOfEpisodesBeforePotentialUpdate) {
-      this.numberOfIterationsBeforePotentialUpdate = numberOfEpisodesBeforePotentialUpdate;
+      this.numberEpisodes = numberOfEpisodesBeforePotentialUpdate;
       return this;
     }
     
@@ -273,8 +273,8 @@ public class AdversaryLearningConfiguration {
       return this;
     }
 
-    public Builder cpUct(double cpUct) {
-      this.cpUct = cpUct;
+    public Builder uctConstantFactor(double uctConstantFactor) {
+      this.uctConstantFactor = uctConstantFactor;
       return this;
     }
 
@@ -293,13 +293,14 @@ public class AdversaryLearningConfiguration {
         "\n alwaysUpdateNeuralNetwork: " + this.alwaysUpdateNeuralNetwork +
         "\n gamesToGetNewNetworkWinRatio: " + (this.alwaysUpdateNeuralNetwork ? "-" : this.gamesToGetNewNetworkWinRatio) +
         "\n updateGamesNewNetworkWinRatioThreshold: " + (this.alwaysUpdateNeuralNetwork ? "-" : this.updateGamesNewNetworkWinRatioThreshold) +
-        "\n numberOfEpisodesBeforePotentialUpdate: " + this.numberOfIterationsBeforePotentialUpdate + 
+        "\n numberOfEpisodesBeforePotentialUpdate: " + this.numberOfEpisodes + 
         "\n iterationStart: " + this.iterationStart + 
         "\n numberOfIterations: " + this.numberOfIterations +
+        "\n checkPointIterationsFrequency: " + this.checkPointIterationsFrequency +
         "\n fromNumberOfIterationsTemperatureZero: " + this.fromNumberOfIterationsTemperatureZero +
         "\n fromNumberOfMovesTemperatureZero: " + this.fromNumberOfMovesTemperatureZero +
         "\n maxTrainExamplesHistory: " + this.maxTrainExamplesHistory +
-        "\n cpUct: " + this.cpUct +
+        "\n cpUct: " + this.uctConstantFactor +
         "\n numberOfMonteCarloSimulations: " + this.numberOfMonteCarloSimulations;
   }
 
@@ -367,12 +368,12 @@ public class AdversaryLearningConfiguration {
     this.updateGamesNewNetworkWinRatioThreshold = updateNeuralNetworkThreshold;
   }
 
-  public int getNumberOfIterationsBeforePotentialUpdate() {
-    return numberOfIterationsBeforePotentialUpdate;
+  public int getNumberOfEpisodes() {
+    return numberOfEpisodes;
   }
 
-  public void setNumberOfIterationsBeforePotentialUpdate(int numberOfEpisodesBeforePotentialUpdate) {
-    this.numberOfIterationsBeforePotentialUpdate = numberOfEpisodesBeforePotentialUpdate;
+  public void setNumberOfEpisodes(int numberOfEpisodesBeforePotentialUpdate) {
+    this.numberOfEpisodes = numberOfEpisodesBeforePotentialUpdate;
   }
   
   public int getIterationStart() {
@@ -401,9 +402,9 @@ public class AdversaryLearningConfiguration {
 
   
   public double getCurrentTemperature(int iteration, int moveNumber) {
-    // TODO clean up different gte / gt
-    if (iteration >= getFromNumberOfIterationsTemperatureZero() ||
-        moveNumber > getFromNumberOfMovesTemperatureZero()) {
+
+    if (getFromNumberOfIterationsTemperatureZero() >= 0 && iteration >= getFromNumberOfIterationsTemperatureZero() ||
+        getFromNumberOfMovesTemperatureZero() >= 0 && moveNumber >= getFromNumberOfMovesTemperatureZero()) {
       return 0;
     }
     
@@ -434,12 +435,12 @@ public class AdversaryLearningConfiguration {
     this.maxTrainExamplesHistory = maxTrainExamplesHistory;
   }
 
-  public double getCpUct() {
-    return cpUct;
+  public double getuctConstantFactor() {
+    return uctConstantFactor;
   }
 
-  public void setCpUct(double cpUct) {
-    this.cpUct = cpUct;
+  public void setUctConstantFactor(double uctConstantFactor) {
+    this.uctConstantFactor = uctConstantFactor;
   }
 
   public int getNumberOfMonteCarloSimulations() {

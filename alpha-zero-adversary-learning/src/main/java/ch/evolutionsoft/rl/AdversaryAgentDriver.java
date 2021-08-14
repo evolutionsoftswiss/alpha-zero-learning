@@ -10,6 +10,7 @@ import org.nd4j.linalg.api.ndarray.INDArray;
 import org.nd4j.linalg.factory.Nd4j;
 
 import ch.evolutionsoft.net.game.NeuralNetConstants;
+import ch.evolutionsoft.net.game.tictactoe.TicTacToeConstants;
 
 /**
  * {@link AdversaryAgentDriver} is only relevant if {@link AdversaryLearningConfiguration} has alwaysUpdateNeuralNetwork = false.
@@ -20,18 +21,16 @@ import ch.evolutionsoft.net.game.NeuralNetConstants;
  */
 public class AdversaryAgentDriver {
 
-  ComputationGraph player1Policy, player2Policy;
-
-  Game game;
+  ComputationGraph player1Policy;
+  ComputationGraph player2Policy;
   
-  public AdversaryAgentDriver(Game game, ComputationGraph player1, ComputationGraph player2) {
+  public AdversaryAgentDriver(ComputationGraph player1, ComputationGraph player2) {
     
-    this.game = game;
     this.player1Policy = player1;
     this.player2Policy = player2;
   }
 
-  public int[] playGames(AdversaryLearningConfiguration configuration, int iteration) {
+  public int[] playGames(Game game, AdversaryLearningConfiguration configuration) {
     
     int numberOfEpisodesPlayer1Starts = configuration.getGamesToGetNewNetworkWinRatio() / 2;
     int numberOfEpisodesPlayer2Starts = configuration.getGamesToGetNewNetworkWinRatio() - numberOfEpisodesPlayer1Starts;
@@ -42,7 +41,7 @@ public class AdversaryAgentDriver {
     
     for (int gameNumber = 1; gameNumber <= numberOfEpisodesPlayer1Starts; gameNumber++) {
       
-      double gameResult = this.playGame(configuration, gameNumber);
+      double gameResult = this.playGame(game.createNewInstance(), configuration, gameNumber);
       
       if (gameResult >= MAX_WIN) {
         
@@ -64,7 +63,7 @@ public class AdversaryAgentDriver {
 
     for (int gameNumber = 1; gameNumber <= numberOfEpisodesPlayer2Starts; gameNumber++) {
       
-      double gameResult = this.playGame(configuration, gameNumber);
+      double gameResult = this.playGame(game.createNewInstance(), configuration, gameNumber);
       
       if (gameResult <= MIN_WIN) {
         
@@ -83,26 +82,26 @@ public class AdversaryAgentDriver {
     return new int[] {player1Wins, player2Wins, draws};
   }
   
-  public double playGame(AdversaryLearningConfiguration configuration, int gameNumber) {
+  public double playGame(Game game, AdversaryLearningConfiguration configuration, int gameNumber) {
     
-    MonteCarloSearch player1 = new MonteCarloSearch(this.game, this.player1Policy, configuration);
-    MonteCarloSearch player2 = new MonteCarloSearch(this.game, this.player2Policy, configuration);
+    MonteCarloSearch player1 = new MonteCarloSearch(this.player1Policy, configuration);
+    MonteCarloSearch player2 = new MonteCarloSearch(this.player2Policy, configuration);
     
-    INDArray currentBoard = game.doFirstMove(gameNumber);
-    Set<Integer> emptyFields = game.getValidMoveIndices(currentBoard);
+    game.doFirstMove(gameNumber % TicTacToeConstants.COLUMN_COUNT);
+    Set<Integer> emptyFields = game.getValidMoveIndices();
     
     int currentPlayer = Game.MIN_PLAYER;
 
-    while (!game.gameEnded(currentBoard)) {
+    while (!game.gameEnded()) {
     
       INDArray moveActionValues = Nd4j.zeros(game.getNumberOfAllAvailableMoves());
       if (currentPlayer == Game.MAX_PLAYER) {
         
-        moveActionValues = player1.getActionValues(currentBoard, 0);
+        moveActionValues = player1.getActionValues(game, 0);
         
       } else if (currentPlayer == Game.MIN_PLAYER) {
         
-        moveActionValues = player2.getActionValues(currentBoard, 0);
+        moveActionValues = player2.getActionValues(game, 0);
       }
       
       int moveAction = moveActionValues.argMax(0).getInt(0);
@@ -111,12 +110,12 @@ public class AdversaryAgentDriver {
         moveAction = new ArrayList<>(emptyFields).get(NeuralNetConstants.randomGenerator.nextInt(emptyFields.size()));
       }
       
-      currentBoard = game.makeMove(currentBoard, moveAction, currentPlayer);
-      emptyFields = game.getValidMoveIndices(currentBoard);
+      game.makeMove(moveAction, currentPlayer);
+      emptyFields = game.getValidMoveIndices();
       currentPlayer = game.getOtherPlayer(currentPlayer);
     }
     
-    double endResult = game.getEndResult(currentBoard, currentPlayer);
+    double endResult = game.getEndResult(currentPlayer);
     if (endResult > 0.5) {
 
       return MAX_WIN;    

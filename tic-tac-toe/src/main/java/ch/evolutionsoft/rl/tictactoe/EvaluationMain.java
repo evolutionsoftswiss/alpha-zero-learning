@@ -4,6 +4,7 @@ import static ch.evolutionsoft.net.game.tictactoe.TicTacToeConstants.COLUMN_COUN
 
 import java.io.IOException;
 import java.util.List;
+import java.util.Map;
 
 import org.deeplearning4j.nn.graph.ComputationGraph;
 import org.deeplearning4j.util.ModelSerializer;
@@ -15,7 +16,12 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import ch.evolutionsoft.net.game.NeuralDataHelper;
+import ch.evolutionsoft.net.game.tictactoe.TicTacToeConstants;
 import ch.evolutionsoft.net.game.tictactoe.TicTacToeNeuralDataConverter;
+import ch.evolutionsoft.rl.AdversaryLearning;
+import ch.evolutionsoft.rl.AdversaryLearningConfiguration;
+import ch.evolutionsoft.rl.AdversaryTrainingExample;
+import ch.evolutionsoft.rl.Game;
 
 public class EvaluationMain {
 
@@ -24,6 +30,14 @@ public class EvaluationMain {
   public static void main(String[] args) throws IOException {
 
     ComputationGraph computationGraph1 = ModelSerializer.restoreComputationGraph("bestmodel.bin", true);
+
+    AdversaryLearning al = new AdversaryLearning(
+        new TicTacToe(Game.MAX_PLAYER),
+        computationGraph1,
+        new AdversaryLearningConfiguration.Builder().iterationStart(201).build());
+    Map<INDArray, AdversaryTrainingExample> examples = al.loadEarlierTrainingExamples("trainExamples.obj");
+ 
+    log.info("Empty field probabilities {}", examples.get(TicTacToeConstants.EMPTY_CONVOLUTIONAL_PLAYGROUND));
     
     evaluateNetwork(computationGraph1);
   }

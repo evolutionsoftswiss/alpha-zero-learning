@@ -15,11 +15,11 @@ public class TreeNode {
 
     Logger logger = LoggerFactory.getLogger(TreeNode.class);
 	
-	int move;
+	int lastMove;
 
 	int depth;
 	
-	int lastColorMove;
+	int lastMoveColor;
 	
 	int timesVisited = 0;
 	
@@ -35,8 +35,8 @@ public class TreeNode {
 	
 	
 	public TreeNode(
-	    int move,
-	    int colorToMove,
+	    int lastMove,
+	    int lastMoveColor,
 	    int depth,
 	    double moveProbability,
 	    double initialQ,
@@ -45,14 +45,14 @@ public class TreeNode {
 		this.parent = parent;
 		this.qValue = initialQ;
 		this.depth = depth;
-		this.move = move;
+		this.lastMove = lastMove;
 		this.moveProbability = moveProbability;
-		this.lastColorMove = colorToMove;
+		this.lastMoveColor = lastMoveColor;
 	}
 	
-	void expand(Game game, INDArray previousActionProbabilities, INDArray currentBoard) {
+	void expand(Game game, INDArray previousActionProbabilities) {
 
-	  Set<Integer> validMoveIndices = game.getValidMoveIndices(currentBoard);
+	  Set<Integer> validMoveIndices = game.getValidMoveIndices();
  
 	  for (int moveIndex : validMoveIndices) {
 	      
@@ -60,7 +60,7 @@ public class TreeNode {
 	        moveIndex,
 	        new TreeNode(
 	            moveIndex,
-	            game.getOtherPlayer(this.lastColorMove),
+	            game.getOtherPlayer(this.lastMoveColor),
 	            this.depth + 1,
 	            previousActionProbabilities.getDouble(moveIndex),
 	            1 - this.qValue,
