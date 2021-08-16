@@ -183,12 +183,12 @@ public class AdversaryLearning {
 
       if (!this.adversaryLearningConfiguration.isAlwaysUpdateNeuralNetwork()) {
 
-        this.previousComputationGraph = ModelSerializer.restoreComputationGraph(getAbsoluteModelPath(TEMPMODEL_NAME), true);
+        this.previousComputationGraph = ModelSerializer.restoreComputationGraph(getAbsoluteModelPath(bestModelName), true);
         this.previousComputationGraph.setLearningRate(this.adversaryLearningConfiguration.getLearningRate());
         if (null != this.adversaryLearningConfiguration.getLearningRateSchedule()) {
           this.computationGraph.setLearningRate(this.adversaryLearningConfiguration.getLearningRateSchedule());
         }
-        log.info("restored tempmodel.bin");
+        log.info("restored tempmodel.bin from bestmodel.bin");
       }
     }
   }
@@ -420,7 +420,7 @@ public class AdversaryLearning {
 
   String getAbsoluteModelPath(String modelName) {
 
-    Path readmePath = Paths.get(new File("README.md").getAbsolutePath()).getParent();
+    Path readmePath = Paths.get(new File("tic-tac-toe" + File.separator + "README.md").getAbsolutePath()).getParent();
     
     return String.valueOf(readmePath.getParent()) + File.separator + modelName;
   }
