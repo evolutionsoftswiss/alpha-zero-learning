@@ -16,25 +16,27 @@ import ch.evolutionsoft.rl.tictactoe.TicTacToe;
 public class AdversaryLearningTest {
   
   public static final String TEST_MODEL_BIN = "testModel.bin";
-  AdversaryLearning learning;
+  public static final String TEST_TRAIN_EXAMPLES = "testTrainExamples.obj";
+  
+  AdversaryLearningConfiguration configuration;
 
   @Test
   void testNetUpdateLastIteration() throws IOException {
-    
-    AdversaryLearningConfiguration configuration =
+
+    configuration =
         new AdversaryLearningConfiguration.Builder().
         alwaysUpdateNeuralNetwork(true).
         numberOfIterations(1).
         numberOfIterationsBeforePotentialUpdate(1).
+        bestModelFileName(TEST_MODEL_BIN).
+        trainExamplesFileName(TEST_TRAIN_EXAMPLES).
         build();
  
     ComputationGraph computationGraph =
         new ComputationGraph(new ConvolutionResidualNet().createConvolutionalGraphConfiguration());
     computationGraph.init();
     
-    learning = new AdversaryLearning(new TicTacToe(Game.MAX_PLAYER), computationGraph, configuration);
-    
-    learning.setBestModelName(TEST_MODEL_BIN);
+    AdversaryLearning learning = new AdversaryLearning(new TicTacToe(Game.MAX_PLAYER), computationGraph, configuration);
     
     assertEquals(0, computationGraph.getIterationCount());
     
@@ -52,15 +54,15 @@ public class AdversaryLearningTest {
         numberOfIterations(1).
         numberOfIterationsBeforePotentialUpdate(1).
         batchSize(16).
+        bestModelFileName(TEST_MODEL_BIN).
+        trainExamplesFileName(TEST_TRAIN_EXAMPLES).
         build();
  
     ComputationGraph computationGraph =
         new ComputationGraph(new ConvolutionResidualNet().createConvolutionalGraphConfiguration());
     computationGraph.init();
     
-    learning = new AdversaryLearning(new TicTacToe(Game.MAX_PLAYER), computationGraph, configuration);
-    
-    learning.setBestModelName(TEST_MODEL_BIN);
+    AdversaryLearning learning = new AdversaryLearning(new TicTacToe(Game.MAX_PLAYER), computationGraph, configuration);
     
     assertEquals(0, computationGraph.getIterationCount());
     
@@ -72,7 +74,8 @@ public class AdversaryLearningTest {
   @AfterEach
   void deleteTempModel() throws IOException {
     
-    Files.delete(Paths.get(learning.getAbsoluteModelPath(TEST_MODEL_BIN)));
+    Files.delete(Paths.get(configuration.getAbsoluteModelPathFromSubmodule(TEST_MODEL_BIN)));
+    Files.delete(Paths.get(configuration.getAbsoluteModelPathFromSubmodule(TEST_TRAIN_EXAMPLES)));
   }
   
 }

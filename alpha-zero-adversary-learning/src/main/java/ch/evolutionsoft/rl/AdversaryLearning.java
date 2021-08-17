@@ -1,13 +1,10 @@
 package ch.evolutionsoft.rl;
 
-import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -61,11 +58,9 @@ public class AdversaryLearning {
   ComputationGraph computationGraph;
   ComputationGraph previousComputationGraph;
 
-  AdversaryLearningConfiguration adversaryLearningConfiguration;
+  public AdversaryLearningConfiguration adversaryLearningConfiguration;
 
   MonteCarloSearch mcts;
-  
-  String bestModelName = "bestmodel.bin";
 
   boolean restoreTrainingExamples;
 
@@ -84,7 +79,7 @@ public class AdversaryLearning {
   public void performLearning() throws IOException {
 
     loadComputationGraphs();
-    loadEarlierTrainingExamples("trainExamples.obj");
+    loadEarlierTrainingExamples(adversaryLearningConfiguration.getTrainExamplesFileName());
 
     for (int iteration = adversaryLearningConfiguration.getIterationStart();
         iteration < adversaryLearningConfiguration.getIterationStart() + 
@@ -109,7 +104,7 @@ public class AdversaryLearning {
 
         log.info("Accepting new model");
         ModelSerializer.writeModel(computationGraph,
-            getAbsoluteModelPath(bestModelName),
+            adversaryLearningConfiguration.getAbsoluteModelPathFromSubmodule(adversaryLearningConfiguration.getBestModelFileName()),
             true);
         if (updateAfterBetterPlayout) {
           initialGame.evaluateBoardActionExamples(previousComputationGraph);
@@ -174,7 +169,8 @@ public class AdversaryLearning {
 
     if (restoreTrainedNeuralNet) {
 
-      this.computationGraph = ModelSerializer.restoreComputationGraph(getAbsoluteModelPath(bestModelName), true);
+      String absoluteBestModelPathFromSubmodule = adversaryLearningConfiguration.getAbsoluteModelPathFromSubmodule(adversaryLearningConfiguration.getBestModelFileName());
+      this.computationGraph = ModelSerializer.restoreComputationGraph(absoluteBestModelPathFromSubmodule, true);
       this.computationGraph.setLearningRate(this.adversaryLearningConfiguration.getLearningRate());
       if (null != this.adversaryLearningConfiguration.getLearningRateSchedule()) {
         this.computationGraph.setLearningRate(this.adversaryLearningConfiguration.getLearningRateSchedule());
@@ -183,7 +179,7 @@ public class AdversaryLearning {
 
       if (!this.adversaryLearningConfiguration.isAlwaysUpdateNeuralNetwork()) {
 
-        this.previousComputationGraph = ModelSerializer.restoreComputationGraph(getAbsoluteModelPath(bestModelName), true);
+        this.previousComputationGraph = ModelSerializer.restoreComputationGraph(absoluteBestModelPathFromSubmodule, true);
         this.previousComputationGraph.setLearningRate(this.adversaryLearningConfiguration.getLearningRate());
         if (null != this.adversaryLearningConfiguration.getLearningRateSchedule()) {
           this.computationGraph.setLearningRate(this.adversaryLearningConfiguration.getLearningRateSchedule());
@@ -228,14 +224,6 @@ public class AdversaryLearning {
     return this.trainExamplesHistory;
   }
 
-  public String getBestModelName() {
-    return bestModelName;
-  }
-
-  public void setBestModelName(String bestModelName) {
-    this.bestModelName = bestModelName;
-  }
-
   void replaceOldTrainingExamplesWithNewActionProbabilities(List<AdversaryTrainingExample> newExamples) {
 
     for (AdversaryTrainingExample currentExample : newExamples) {
@@ -252,8 +240,9 @@ public class AdversaryLearning {
     boolean updateAfterBetterPlayout = false;
     if (!adversaryLearningConfiguration.isAlwaysUpdateNeuralNetwork()) {
 
-      ModelSerializer.writeModel(computationGraph, getAbsoluteModelPath(TEMPMODEL_NAME), true);
-      this.previousComputationGraph = ModelSerializer.restoreComputationGraph(getAbsoluteModelPath(TEMPMODEL_NAME), true);
+      String absoluteTempModelPathFromSubmodule = adversaryLearningConfiguration.getAbsoluteModelPathFromSubmodule(TEMPMODEL_NAME);
+      ModelSerializer.writeModel(computationGraph, absoluteTempModelPathFromSubmodule, true);
+      this.previousComputationGraph = ModelSerializer.restoreComputationGraph(absoluteTempModelPathFromSubmodule, true);
 
       this.computationGraph = this.fitNeuralNet(this.computationGraph, trainExamples);
 
@@ -272,7 +261,7 @@ public class AdversaryLearning {
       if (!updateAfterBetterPlayout) {
 
         log.info("Rejecting new model");
-        this.computationGraph = ModelSerializer.restoreComputationGraph(getAbsoluteModelPath(TEMPMODEL_NAME), true);
+        this.computationGraph = ModelSerializer.restoreComputationGraph(absoluteTempModelPathFromSubmodule, true);
       }
 
     } else {
@@ -294,7 +283,7 @@ public class AdversaryLearning {
     
     if (0 == iteration % adversaryLearningConfiguration.getCheckPointIterationsFrequency()) {
 
-      String bestModelPath = getAbsoluteModelPath(bestModelName);
+      String bestModelPath = adversaryLearningConfiguration.getAbsoluteModelPathFromSubmodule(adversaryLearningConfiguration.getBestModelFileName());
       ModelSerializer.writeModel(computationGraph, bestModelPath.substring(0, bestModelPath.length() - ".bin".length()) + prependedZeros + iteration + ".bin", true);
       saveTrainExamplesHistory(iteration);
     }
@@ -416,13 +405,6 @@ public class AdversaryLearning {
 
       trainExamplesOutput.writeObject(trainExamplesHistory);
     }
-  }
-
-  String getAbsoluteModelPath(String modelName) {
-
-    Path readmePath = Paths.get(new File("tic-tac-toe" + File.separator + "README.md").getAbsolutePath()).getParent();
-    
-    return String.valueOf(readmePath.getParent()) + File.separator + modelName;
   }
   
   boolean hasMoreThanOneMove(Set<Integer> emptyFields) {

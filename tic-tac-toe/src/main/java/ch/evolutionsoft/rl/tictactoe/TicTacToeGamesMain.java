@@ -22,7 +22,9 @@ public class TicTacToeGamesMain {
   public static void main(String[] args) throws IOException {
     
     ComputationGraph perfectResNet = ModelSerializer.restoreComputationGraph("TicTacToePerfectResidualNet.bin");
+        //AdversaryLearning.getAbsoluteModelPathFromSubmodule("tic-tac-toe", "TicTacToePerfectResidualNet.bin"));
     ComputationGraph alphaNet = ModelSerializer.restoreComputationGraph("bestmodel.bin");
+        //AdversaryLearning.getAbsoluteModelPathFromSubmodule("tic-tac-toe", "bestmodel.bin"));
     
     int[] results1 = playGamesSupervisedNetVsAlphaZeroNet(perfectResNet, alphaNet);
     int[] results2 = playGamesAlphaNetVsSupervisedResidualNet(perfectResNet, alphaNet);

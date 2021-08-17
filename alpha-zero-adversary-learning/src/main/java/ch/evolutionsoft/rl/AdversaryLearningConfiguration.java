@@ -1,5 +1,7 @@
 package ch.evolutionsoft.rl;
 
+import java.io.File;
+
 import org.deeplearning4j.nn.graph.ComputationGraph;
 import org.nd4j.linalg.schedule.ISchedule;
 
@@ -145,6 +147,12 @@ public class AdversaryLearningConfiguration {
    */
   int numberOfMonteCarloSimulations;
 
+  String submoduleDirectory;
+
+  String bestModelFileName;
+
+  String trainExamplesFileName;
+
   /**
    * Default initial values for TicTacToe example implementation.
    * 
@@ -168,6 +176,10 @@ public class AdversaryLearningConfiguration {
     int fromNumberOfIterationsTemperatureZero = -1;
     int fromNumberOfMovesTemperatureZero = 3;
     int maxTrainExamplesHistory = 5000;
+
+    String submoduleDirectory = "tic-tac-toe";
+    String bestModelFileName = "bestmodel.bin";
+    String trainExamplesFileName = "trainExamples.obj";
 
     double uctConstantFactor = 0.8;
     int numberOfMonteCarloSimulations = 30;
@@ -193,6 +205,9 @@ public class AdversaryLearningConfiguration {
       configuration.maxTrainExamplesHistory = maxTrainExamplesHistory;
       configuration.uctConstantFactor = uctConstantFactor;
       configuration.numberOfMonteCarloSimulations = numberOfMonteCarloSimulations;
+      configuration.submoduleDirectory = submoduleDirectory;
+      configuration.bestModelFileName = bestModelFileName;
+      configuration.trainExamplesFileName = trainExamplesFileName;
       
       return configuration;
     }
@@ -282,6 +297,21 @@ public class AdversaryLearningConfiguration {
       this.numberOfMonteCarloSimulations = numberOfMonteCarloSimulations;
       return this;
     }
+    
+    public Builder submoduleDirectory(String submoduleDirectory) {
+      this.submoduleDirectory = submoduleDirectory;
+      return this;
+    }
+    
+    public Builder bestModelFileName(String bestModelFileName) {
+      this.bestModelFileName = bestModelFileName;
+      return this;
+    }
+    
+    public Builder trainExamplesFileName(String trainExamplesFileName) {
+      this.trainExamplesFileName = trainExamplesFileName;
+      return this;
+    }
   }
   
   public String toString() {
@@ -301,7 +331,10 @@ public class AdversaryLearningConfiguration {
         "\n fromNumberOfMovesTemperatureZero: " + this.fromNumberOfMovesTemperatureZero +
         "\n maxTrainExamplesHistory: " + this.maxTrainExamplesHistory +
         "\n cpUct: " + this.uctConstantFactor +
-        "\n numberOfMonteCarloSimulations: " + this.numberOfMonteCarloSimulations;
+        "\n numberOfMonteCarloSimulations: " + this.numberOfMonteCarloSimulations +
+        "\n submoduleDirectory: " + this.submoduleDirectory +
+        "\n bestModelFileName: " + this.bestModelFileName +
+        "\n trainExamplesFileName" + this.trainExamplesFileName;
   }
 
   public double getLearningRate() {
@@ -449,5 +482,35 @@ public class AdversaryLearningConfiguration {
 
   public void setNumberOfMonteCarloSimulations(int nummberOfMonteCarloSimulations) {
     this.numberOfMonteCarloSimulations = nummberOfMonteCarloSimulations;
+  }
+  
+  public String getAbsoluteModelPathFromSubmodule(String modelName) {
+  
+    String submodulePath = new File(submoduleDirectory).getAbsolutePath();
+    
+    return submodulePath + File.separator + modelName;
+  }
+  public String getSubmoduleDirectory() {
+    return submoduleDirectory;
+  }
+
+  public void setSubmoduleDirectory(String submoduleDirectory) {
+    this.submoduleDirectory = submoduleDirectory;
+  }
+
+  public String getBestModelFileName() {
+    return bestModelFileName;
+  }
+
+  public void setBestModelFileName(String bestModelFileName) {
+    this.bestModelFileName = bestModelFileName;
+  }
+
+  public String getTrainExamplesFileName() {
+    return trainExamplesFileName;
+  }
+
+  public void setTrainExamplesFileName(String trainExamplesFileName) {
+    this.trainExamplesFileName = trainExamplesFileName;
   }
 }
