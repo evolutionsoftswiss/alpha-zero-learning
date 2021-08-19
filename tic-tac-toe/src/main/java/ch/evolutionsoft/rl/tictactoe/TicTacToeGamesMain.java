@@ -21,10 +21,12 @@ public class TicTacToeGamesMain {
 
   public static void main(String[] args) throws IOException {
     
-    ComputationGraph perfectResNet = ModelSerializer.restoreComputationGraph("TicTacToePerfectResidualNet.bin");
-        //AdversaryLearning.getAbsoluteModelPathFromSubmodule("tic-tac-toe", "TicTacToePerfectResidualNet.bin"));
-    ComputationGraph alphaNet = ModelSerializer.restoreComputationGraph("bestmodel.bin");
-        //AdversaryLearning.getAbsoluteModelPathFromSubmodule("tic-tac-toe", "bestmodel.bin"));
+    AdversaryLearningConfiguration configuration = new AdversaryLearningConfiguration.Builder().build();
+    
+    ComputationGraph perfectResNet = ModelSerializer.restoreComputationGraph(
+        configuration.getAbsoluteModelPathFrom("TicTacToePerfectResidualNet.bin"));
+    ComputationGraph alphaNet = ModelSerializer.restoreComputationGraph(
+        configuration.getAbsoluteModelPathFrom("bestmodel.bin"));
     
     int[] results1 = playGamesSupervisedNetVsAlphaZeroNet(perfectResNet, alphaNet);
     int[] results2 = playGamesAlphaNetVsSupervisedResidualNet(perfectResNet, alphaNet);
@@ -80,7 +82,7 @@ public class TicTacToeGamesMain {
         results[1]++;
       }
 
-      log.info("Playout finished with first move index {}\nGame ended with board {}", firstMoveIndex, ticTacToe.getCurrentBoard());
+      log.info("Game finished with first move index {}\nGame ended with board {}", firstMoveIndex, ticTacToe.getCurrentBoard());
     }
     
     return results;
@@ -133,7 +135,7 @@ public class TicTacToeGamesMain {
         
       }
 
-      log.info("Playout finished with first move index {}\nGame ended with board {}", firstMoveIndex, ticTacToe.getCurrentBoard());
+      log.info("Game finished with first move index {}\nGame ended with board {}", firstMoveIndex, ticTacToe.getCurrentBoard());
     }
     
     return results;

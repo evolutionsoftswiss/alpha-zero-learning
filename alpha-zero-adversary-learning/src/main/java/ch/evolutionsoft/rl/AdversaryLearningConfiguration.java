@@ -1,7 +1,9 @@
 package ch.evolutionsoft.rl;
 
 import java.io.File;
+import java.nio.file.Paths;
 
+import org.apache.commons.lang3.StringUtils;
 import org.deeplearning4j.nn.graph.ComputationGraph;
 import org.nd4j.linalg.schedule.ISchedule;
 
@@ -16,9 +18,7 @@ import ch.evolutionsoft.net.game.NeuralNetConstants;
 public class AdversaryLearningConfiguration {
 
   /**
-   * Fixed {@link ComputationGraph} learning rate, currently the save option between
-   * restored tempmodel.bin or bestmodel.bin from files. See also comment for
-   * learningRateSchedule.
+   * Fixed {@link ComputationGraph} learning rate
    */
   double learningRate;
   
@@ -26,21 +26,19 @@ public class AdversaryLearningConfiguration {
    * A learningRateSchedule defining different learning rates in function of the
    * number of performed net iterations meaning calls to {@link ComputationGraph} fit method here.
    * 
-   * Be careful when {@link ComputationGraph} gets restored from files tempmodel.bin or bestmodel.bin.
-   * Double.NaN values were observed after restoring with learningRateSchedule.
-   * 
-   * The iterations deciding the learning rate for ISchedule is not directly related to alpha zero 
-   * numberOfIterations. With alwaysUpdateNeuralNetwork = true it is also dependent of 
-   * numberOfEpisodesBeforePotentialUpdate. For the default TicTacToe {@link AdversaryLearningConfiguration} 
-   * with numberOfEpisodesBeforePotentialUpdate = 5. The relation between ISchedule iterations and Alpha Zero
-   * numberOfIterations is then: 5 * learningRateIterations = numberOfIterations.
-   * 
-   * If alwaysUpdateNeuralNetwork = false the learningRateSchedule iterations depend on the number of 
+   * The iterations deciding the learning rate for ISchedule is only directly related to alpha zero 
+   * numberOfIterations with alwaysUpdateNeuralNetwork = true.
+   * Otherwise with alwaysUpdateNeuralNetwork = false it is also dependent of 
    * performed {@link ComputationGraph} updates using the fit method.
-   * 
    */
   ISchedule learningRateSchedule;
 
+  /**
+   * Size of mini batches used to perform {@link ComputationGraph} updates with fit.
+   *
+   * TicTacToe currently uses a value greater than all possible {@link AdversaryTrainingExample}
+   * leading to use one single batch always.
+   */
   int batchSize;
 
   /**
@@ -63,7 +61,7 @@ public class AdversaryLearningConfiguration {
    * the Alpha Zero net gets always updated. gamesToGetNewNetworkWinRatio and 
    * updateGamesNewNetworkWinRatioThreshold are irrelevant with this configuration set to true.
    * 
-   * False means the AlphaGo Zero approach by running games with different neural net versions.
+   * False uses the AlphaGo approach by running games with different neural net versions.
    * gamesToGetNewNetworkWinRatio and updateGamesNewNetworkWinRatioThreshold are used to
    * decide if the neural net gets updated or not.
    */
@@ -89,7 +87,7 @@ public class AdversaryLearningConfiguration {
    * training examples used to train the neural net. numberOfEpisodes defines how much times a game 
    * will be run from start to end to gather training examples before a potential neural net update.
    */
-  int numberOfEpisodes;
+  int numberOfIterationsBeforePotentialUpdate;
 
   /**
    * Mainly used to continue training after program termination.
@@ -136,7 +134,7 @@ public class AdversaryLearningConfiguration {
 
   /**
    * {@link MonteCarloSearch} parameter influencing exploration / exploitation of
-   * different move actions. Currently 1.5 is used.
+   * different move actions. TicTacToe uses 0.8.
    */
   double uctConstantFactor;
 
@@ -147,10 +145,15 @@ public class AdversaryLearningConfiguration {
    */
   int numberOfMonteCarloSimulations;
 
-  String submoduleDirectory;
-
+  /**
+   * The file name and extension without path to use for the current best model.
+   */
   String bestModelFileName;
 
+  /**
+   * The file name and extension without path to use for storing the generated
+   * {@link AdversaryTrainingExample} during self play.
+   */
   String trainExamplesFileName;
 
   /**
@@ -169,7 +172,7 @@ public class AdversaryLearningConfiguration {
     boolean alwaysUpdateNeuralNetwork = true;
     int gamesToGetNewNetworkWinRatio = 36;
     double updateGamesNewNetworkWinRatioThreshold = 0.55;
-    int numberEpisodes = 10;
+    int numberOfIterationsBeforePotentialUpdate = 10;
     int iterationStart = 1;
     int numberOfIterations = 250;
     int checkPointIterationsFrequency = 50;
@@ -177,7 +180,6 @@ public class AdversaryLearningConfiguration {
     int fromNumberOfMovesTemperatureZero = 3;
     int maxTrainExamplesHistory = 5000;
 
-    String submoduleDirectory = "tic-tac-toe";
     String bestModelFileName = "bestmodel.bin";
     String trainExamplesFileName = "trainExamples.obj";
 
@@ -196,7 +198,7 @@ public class AdversaryLearningConfiguration {
       configuration.alwaysUpdateNeuralNetwork = alwaysUpdateNeuralNetwork;
       configuration.gamesToGetNewNetworkWinRatio = gamesToGetNewNetworkWinRatio;
       configuration.updateGamesNewNetworkWinRatioThreshold = updateGamesNewNetworkWinRatioThreshold;
-      configuration.numberOfEpisodes = numberEpisodes;
+      configuration.numberOfIterationsBeforePotentialUpdate = numberOfIterationsBeforePotentialUpdate;
       configuration.iterationStart = iterationStart;
       configuration.numberOfIterations = numberOfIterations;
       configuration.checkPointIterationsFrequency = checkPointIterationsFrequency;
@@ -205,7 +207,6 @@ public class AdversaryLearningConfiguration {
       configuration.maxTrainExamplesHistory = maxTrainExamplesHistory;
       configuration.uctConstantFactor = uctConstantFactor;
       configuration.numberOfMonteCarloSimulations = numberOfMonteCarloSimulations;
-      configuration.submoduleDirectory = submoduleDirectory;
       configuration.bestModelFileName = bestModelFileName;
       configuration.trainExamplesFileName = trainExamplesFileName;
       
@@ -263,7 +264,7 @@ public class AdversaryLearningConfiguration {
     }
 
     public Builder numberOfIterationsBeforePotentialUpdate(int numberOfEpisodesBeforePotentialUpdate) {
-      this.numberEpisodes = numberOfEpisodesBeforePotentialUpdate;
+      this.numberOfIterationsBeforePotentialUpdate = numberOfEpisodesBeforePotentialUpdate;
       return this;
     }
     
@@ -298,11 +299,6 @@ public class AdversaryLearningConfiguration {
       return this;
     }
     
-    public Builder submoduleDirectory(String submoduleDirectory) {
-      this.submoduleDirectory = submoduleDirectory;
-      return this;
-    }
-    
     public Builder bestModelFileName(String bestModelFileName) {
       this.bestModelFileName = bestModelFileName;
       return this;
@@ -323,7 +319,7 @@ public class AdversaryLearningConfiguration {
         "\n alwaysUpdateNeuralNetwork: " + this.alwaysUpdateNeuralNetwork +
         "\n gamesToGetNewNetworkWinRatio: " + (this.alwaysUpdateNeuralNetwork ? "-" : this.gamesToGetNewNetworkWinRatio) +
         "\n updateGamesNewNetworkWinRatioThreshold: " + (this.alwaysUpdateNeuralNetwork ? "-" : this.updateGamesNewNetworkWinRatioThreshold) +
-        "\n numberOfEpisodesBeforePotentialUpdate: " + this.numberOfEpisodes + 
+        "\n numberOfEpisodesBeforePotentialUpdate: " + this.numberOfIterationsBeforePotentialUpdate + 
         "\n iterationStart: " + this.iterationStart + 
         "\n numberOfIterations: " + this.numberOfIterations +
         "\n checkPointIterationsFrequency: " + this.checkPointIterationsFrequency +
@@ -332,9 +328,8 @@ public class AdversaryLearningConfiguration {
         "\n maxTrainExamplesHistory: " + this.maxTrainExamplesHistory +
         "\n cpUct: " + this.uctConstantFactor +
         "\n numberOfMonteCarloSimulations: " + this.numberOfMonteCarloSimulations +
-        "\n submoduleDirectory: " + this.submoduleDirectory +
-        "\n bestModelFileName: " + this.bestModelFileName +
-        "\n trainExamplesFileName" + this.trainExamplesFileName;
+        "\n bestModelFileName: " + getAbsoluteModelPathFrom(this.bestModelFileName) +
+        "\n trainExamplesFileName: " + getAbsoluteModelPathFrom(this.trainExamplesFileName);
   }
 
   public double getLearningRate() {
@@ -401,12 +396,12 @@ public class AdversaryLearningConfiguration {
     this.updateGamesNewNetworkWinRatioThreshold = updateNeuralNetworkThreshold;
   }
 
-  public int getNumberOfEpisodes() {
-    return numberOfEpisodes;
+  public int getNumberOfIterationsBeforePotentialUpdate() {
+    return numberOfIterationsBeforePotentialUpdate;
   }
 
-  public void setNumberOfEpisodes(int numberOfEpisodesBeforePotentialUpdate) {
-    this.numberOfEpisodes = numberOfEpisodesBeforePotentialUpdate;
+  public void setNumberOfIterationsBeforePotentialUpdate(int numberOfEpisodesBeforePotentialUpdate) {
+    this.numberOfIterationsBeforePotentialUpdate = numberOfEpisodesBeforePotentialUpdate;
   }
   
   public int getIterationStart() {
@@ -484,18 +479,11 @@ public class AdversaryLearningConfiguration {
     this.numberOfMonteCarloSimulations = nummberOfMonteCarloSimulations;
   }
   
-  public String getAbsoluteModelPathFromSubmodule(String modelName) {
+  public String getAbsoluteModelPathFrom(String modelName) {
   
-    String submodulePath = new File(submoduleDirectory).getAbsolutePath();
+    String currentPath = String.valueOf(Paths.get(StringUtils.EMPTY).toAbsolutePath());
     
-    return submodulePath + File.separator + modelName;
-  }
-  public String getSubmoduleDirectory() {
-    return submoduleDirectory;
-  }
-
-  public void setSubmoduleDirectory(String submoduleDirectory) {
-    this.submoduleDirectory = submoduleDirectory;
+    return currentPath + File.separator + modelName;
   }
 
   public String getBestModelFileName() {

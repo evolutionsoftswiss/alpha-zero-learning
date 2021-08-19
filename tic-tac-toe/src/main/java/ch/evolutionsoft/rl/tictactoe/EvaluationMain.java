@@ -34,7 +34,7 @@ public class EvaluationMain {
     AdversaryLearning al = new AdversaryLearning(
         new TicTacToe(Game.MAX_PLAYER),
         computationGraph1,
-        new AdversaryLearningConfiguration.Builder().iterationStart(201).build());
+        new AdversaryLearningConfiguration.Builder().build());
     Map<INDArray, AdversaryTrainingExample> examples = al.loadEarlierTrainingExamples("trainExamples.obj");
  
     log.info("Empty field probabilities {}", examples.get(TicTacToeConstants.EMPTY_CONVOLUTIONAL_PLAYGROUND));

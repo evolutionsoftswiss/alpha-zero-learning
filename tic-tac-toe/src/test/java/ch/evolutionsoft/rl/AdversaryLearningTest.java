@@ -48,7 +48,7 @@ public class AdversaryLearningTest {
   @Test
   void testMiniBatchBehavior() throws IOException {
     
-    AdversaryLearningConfiguration configuration =
+    configuration =
         new AdversaryLearningConfiguration.Builder().
         alwaysUpdateNeuralNetwork(true).
         numberOfIterations(1).
@@ -74,8 +74,8 @@ public class AdversaryLearningTest {
   @AfterEach
   void deleteTempModel() throws IOException {
     
-    Files.delete(Paths.get(configuration.getAbsoluteModelPathFromSubmodule(TEST_MODEL_BIN)));
-    Files.delete(Paths.get(configuration.getAbsoluteModelPathFromSubmodule(TEST_TRAIN_EXAMPLES)));
+    Files.delete(Paths.get(configuration.getAbsoluteModelPathFrom(TEST_MODEL_BIN)));
+    Files.delete(Paths.get(configuration.getAbsoluteModelPathFrom(TEST_TRAIN_EXAMPLES)));
   }
   
 }

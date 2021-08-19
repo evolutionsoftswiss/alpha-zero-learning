@@ -58,7 +58,7 @@ public class AdversaryLearning {
   ComputationGraph computationGraph;
   ComputationGraph previousComputationGraph;
 
-  public AdversaryLearningConfiguration adversaryLearningConfiguration;
+  AdversaryLearningConfiguration adversaryLearningConfiguration;
 
   MonteCarloSearch mcts;
 
@@ -86,13 +86,13 @@ public class AdversaryLearning {
         adversaryLearningConfiguration.getNumberOfIterations();
         iteration++) {
 
-      for (int episode = 1; episode <= adversaryLearningConfiguration.getNumberOfEpisodes(); episode++) {
+      for (int episode = 1; episode <= adversaryLearningConfiguration.getNumberOfIterationsBeforePotentialUpdate(); episode++) {
 
         List<AdversaryTrainingExample> newExamples = this.executeEpisode(iteration);
   
         replaceOldTrainingExamplesWithNewActionProbabilities(newExamples);
   
-        saveTrainExamplesHistory(-1);
+        saveTrainExamplesHistory();
         
         log.info("Episode {}-{} ended, train examples {}", iteration, episode, this.trainExamplesHistory.size());
       }
@@ -103,15 +103,19 @@ public class AdversaryLearning {
           updateAfterBetterPlayout) {
 
         log.info("Accepting new model");
+        String absoluteBestModelPath =
+            adversaryLearningConfiguration.getAbsoluteModelPathFrom(adversaryLearningConfiguration.getBestModelFileName());
         ModelSerializer.writeModel(computationGraph,
-            adversaryLearningConfiguration.getAbsoluteModelPathFromSubmodule(adversaryLearningConfiguration.getBestModelFileName()),
+            absoluteBestModelPath,
             true);
+        
+        log.info("Write new model {}", absoluteBestModelPath);
+
         if (updateAfterBetterPlayout) {
           initialGame.evaluateBoardActionExamples(previousComputationGraph);
         }
         initialGame.evaluateBoardActionExamples(computationGraph);
         initialGame.evaluateNetwork(computationGraph);
-
       }
 
       createCheckpoint(iteration);
@@ -169,22 +173,23 @@ public class AdversaryLearning {
 
     if (restoreTrainedNeuralNet) {
 
-      String absoluteBestModelPathFromSubmodule = adversaryLearningConfiguration.getAbsoluteModelPathFromSubmodule(adversaryLearningConfiguration.getBestModelFileName());
-      this.computationGraph = ModelSerializer.restoreComputationGraph(absoluteBestModelPathFromSubmodule, true);
+      String absoluteBestModelPath =
+          adversaryLearningConfiguration.getAbsoluteModelPathFrom(adversaryLearningConfiguration.getBestModelFileName());
+      this.computationGraph = ModelSerializer.restoreComputationGraph(absoluteBestModelPath, true);
       this.computationGraph.setLearningRate(this.adversaryLearningConfiguration.getLearningRate());
       if (null != this.adversaryLearningConfiguration.getLearningRateSchedule()) {
         this.computationGraph.setLearningRate(this.adversaryLearningConfiguration.getLearningRateSchedule());
       }
-      log.info("restored bestmodel.bin");
+      log.info("restored model {}", absoluteBestModelPath);
 
       if (!this.adversaryLearningConfiguration.isAlwaysUpdateNeuralNetwork()) {
 
-        this.previousComputationGraph = ModelSerializer.restoreComputationGraph(absoluteBestModelPathFromSubmodule, true);
+        this.previousComputationGraph = ModelSerializer.restoreComputationGraph(absoluteBestModelPath, true);
         this.previousComputationGraph.setLearningRate(this.adversaryLearningConfiguration.getLearningRate());
         if (null != this.adversaryLearningConfiguration.getLearningRateSchedule()) {
           this.computationGraph.setLearningRate(this.adversaryLearningConfiguration.getLearningRateSchedule());
         }
-        log.info("restored tempmodel.bin from bestmodel.bin");
+        log.info("restored temp model from {}", absoluteBestModelPath);
       }
     }
   }
@@ -240,9 +245,12 @@ public class AdversaryLearning {
     boolean updateAfterBetterPlayout = false;
     if (!adversaryLearningConfiguration.isAlwaysUpdateNeuralNetwork()) {
 
-      String absoluteTempModelPathFromSubmodule = adversaryLearningConfiguration.getAbsoluteModelPathFromSubmodule(TEMPMODEL_NAME);
-      ModelSerializer.writeModel(computationGraph, absoluteTempModelPathFromSubmodule, true);
-      this.previousComputationGraph = ModelSerializer.restoreComputationGraph(absoluteTempModelPathFromSubmodule, true);
+      String absoluteTempModelPath = adversaryLearningConfiguration.getAbsoluteModelPathFrom(TEMPMODEL_NAME);
+      ModelSerializer.writeModel(computationGraph, absoluteTempModelPath, true);
+      
+      log.info("Write temp model {}", absoluteTempModelPath);
+      
+      this.previousComputationGraph = ModelSerializer.restoreComputationGraph(absoluteTempModelPath, true);
 
       this.computationGraph = this.fitNeuralNet(this.computationGraph, trainExamples);
 
@@ -261,7 +269,9 @@ public class AdversaryLearning {
       if (!updateAfterBetterPlayout) {
 
         log.info("Rejecting new model");
-        this.computationGraph = ModelSerializer.restoreComputationGraph(absoluteTempModelPathFromSubmodule, true);
+        this.computationGraph = ModelSerializer.restoreComputationGraph(absoluteTempModelPath, true);
+        
+        log.info("Restored best model from {}", absoluteTempModelPath);
       }
 
     } else {
@@ -274,16 +284,11 @@ public class AdversaryLearning {
 
   void createCheckpoint(int iteration) throws IOException {
 
-    int prependingZeros = SEVEN_DIGITS - String.valueOf(iteration).length();
-    
-    StringBuilder prependedZeros = new StringBuilder();
-    for (int n = 1; n <= prependingZeros; n++) {
-      prependedZeros.append('0');
-    }
+    StringBuilder prependedZeros = prependZeros(iteration);
     
     if (0 == iteration % adversaryLearningConfiguration.getCheckPointIterationsFrequency()) {
 
-      String bestModelPath = adversaryLearningConfiguration.getAbsoluteModelPathFromSubmodule(adversaryLearningConfiguration.getBestModelFileName());
+      String bestModelPath = adversaryLearningConfiguration.getAbsoluteModelPathFrom(adversaryLearningConfiguration.getBestModelFileName());
       ModelSerializer.writeModel(computationGraph, bestModelPath.substring(0, bestModelPath.length() - ".bin".length()) + prependedZeros + iteration + ".bin", true);
       saveTrainExamplesHistory(iteration);
     }
@@ -384,9 +389,29 @@ public class AdversaryLearning {
 
     } catch (IllegalArgumentException iae) {
 
-      log.info("{}", initialGame);
       log.info("{}", game);
       throw new RuntimeException(iae);
+    }
+  }
+
+  void saveTrainExamplesHistory() throws IOException {
+
+    /** TODO resize Map
+    if (this.trainExamplesHistory.size() > adversaryLearningConfiguration.getMaxTrainExamplesHistory()) {
+
+      this.trainExamplesHistory
+          .subList(0, trainExamplesHistory.size() - adversaryLearningConfiguration.getMaxTrainExamplesHistory())
+          .clear();
+    }*/
+
+    String trainExamplesPath = adversaryLearningConfiguration.getAbsoluteModelPathFrom(
+        adversaryLearningConfiguration.getTrainExamplesFileName());
+    
+    try (ObjectOutputStream trainExamplesOutput = new ObjectOutputStream(
+        new FileOutputStream(trainExamplesPath))) {
+
+      trainExamplesOutput.writeObject(trainExamplesHistory);
+
     }
   }
 
@@ -400,11 +425,27 @@ public class AdversaryLearning {
           .clear();
     }*/
 
+    StringBuilder prependedZeros = prependZeros(iteration);
+    String trainExamplesPath = adversaryLearningConfiguration.getAbsoluteModelPathFrom(
+        adversaryLearningConfiguration.getTrainExamplesFileName());
+    
     try (ObjectOutputStream trainExamplesOutput = new ObjectOutputStream(
-        new FileOutputStream("trainExamples" + (iteration > 0 ? "0000" + iteration : "") + ".obj"))) {
+        new FileOutputStream(trainExamplesPath.substring(0, trainExamplesPath.length() - ".obj".length())  + prependedZeros + iteration + ".obj"))) {
 
       trainExamplesOutput.writeObject(trainExamplesHistory);
+
     }
+  }
+
+  StringBuilder prependZeros(int iteration) {
+
+    int prependingZeros = SEVEN_DIGITS - String.valueOf(iteration).length();
+    
+    StringBuilder prependedZeros = new StringBuilder();
+    for (int n = 1; n <= prependingZeros; n++) {
+      prependedZeros.append('0');
+    }
+    return prependedZeros;
   }
   
   boolean hasMoreThanOneMove(Set<Integer> emptyFields) {
