@@ -137,8 +137,7 @@ public class MonteCarloSearch {
     for (int index : validMoveIndices) {
 
       double softmaxParameter = softmaxParameters.getDouble(index);
-      if (Double.isInfinite(softmaxParameter)) {
-        // TODO remove, should no more occur with if's below and above
+      if (logger.isWarnEnabled() && Double.isInfinite(softmaxParameter)) {
         logger.warn("Infinite softmax param {} for valid move index {}, NaN results expected."
             + " Is {} and getValidMoveIndices() OK ?"
             + "getValidMoveIndices() had {}, but visitedCounts {}",

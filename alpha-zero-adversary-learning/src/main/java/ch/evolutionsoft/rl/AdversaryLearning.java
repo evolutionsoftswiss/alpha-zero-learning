@@ -7,12 +7,15 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import org.apache.commons.math3.distribution.EnumeratedIntegerDistribution;
 import org.deeplearning4j.nn.graph.ComputationGraph;
@@ -254,6 +257,8 @@ public class AdversaryLearning {
 
       this.computationGraph = this.fitNeuralNet(this.computationGraph, trainExamples);
 
+      log.info("Challenge new model version with previous model in {} games", adversaryLearningConfiguration.gamesToGetNewNetworkWinRatio);
+      
       AdversaryAgentDriver adversaryAgentDriver = new AdversaryAgentDriver(
           this.previousComputationGraph,
           this.computationGraph);
@@ -262,10 +267,15 @@ public class AdversaryLearning {
 
       log.info("New model wins {} / prev model wins {} / draws {}", gameResults[1], gameResults[0], gameResults[2]);
 
-      updateAfterBetterPlayout = (gameResults[1] + DRAW_WEIGHT * gameResults[2])
-          / (gameResults[0] + gameResults[1] + DRAW_WEIGHT * gameResults[2]) > adversaryLearningConfiguration
+      double newModelWinDrawRatio = (gameResults[1] + DRAW_WEIGHT * gameResults[2])
+          / (gameResults[0] + gameResults[1] + DRAW_WEIGHT * gameResults[2]);
+      updateAfterBetterPlayout = newModelWinDrawRatio > adversaryLearningConfiguration
               .getUpdateGamesNewNetworkWinRatioThreshold();
 
+      log.info("New model win/draw ratio against previous model is {} vs configured threshold {}",
+          newModelWinDrawRatio,
+          adversaryLearningConfiguration.getUpdateGamesNewNetworkWinRatioThreshold());
+      
       if (!updateAfterBetterPlayout) {
 
         log.info("Rejecting new model");
@@ -390,19 +400,13 @@ public class AdversaryLearning {
     } catch (IllegalArgumentException iae) {
 
       log.info("{}", game);
-      throw new RuntimeException(iae);
+      throw new IllegalArgumentException(iae);
     }
   }
 
   void saveTrainExamplesHistory() throws IOException {
 
-    /** TODO resize Map
-    if (this.trainExamplesHistory.size() > adversaryLearningConfiguration.getMaxTrainExamplesHistory()) {
-
-      this.trainExamplesHistory
-          .subList(0, trainExamplesHistory.size() - adversaryLearningConfiguration.getMaxTrainExamplesHistory())
-          .clear();
-    }*/
+    this.resizeTrainExamplesHistory();
 
     String trainExamplesPath = adversaryLearningConfiguration.getAbsoluteModelPathFrom(
         adversaryLearningConfiguration.getTrainExamplesFileName());
@@ -417,13 +421,7 @@ public class AdversaryLearning {
 
   void saveTrainExamplesHistory(int iteration) throws IOException {
 
-    /** TODO resize Map
-    if (this.trainExamplesHistory.size() > adversaryLearningConfiguration.getMaxTrainExamplesHistory()) {
-
-      this.trainExamplesHistory
-          .subList(0, trainExamplesHistory.size() - adversaryLearningConfiguration.getMaxTrainExamplesHistory())
-          .clear();
-    }*/
+    this.resizeTrainExamplesHistory();
 
     StringBuilder prependedZeros = prependZeros(iteration);
     String trainExamplesPath = adversaryLearningConfiguration.getAbsoluteModelPathFrom(
@@ -437,6 +435,25 @@ public class AdversaryLearning {
     }
   }
 
+  void resizeTrainExamplesHistory() {
+
+    if (this.adversaryLearningConfiguration.getMaxTrainExamplesHistory() >=
+        this.trainExamplesHistory.size()) {
+      
+      return;
+    }
+
+    Comparator<AdversaryTrainingExample> byIterationDescending = 
+      (AdversaryTrainingExample firstExample, AdversaryTrainingExample secondExample) -> 
+      secondExample.getIteration() - firstExample.getIteration();
+    this.trainExamplesHistory =
+        this.trainExamplesHistory.entrySet().stream().
+        sorted(Entry.comparingByValue(byIterationDescending)).
+        limit(this.adversaryLearningConfiguration.getMaxTrainExamplesHistory()).
+        collect(Collectors.toMap(
+           Entry::getKey, Entry::getValue, (e1, e2) -> e1, HashMap::new));
+  }
+  
   StringBuilder prependZeros(int iteration) {
 
     int prependingZeros = SEVEN_DIGITS - String.valueOf(iteration).length();
@@ -526,8 +543,11 @@ public class AdversaryLearning {
   
         INDArray actionIndexProbabilities = Nd4j.zeros(initialGame.getNumberOfAllAvailableMoves());
         INDArray trainingExampleActionProbabilities = currentTrainingExample.getActionIndexProbabilities();
+
+        // TODO review simplification by always having getNumberOfAllAvailableMoves
         if (actionIndexProbabilities.shape()[0] > trainingExampleActionProbabilities.shape()[0]) {
   
+          // Leave remaining moves at the end with 0, only pass at numberOfSquares in Go
           for (int i = 0; i < trainingExampleActionProbabilities.shape()[0]; i++) {
             actionIndexProbabilities.putScalar(i, trainingExampleActionProbabilities.getDouble(i));
           }
@@ -542,6 +562,7 @@ public class AdversaryLearning {
   
         } else {
   
+          // Shapes do match
           actionIndexProbabilities = trainingExampleActionProbabilities;
         }
   

@@ -22,6 +22,9 @@ import org.nd4j.linalg.api.ndarray.INDArray;
  * An end result max win 1 or min win 0 comes from one same self play with
  * an end result not a draw. In the case of a draw currentPlayerValue is 0.5 for all examples.
  * 
+ * The iteration number denoted the recentness of an {@link AdversaryTrainingExample}.
+ * It is used to discard the oldest example when necessary.
+ * 
  * @author evolutionsoft
  */
 public class AdversaryTrainingExample implements Serializable {
@@ -64,6 +67,14 @@ public class AdversaryTrainingExample implements Serializable {
   public int getCurrentPlayer() {
     return currentPlayer;
   }
+
+  public int getIteration() {
+    return iteration;
+  }
+
+  public void setIteration(int iteration) {
+    this.iteration = iteration;
+  }
   
   public boolean equals(Object other) {
     
@@ -89,6 +100,7 @@ public class AdversaryTrainingExample implements Serializable {
         this.currentPlayer + System.lineSeparator() +
         this.actionIndexProbabilities.toString() + System.lineSeparator() +
         this.currentPlayerValue + System.lineSeparator() +
+        this.iteration + System.lineSeparator() +
         "}";
   }
 }

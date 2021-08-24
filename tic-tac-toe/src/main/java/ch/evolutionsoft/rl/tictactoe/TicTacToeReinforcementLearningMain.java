@@ -33,8 +33,10 @@ public class TicTacToeReinforcementLearningMain {
         build();
    
     ComputationGraph neuralNet = main.createConvolutionalConfiguration(adversaryLearningConfiguration);
-    
-    log.info(neuralNet.summary());
+
+    if (log.isInfoEnabled()) {
+      log.info(neuralNet.summary());
+    }
     
     AdversaryLearning adversaryLearning =
         new AdversaryLearning(

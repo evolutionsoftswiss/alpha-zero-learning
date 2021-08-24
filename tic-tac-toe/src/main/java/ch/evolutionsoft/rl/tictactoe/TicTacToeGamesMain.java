@@ -28,14 +28,14 @@ public class TicTacToeGamesMain {
     ComputationGraph alphaNet = ModelSerializer.restoreComputationGraph(
         configuration.getAbsoluteModelPathFrom("bestmodel.bin"));
     
-    int[] results1 = playGamesSupervisedNetVsAlphaZeroNet(perfectResNet, alphaNet);
-    int[] results2 = playGamesAlphaNetVsSupervisedResidualNet(perfectResNet, alphaNet);
+    int[] results1 = playGames(perfectResNet, alphaNet, false);
+    int[] results2 = playGames(perfectResNet, alphaNet, true);
 
     log.info("Alpha O: loss {} draws {} wins {}", results1[0], results1[1], results1[2]);
     log.info("Alpha X: loss {} draws {} wins {}", results2[2], results2[1], results2[0]);
   }
 
-  static int[] playGamesSupervisedNetVsAlphaZeroNet(ComputationGraph perfectResNet, ComputationGraph alphaNet) {
+  static int[] playGames(ComputationGraph perfectResNet, ComputationGraph alphaNet, boolean alphaIsMaxPlayer) {
 
     int[] results = new int[3];
     
@@ -45,22 +45,22 @@ public class TicTacToeGamesMain {
 
       int firstMoveIndex = game % TicTacToeConstants.COLUMN_COUNT;
       ticTacToe.doFirstMove(firstMoveIndex);
-      boolean xPlayer = false;
+      boolean maxPlayer = false;
       int numberOfMoves = 1;
       
       while (!ticTacToe.gameEnded()) {
         
-        if (xPlayer) {
+        if (!alphaIsMaxPlayer && maxPlayer || alphaIsMaxPlayer && !maxPlayer) {
 
-          doMoveFromSupervisedResidualNet(perfectResNet, ticTacToe, xPlayer);
+          doMoveFromSupervisedResidualNet(perfectResNet, ticTacToe, maxPlayer);
         
         } else {
 
-          doMoveFromAlphaZeroNet(alphaNet, ticTacToe, xPlayer);
+          doMoveFromAlphaZeroNet(alphaNet, ticTacToe, maxPlayer);
         }
         
         numberOfMoves++;
-        xPlayer = !xPlayer;
+        maxPlayer = !maxPlayer;
         
       }
 
@@ -88,60 +88,8 @@ public class TicTacToeGamesMain {
     return results;
   }
 
-  static int[] playGamesAlphaNetVsSupervisedResidualNet(ComputationGraph perfectResNet, ComputationGraph alphaNet) {
-
-    int[] results = new int[3];
-    
-    for (int game = 1; game <= 27; game++) {
-
-      Game ticTacToe = new TicTacToe(Game.MAX_PLAYER);
-      
-      int firstMoveIndex = game % TicTacToeConstants.COLUMN_COUNT;
-      ticTacToe.doFirstMove(firstMoveIndex);
-      boolean xPlayer = false;
-      int numberOfMoves = 1;
-      
-      while (!ticTacToe.gameEnded()) {
-        
-        if (!xPlayer) {
-
-          doMoveFromSupervisedResidualNet(perfectResNet, ticTacToe, xPlayer);
-        
-        } else {
-
-          doMoveFromAlphaZeroNet(alphaNet, ticTacToe, xPlayer);
-        }
-        
-        numberOfMoves++;
-        xPlayer = !xPlayer;
-        
-      }
-
-      double endResult = ticTacToe.getEndResult(-1);      
-      if (endResult > AdversaryLearning.DRAW_VALUE) {
-
-        log.info("X wins after {} moves", numberOfMoves);
-        results[0]++;
-      
-      } else if (endResult < AdversaryLearning.DRAW_VALUE) {
-
-        log.info("O wins after {} moves", numberOfMoves);
-        results[2]++;
-      
-      } else if (ticTacToe.getValidMoveIndices().isEmpty()) {
-
-        log.info("Draw");
-        results[1]++;
-        
-      }
-
-      log.info("Game finished with first move index {}\nGame ended with board {}", firstMoveIndex, ticTacToe.getCurrentBoard());
-    }
-    
-    return results;
-  }
-
   static INDArray doMoveFromAlphaZeroNet(ComputationGraph alphaNet, Game ticTacToe, boolean xPlayer) {
+
     int moveIndex = new MonteCarloSearch(alphaNet, new AdversaryLearningConfiguration.
         Builder().build()).getActionValues(ticTacToe, 0).argMax(0).getInt(0);
     
@@ -155,6 +103,7 @@ public class TicTacToeGamesMain {
 
   static INDArray doMoveFromSupervisedResidualNet(ComputationGraph perfectResNet, Game ticTacToe,
       boolean xPlayer) {
+ 
     int moveIndex = getBestMove(perfectResNet, ticTacToe.getCurrentBoard());
 
     if (!ticTacToe.getValidMoveIndices().contains(moveIndex)) {

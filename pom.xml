@@ -13,6 +13,9 @@
 		<dl4j.version>1.0.0-beta7</dl4j.version>
 		<datavec.version>1.0.0-beta7</datavec.version>
 		<nd4j.backend>linux-x86_64-avx2</nd4j.backend>
+	    <sonar.java.coveragePlugin>jacoco</sonar.java.coveragePlugin>
+		<sonar.language>java</sonar.language>
+		<sonar.coverage.jacoco.xmlReportPaths>target/site/jacoco-aggregate/jacoco.xml</sonar.coverage.jacoco.xmlReportPaths>
 	</properties>
 	
 	<modules>
@@ -148,6 +151,34 @@
 	
 			</plugins>
 		</pluginManagement>
+		
+		<plugins>
+
+				<plugin>
+				    <groupId>org.jacoco</groupId>
+				    <artifactId>jacoco-maven-plugin</artifactId>
+				    <version>0.8.7</version>
+				    <configuration>
+				        <append>true</append>
+				    </configuration>
+				    <executions>
+				        <execution>
+				            <id>agent</id>
+				            <goals>
+				                <goal>prepare-agent</goal>
+				            </goals>
+				        </execution>
+			            <execution>
+			                <id>report-aggregate</id>
+			                <phase>test</phase>
+			                <goals>
+			                    <goal>report-aggregate</goal>
+			                </goals>
+			            </execution>
+				    </executions>
+				</plugin>
+		
+		</plugins>
 	</build>
 
 </project>
