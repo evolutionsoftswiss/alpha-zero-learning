@@ -15,7 +15,7 @@
 		<nd4j.backend>linux-x86_64-avx2</nd4j.backend>
 	    <sonar.java.coveragePlugin>jacoco</sonar.java.coveragePlugin>
 		<sonar.language>java</sonar.language>
-		<sonar.coverage.jacoco.xmlReportPaths>target/site/jacoco-aggregate/jacoco.xml</sonar.coverage.jacoco.xmlReportPaths>
+		<sonar.coverage.jacoco.xmlReportPaths>target/site/jacoco/jacoco.xml</sonar.coverage.jacoco.xmlReportPaths>
 	</properties>
 	
 	<modules>
@@ -169,10 +169,10 @@
 				            </goals>
 				        </execution>
 			            <execution>
-			                <id>report-aggregate</id>
+			                <id>report</id>
 			                <phase>test</phase>
 			                <goals>
-			                    <goal>report-aggregate</goal>
+			                    <goal>report</goal>
 			                </goals>
 			            </execution>
 				    </executions>
