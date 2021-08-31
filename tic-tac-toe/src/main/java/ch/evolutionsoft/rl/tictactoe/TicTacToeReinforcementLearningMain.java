@@ -1,14 +1,19 @@
 package ch.evolutionsoft.rl.tictactoe;
 
 import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
 
 import org.deeplearning4j.nn.conf.ComputationGraphConfiguration;
 import org.deeplearning4j.nn.graph.ComputationGraph;
+import org.nd4j.linalg.schedule.MapSchedule;
+import org.nd4j.linalg.schedule.ScheduleType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import ch.evolutionsoft.rl.AdversaryLearning;
 import ch.evolutionsoft.rl.AdversaryLearningConfiguration;
+import ch.evolutionsoft.rl.Game;
 
 public class TicTacToeReinforcementLearningMain {
 
@@ -17,24 +22,42 @@ public class TicTacToeReinforcementLearningMain {
   public static void main(String[] args) throws IOException {
     
     TicTacToeReinforcementLearningMain main = new TicTacToeReinforcementLearningMain();
-   
-    ComputationGraph neuralNet = main.createConvolutionalConfiguration();
     
-    log.info(neuralNet.summary());
+    Map<Integer, Double> learningRatesByIterations = new HashMap<>();
+    learningRatesByIterations.put(0, 2e-3);
+    learningRatesByIterations.put(200, 1e-3);
+    MapSchedule learningRateMapSchedule = new MapSchedule(ScheduleType.ITERATION, learningRatesByIterations);
+    AdversaryLearningConfiguration adversaryLearningConfiguration =
+        new AdversaryLearningConfiguration.Builder().
+        learningRateSchedule(learningRateMapSchedule).
+        build();
+   
+    ComputationGraph neuralNet = main.createConvolutionalConfiguration(adversaryLearningConfiguration);
+
+    if (log.isInfoEnabled()) {
+      log.info(neuralNet.summary());
+    }
     
     AdversaryLearning adversaryLearning =
         new AdversaryLearning(
-            new TicTacToe(),
+            new TicTacToe(Game.MAX_PLAYER),
             neuralNet,
-            new AdversaryLearningConfiguration.Builder().numberOfIterations(20).build());
+            adversaryLearningConfiguration);
     
     adversaryLearning.performLearning();
   }
 
-  ComputationGraph createConvolutionalConfiguration() {
+  ComputationGraph createConvolutionalConfiguration(AdversaryLearningConfiguration adversaryLearningConfiguration) {
 
-    ConvolutionResidualNet convolutionalLayerNet = new ConvolutionResidualNet(1e-3);
+    ConvolutionResidualNet convolutionalLayerNet =
+        new ConvolutionResidualNet(adversaryLearningConfiguration.getLearningRate());
 
+    if (null != adversaryLearningConfiguration.getLearningRateSchedule()) {
+
+      convolutionalLayerNet =
+          new ConvolutionResidualNet(adversaryLearningConfiguration.getLearningRateSchedule());
+    }
+    
     ComputationGraphConfiguration convolutionalLayerNetConfiguration =
         convolutionalLayerNet.createConvolutionalGraphConfiguration();
 
@@ -43,5 +66,4 @@ public class TicTacToeReinforcementLearningMain {
 
     return net;
   }
-
 }

@@ -1,25 +1,29 @@
 package ch.evolutionsoft.rl;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import org.nd4j.linalg.api.ndarray.INDArray;
-
-import ch.evolutionsoft.net.game.NeuralNetConstants;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class TreeNode {
+
+    Logger logger = LoggerFactory.getLogger(TreeNode.class);
 	
-	int move;
+	int lastMove;
 
 	int depth;
 	
-	int lastColorMove;
+	int lastMoveColor;
 	
 	int timesVisited = 0;
 	
-	double qValue = 0; 
+	double qValue = AdversaryLearning.DRAW_VALUE; 
 	
 	double uValue = 0;
 	
@@ -31,61 +35,54 @@ public class TreeNode {
 	
 	
 	public TreeNode(
-	    int move,
-	    int colorToMove,
+	    int lastMove,
+	    int lastMoveColor,
 	    int depth,
 	    double moveProbability,
+	    double initialQ,
 	    TreeNode parent){
 		
 		this.parent = parent;
+		this.qValue = initialQ;
 		this.depth = depth;
-		this.move = move;
+		this.lastMove = lastMove;
 		this.moveProbability = moveProbability;
-		this.lastColorMove = colorToMove;
+		this.lastMoveColor = lastMoveColor;
+	}
+	
+	void expand(Game game, INDArray previousActionProbabilities) {
+
+	  Set<Integer> validMoveIndices = game.getValidMoveIndices();
+ 
+	  for (int moveIndex : validMoveIndices) {
+	      
+	    this.children.put(
+	        moveIndex,
+	        new TreeNode(
+	            moveIndex,
+	            game.getOtherPlayer(this.lastMoveColor),
+	            this.depth + 1,
+	            previousActionProbabilities.getDouble(moveIndex),
+	            1 - this.qValue,
+	            this));
+	    }
+	  
 	}
 
-
-	void expand(Game game, INDArray previousActionProbabilities, INDArray currentBoard) {
+	public boolean isExpanded() {
 	  
-	  for (int index : game.getEmptyFields(currentBoard)) {
-	    
-	    if (!this.children.containsKey(index)) {
-	      
-	      this.children.put(
-	          index,
-	          new TreeNode(
-	              index,
-	              game.getOtherPlayer(this.lastColorMove),
-	              this.depth + 1,
-	              previousActionProbabilities.getDouble(index),
-	              this));
-	    }
-	  }
+	  return !this.children.isEmpty();
 	}
 	
 	protected TreeNode selectMove(double cpUct) {
 
-	  // Handle never visited children
-	  List<TreeNode> neverVisitedChildren = new ArrayList<>();
-      for (TreeNode treeNode : this.children.values()) {
-        
-        if (0 >= treeNode.timesVisited) {
-          neverVisitedChildren.add(treeNode);
-        }
-      }
-      
-      if (!neverVisitedChildren.isEmpty()) {
-        
-        return neverVisitedChildren.get(
-            NeuralNetConstants.randomGenerator.nextInt(
-                neverVisitedChildren.size())
-            );
-      }
-	  
+      List<TreeNode> childNodes = new ArrayList<>(this.children.values());
+      Collections.shuffle(childNodes);
+
       double bestValue = Integer.MIN_VALUE;
       TreeNode bestNode = null;
       
-      for (TreeNode treeNode : this.children.values()) {
+      for (TreeNode treeNode : childNodes) {
         	
         double currentValue = treeNode.getValue(cpUct);
           
@@ -110,15 +107,17 @@ public class TreeNode {
 	}
 	
 	
-	public void update(double newValue){
-	  
+	public void update(double newValue) {
+
 	  this.timesVisited++;
 	  
-	  this.qValue += (newValue - this.qValue) / this.timesVisited; 
+	  this.qValue += (newValue - this.qValue) / (this.timesVisited); 
+      
 	}
 	
 	
 	public void updateRecursiv(double newValue) {
+	  
 
 	  if (null != this.parent) {
 	    
@@ -126,5 +125,16 @@ public class TreeNode {
 	  }
 	  
 	  this.update(newValue);
+	  
+	}
+
+	public TreeNode getChildWithMoveIndex(int moveIndex) {
+	  
+	  return this.children.get(moveIndex);
+	}
+	
+	public boolean containsChildMoveIndex(int moveIndex) {
+	  
+	  return this.children.containsKey(moveIndex);
 	}
 }

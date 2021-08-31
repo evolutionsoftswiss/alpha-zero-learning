@@ -9,22 +9,25 @@ import org.deeplearning4j.nn.graph.ComputationGraph;
 import org.nd4j.linalg.api.ndarray.INDArray;
 import org.nd4j.linalg.factory.Nd4j;
 
-import ch.evolutionsoft.net.game.NeuralNetConstants;
-
+/**
+ * {@link AdversaryAgentDriver} is only relevant if {@link AdversaryLearningConfiguration} has alwaysUpdateNeuralNetwork = false.
+ * In that case, a configured number of games and win rate decide if the alpha zero network gets updated with newest version of
+ * the neural net, a {@link ComputationGraph} here.
+ * 
+ * @author evolutionsoft
+ */
 public class AdversaryAgentDriver {
 
-  ComputationGraph player1Policy, player2Policy;
-
-  Game game;
+  ComputationGraph player1Policy;
+  ComputationGraph player2Policy;
   
-  public AdversaryAgentDriver(Game game, ComputationGraph player1, ComputationGraph player2) {
+  public AdversaryAgentDriver(ComputationGraph player1, ComputationGraph player2) {
     
-    this.game = game;
     this.player1Policy = player1;
     this.player2Policy = player2;
   }
 
-  public int[] playGames(AdversaryLearningConfiguration configuration, double temperature) {
+  public int[] playGames(Game game, AdversaryLearningConfiguration configuration) {
     
     int numberOfEpisodesPlayer1Starts = configuration.getGamesToGetNewNetworkWinRatio() / 2;
     int numberOfEpisodesPlayer2Starts = configuration.getGamesToGetNewNetworkWinRatio() - numberOfEpisodesPlayer1Starts;
@@ -35,7 +38,7 @@ public class AdversaryAgentDriver {
     
     for (int gameNumber = 1; gameNumber <= numberOfEpisodesPlayer1Starts; gameNumber++) {
       
-      double gameResult = this.playGame(configuration, temperature, gameNumber % game.getFieldCount());
+      double gameResult = this.playGame(game.createNewInstance(), configuration, gameNumber);
       
       if (gameResult >= MAX_WIN) {
         
@@ -57,7 +60,7 @@ public class AdversaryAgentDriver {
 
     for (int gameNumber = 1; gameNumber <= numberOfEpisodesPlayer2Starts; gameNumber++) {
       
-      double gameResult = this.playGame(configuration, temperature, gameNumber % game.getFieldCount());
+      double gameResult = this.playGame(game.createNewInstance(), configuration, gameNumber);
       
       if (gameResult <= MIN_WIN) {
         
@@ -76,46 +79,44 @@ public class AdversaryAgentDriver {
     return new int[] {player1Wins, player2Wins, draws};
   }
   
-  public double playGame(AdversaryLearningConfiguration configuration, double temperature, int firstIndex) {
+  public double playGame(Game game, AdversaryLearningConfiguration configuration, int gameNumber) {
     
-    MonteCarloSearch player1 = new MonteCarloSearch(this.game, this.player1Policy, configuration);
-    MonteCarloSearch player2 = new MonteCarloSearch(this.game, this.player2Policy, configuration);
+    MonteCarloSearch player1 = new MonteCarloSearch(this.player1Policy, configuration);
+    MonteCarloSearch player2 = new MonteCarloSearch(this.player2Policy, configuration);
     
-    INDArray currentBoard = game.doFirstMove(firstIndex);
-    Set<Integer> emptyFields = game.getEmptyFields(currentBoard);
+    Set<Integer> emptyFields = game.getValidMoveIndices();
     
-    int currentPlayer = game.getCurrentPlayer(emptyFields);
+    int currentPlayer = Game.MAX_PLAYER;
 
-    while (!game.gameEnded(currentBoard)) {
+    while (!game.gameEnded()) {
     
-      INDArray moveActionValues = Nd4j.zeros(game.getFieldCount());
+      INDArray moveActionValues = Nd4j.zeros(game.getNumberOfAllAvailableMoves());
       if (currentPlayer == Game.MAX_PLAYER) {
         
-        moveActionValues = player1.getActionValues(currentBoard, temperature);
+        moveActionValues = player1.getActionValues(game, 0);
         
       } else if (currentPlayer == Game.MIN_PLAYER) {
         
-        moveActionValues = player2.getActionValues(currentBoard, temperature);
+        moveActionValues = player2.getActionValues(game, 0);
       }
       
       int moveAction = moveActionValues.argMax(0).getInt(0);
 
       if (!emptyFields.contains(moveAction)) {
-        moveAction = new ArrayList<>(emptyFields).get(NeuralNetConstants.randomGenerator.nextInt(emptyFields.size()));
+        moveAction = new ArrayList<>(emptyFields).get(AdversaryLearningConstants.randomGenerator.nextInt(emptyFields.size()));
       }
       
-      currentBoard = game.makeMove(currentBoard, moveAction, currentPlayer);
-      emptyFields = game.getEmptyFields(currentBoard);
-      currentPlayer = game.getCurrentPlayer(emptyFields);
+      game.makeMove(moveAction, currentPlayer);
+      emptyFields = game.getValidMoveIndices();
+      currentPlayer = game.getOtherPlayer(currentPlayer);
     }
     
-    if (game.hasWon(currentBoard, Game.MAX_PLAYER)) {
-      
-      return MAX_WIN;
-    
-    }
-    
-    if (game.hasWon(currentBoard, Game.MIN_PLAYER)) {
+    double endResult = game.getEndResult(currentPlayer);
+    if (endResult > 0.5) {
+
+      return MAX_WIN;    
+
+    } else if (endResult < 0.5) {
       
       return MIN_WIN;
     }
