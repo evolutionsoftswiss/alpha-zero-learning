@@ -10,11 +10,11 @@ import org.junit.jupiter.api.Test;
 import org.nd4j.linalg.api.ndarray.INDArray;
 import org.nd4j.linalg.factory.Nd4j;
 
-import ch.evolutionsoft.net.game.NeuralNetConstants;
-import ch.evolutionsoft.net.game.tictactoe.TicTacToeConstants;
+import ch.evolutionsoft.rl.AdversaryLearningConstants;
 import ch.evolutionsoft.rl.AdversaryTrainingExample;
 import ch.evolutionsoft.rl.Game;
 import ch.evolutionsoft.rl.tictactoe.TicTacToe;
+import ch.evolutionsoft.rl.tictactoe.TicTacToeConstants;
 
 public class TicTacToeTest {
 
@@ -24,7 +24,7 @@ public class TicTacToeTest {
   public void testSymmetriesWithNoDifferentSymmetry() {
 
     INDArray middleBoard = TicTacToeConstants.EMPTY_CONVOLUTIONAL_PLAYGROUND.dup();
-    middleBoard.putScalar(TicTacToeConstants.MAX_PLAYER_CHANNEL, 1, 1, NeuralNetConstants.ONE);
+    middleBoard.putScalar(TicTacToeConstants.MAX_PLAYER_CHANNEL, 1, 1, AdversaryLearningConstants.ONE);
     
     List<AdversaryTrainingExample> trainingExampleSymmetries =
         ticTacToe.getSymmetries(middleBoard, Nd4j.zeros(TicTacToeConstants.COLUMN_COUNT), Game.MAX_PLAYER, 0);
@@ -50,8 +50,8 @@ public class TicTacToeTest {
   public void testSymmetriesWith4Symmetries() {
     
     INDArray topLeftMiddleBoard = TicTacToeConstants.EMPTY_CONVOLUTIONAL_PLAYGROUND.dup();
-    topLeftMiddleBoard.putScalar(TicTacToeConstants.MAX_PLAYER_CHANNEL, 1, 1, NeuralNetConstants.ONE);
-    topLeftMiddleBoard.putScalar(TicTacToeConstants.MIN_PLAYER_CHANNEL, 0, 0, NeuralNetConstants.ONE);
+    topLeftMiddleBoard.putScalar(TicTacToeConstants.MAX_PLAYER_CHANNEL, 1, 1, AdversaryLearningConstants.ONE);
+    topLeftMiddleBoard.putScalar(TicTacToeConstants.MIN_PLAYER_CHANNEL, 0, 0, AdversaryLearningConstants.ONE);
     
     List<AdversaryTrainingExample> trainingExampleSymmetries =
         ticTacToe.getSymmetries(topLeftMiddleBoard, Nd4j.zeros(TicTacToeConstants.COLUMN_COUNT), Game.MAX_PLAYER, 0);
@@ -71,16 +71,16 @@ public class TicTacToeTest {
     assertSame(4, uniqueSymmetries.size());
     
     INDArray symmetry1 = TicTacToeConstants.EMPTY_CONVOLUTIONAL_PLAYGROUND.dup();
-    symmetry1.putScalar(TicTacToeConstants.MAX_PLAYER_CHANNEL, 1, 1, NeuralNetConstants.ONE);
-    symmetry1.putScalar(TicTacToeConstants.MIN_PLAYER_CHANNEL, 0, 2, NeuralNetConstants.ONE);
+    symmetry1.putScalar(TicTacToeConstants.MAX_PLAYER_CHANNEL, 1, 1, AdversaryLearningConstants.ONE);
+    symmetry1.putScalar(TicTacToeConstants.MIN_PLAYER_CHANNEL, 0, 2, AdversaryLearningConstants.ONE);
   
     INDArray symmetry2 = TicTacToeConstants.EMPTY_CONVOLUTIONAL_PLAYGROUND.dup();
-    symmetry2.putScalar(TicTacToeConstants.MAX_PLAYER_CHANNEL, 1, 1, NeuralNetConstants.ONE);
-    symmetry2.putScalar(TicTacToeConstants.MIN_PLAYER_CHANNEL, 2, 2, NeuralNetConstants.ONE);
+    symmetry2.putScalar(TicTacToeConstants.MAX_PLAYER_CHANNEL, 1, 1, AdversaryLearningConstants.ONE);
+    symmetry2.putScalar(TicTacToeConstants.MIN_PLAYER_CHANNEL, 2, 2, AdversaryLearningConstants.ONE);
     
     INDArray symmetry3 = TicTacToeConstants.EMPTY_CONVOLUTIONAL_PLAYGROUND.dup();
-    symmetry3.putScalar(TicTacToeConstants.MAX_PLAYER_CHANNEL, 1, 1, NeuralNetConstants.ONE);
-    symmetry3.putScalar(TicTacToeConstants.MIN_PLAYER_CHANNEL, 2, 0, NeuralNetConstants.ONE);
+    symmetry3.putScalar(TicTacToeConstants.MAX_PLAYER_CHANNEL, 1, 1, AdversaryLearningConstants.ONE);
+    symmetry3.putScalar(TicTacToeConstants.MIN_PLAYER_CHANNEL, 2, 0, AdversaryLearningConstants.ONE);
     
     assertTrue(uniqueSymmetries.contains(symmetry0Example));
     assertTrue(uniqueSymmetries.contains(
@@ -95,10 +95,10 @@ public class TicTacToeTest {
   public void testSymmetriesWith8Symmetries() {
     
     INDArray lBoard = TicTacToeConstants.EMPTY_CONVOLUTIONAL_PLAYGROUND.dup();
-    lBoard.putScalar(TicTacToeConstants.MAX_PLAYER_CHANNEL, 1, 1, NeuralNetConstants.ONE);
-    lBoard.putScalar(TicTacToeConstants.MAX_PLAYER_CHANNEL, 2, 1, NeuralNetConstants.ONE);
-    lBoard.putScalar(TicTacToeConstants.MIN_PLAYER_CHANNEL, 0, 0, NeuralNetConstants.ONE);
-    lBoard.putScalar(TicTacToeConstants.MIN_PLAYER_CHANNEL, 0, 1, NeuralNetConstants.ONE);
+    lBoard.putScalar(TicTacToeConstants.MAX_PLAYER_CHANNEL, 1, 1, AdversaryLearningConstants.ONE);
+    lBoard.putScalar(TicTacToeConstants.MAX_PLAYER_CHANNEL, 2, 1, AdversaryLearningConstants.ONE);
+    lBoard.putScalar(TicTacToeConstants.MIN_PLAYER_CHANNEL, 0, 0, AdversaryLearningConstants.ONE);
+    lBoard.putScalar(TicTacToeConstants.MIN_PLAYER_CHANNEL, 0, 1, AdversaryLearningConstants.ONE);
     
     List<AdversaryTrainingExample> trainingExampleSymmetries =
         ticTacToe.getSymmetries(lBoard, Nd4j.zeros(TicTacToeConstants.COLUMN_COUNT), Game.MAX_PLAYER, 0);
@@ -118,46 +118,46 @@ public class TicTacToeTest {
     assertSame(8, uniqueSymmetries.size());
     
     INDArray symmetry1 = TicTacToeConstants.EMPTY_CONVOLUTIONAL_PLAYGROUND.dup();
-    symmetry1.putScalar(TicTacToeConstants.MAX_PLAYER_CHANNEL, 1, 1, NeuralNetConstants.ONE);
-    symmetry1.putScalar(TicTacToeConstants.MAX_PLAYER_CHANNEL, 0, 1, NeuralNetConstants.ONE);
-    symmetry1.putScalar(TicTacToeConstants.MIN_PLAYER_CHANNEL, 2, 0, NeuralNetConstants.ONE);
-    symmetry1.putScalar(TicTacToeConstants.MIN_PLAYER_CHANNEL, 2, 1, NeuralNetConstants.ONE);
+    symmetry1.putScalar(TicTacToeConstants.MAX_PLAYER_CHANNEL, 1, 1, AdversaryLearningConstants.ONE);
+    symmetry1.putScalar(TicTacToeConstants.MAX_PLAYER_CHANNEL, 0, 1, AdversaryLearningConstants.ONE);
+    symmetry1.putScalar(TicTacToeConstants.MIN_PLAYER_CHANNEL, 2, 0, AdversaryLearningConstants.ONE);
+    symmetry1.putScalar(TicTacToeConstants.MIN_PLAYER_CHANNEL, 2, 1, AdversaryLearningConstants.ONE);
   
     INDArray symmetry2 = TicTacToeConstants.EMPTY_CONVOLUTIONAL_PLAYGROUND.dup();
-    symmetry2.putScalar(TicTacToeConstants.MAX_PLAYER_CHANNEL, 1, 1, NeuralNetConstants.ONE);
-    symmetry2.putScalar(TicTacToeConstants.MAX_PLAYER_CHANNEL, 1, 0, NeuralNetConstants.ONE);
-    symmetry2.putScalar(TicTacToeConstants.MIN_PLAYER_CHANNEL, 1, 2, NeuralNetConstants.ONE);
-    symmetry2.putScalar(TicTacToeConstants.MIN_PLAYER_CHANNEL, 2, 2, NeuralNetConstants.ONE);
+    symmetry2.putScalar(TicTacToeConstants.MAX_PLAYER_CHANNEL, 1, 1, AdversaryLearningConstants.ONE);
+    symmetry2.putScalar(TicTacToeConstants.MAX_PLAYER_CHANNEL, 1, 0, AdversaryLearningConstants.ONE);
+    symmetry2.putScalar(TicTacToeConstants.MIN_PLAYER_CHANNEL, 1, 2, AdversaryLearningConstants.ONE);
+    symmetry2.putScalar(TicTacToeConstants.MIN_PLAYER_CHANNEL, 2, 2, AdversaryLearningConstants.ONE);
     
     INDArray symmetry3 = TicTacToeConstants.EMPTY_CONVOLUTIONAL_PLAYGROUND.dup();
-    symmetry3.putScalar(TicTacToeConstants.MAX_PLAYER_CHANNEL, 1, 1, NeuralNetConstants.ONE);
-    symmetry3.putScalar(TicTacToeConstants.MAX_PLAYER_CHANNEL, 1, 0, NeuralNetConstants.ONE);
-    symmetry3.putScalar(TicTacToeConstants.MIN_PLAYER_CHANNEL, 1, 2, NeuralNetConstants.ONE);
-    symmetry3.putScalar(TicTacToeConstants.MIN_PLAYER_CHANNEL, 0, 2, NeuralNetConstants.ONE);
+    symmetry3.putScalar(TicTacToeConstants.MAX_PLAYER_CHANNEL, 1, 1, AdversaryLearningConstants.ONE);
+    symmetry3.putScalar(TicTacToeConstants.MAX_PLAYER_CHANNEL, 1, 0, AdversaryLearningConstants.ONE);
+    symmetry3.putScalar(TicTacToeConstants.MIN_PLAYER_CHANNEL, 1, 2, AdversaryLearningConstants.ONE);
+    symmetry3.putScalar(TicTacToeConstants.MIN_PLAYER_CHANNEL, 0, 2, AdversaryLearningConstants.ONE);
     
     INDArray symmetry4 = TicTacToeConstants.EMPTY_CONVOLUTIONAL_PLAYGROUND.dup();
-    symmetry4.putScalar(TicTacToeConstants.MAX_PLAYER_CHANNEL, 1, 1, NeuralNetConstants.ONE);
-    symmetry4.putScalar(TicTacToeConstants.MAX_PLAYER_CHANNEL, 1, 2, NeuralNetConstants.ONE);
-    symmetry4.putScalar(TicTacToeConstants.MIN_PLAYER_CHANNEL, 1, 0, NeuralNetConstants.ONE);
-    symmetry4.putScalar(TicTacToeConstants.MIN_PLAYER_CHANNEL, 2, 0, NeuralNetConstants.ONE);
+    symmetry4.putScalar(TicTacToeConstants.MAX_PLAYER_CHANNEL, 1, 1, AdversaryLearningConstants.ONE);
+    symmetry4.putScalar(TicTacToeConstants.MAX_PLAYER_CHANNEL, 1, 2, AdversaryLearningConstants.ONE);
+    symmetry4.putScalar(TicTacToeConstants.MIN_PLAYER_CHANNEL, 1, 0, AdversaryLearningConstants.ONE);
+    symmetry4.putScalar(TicTacToeConstants.MIN_PLAYER_CHANNEL, 2, 0, AdversaryLearningConstants.ONE);
     
     INDArray symmetry5 = TicTacToeConstants.EMPTY_CONVOLUTIONAL_PLAYGROUND.dup();
-    symmetry5.putScalar(TicTacToeConstants.MAX_PLAYER_CHANNEL, 1, 1, NeuralNetConstants.ONE);
-    symmetry5.putScalar(TicTacToeConstants.MAX_PLAYER_CHANNEL, 0, 1, NeuralNetConstants.ONE);
-    symmetry5.putScalar(TicTacToeConstants.MIN_PLAYER_CHANNEL, 2, 1, NeuralNetConstants.ONE);
-    symmetry5.putScalar(TicTacToeConstants.MIN_PLAYER_CHANNEL, 2, 2, NeuralNetConstants.ONE);
+    symmetry5.putScalar(TicTacToeConstants.MAX_PLAYER_CHANNEL, 1, 1, AdversaryLearningConstants.ONE);
+    symmetry5.putScalar(TicTacToeConstants.MAX_PLAYER_CHANNEL, 0, 1, AdversaryLearningConstants.ONE);
+    symmetry5.putScalar(TicTacToeConstants.MIN_PLAYER_CHANNEL, 2, 1, AdversaryLearningConstants.ONE);
+    symmetry5.putScalar(TicTacToeConstants.MIN_PLAYER_CHANNEL, 2, 2, AdversaryLearningConstants.ONE);
     
     INDArray symmetry6 = TicTacToeConstants.EMPTY_CONVOLUTIONAL_PLAYGROUND.dup();
-    symmetry6.putScalar(TicTacToeConstants.MAX_PLAYER_CHANNEL, 1, 1, NeuralNetConstants.ONE);
-    symmetry6.putScalar(TicTacToeConstants.MAX_PLAYER_CHANNEL, 1, 2, NeuralNetConstants.ONE);
-    symmetry6.putScalar(TicTacToeConstants.MIN_PLAYER_CHANNEL, 0, 0, NeuralNetConstants.ONE);
-    symmetry6.putScalar(TicTacToeConstants.MIN_PLAYER_CHANNEL, 1, 0, NeuralNetConstants.ONE);
+    symmetry6.putScalar(TicTacToeConstants.MAX_PLAYER_CHANNEL, 1, 1, AdversaryLearningConstants.ONE);
+    symmetry6.putScalar(TicTacToeConstants.MAX_PLAYER_CHANNEL, 1, 2, AdversaryLearningConstants.ONE);
+    symmetry6.putScalar(TicTacToeConstants.MIN_PLAYER_CHANNEL, 0, 0, AdversaryLearningConstants.ONE);
+    symmetry6.putScalar(TicTacToeConstants.MIN_PLAYER_CHANNEL, 1, 0, AdversaryLearningConstants.ONE);
     
     INDArray symmetry7 = TicTacToeConstants.EMPTY_CONVOLUTIONAL_PLAYGROUND.dup();
-    symmetry7.putScalar(TicTacToeConstants.MAX_PLAYER_CHANNEL, 1, 1, NeuralNetConstants.ONE);
-    symmetry7.putScalar(TicTacToeConstants.MAX_PLAYER_CHANNEL, 1, 2, NeuralNetConstants.ONE);
-    symmetry7.putScalar(TicTacToeConstants.MIN_PLAYER_CHANNEL, 2, 0, NeuralNetConstants.ONE);
-    symmetry7.putScalar(TicTacToeConstants.MIN_PLAYER_CHANNEL, 1, 0, NeuralNetConstants.ONE);
+    symmetry7.putScalar(TicTacToeConstants.MAX_PLAYER_CHANNEL, 1, 1, AdversaryLearningConstants.ONE);
+    symmetry7.putScalar(TicTacToeConstants.MAX_PLAYER_CHANNEL, 1, 2, AdversaryLearningConstants.ONE);
+    symmetry7.putScalar(TicTacToeConstants.MIN_PLAYER_CHANNEL, 2, 0, AdversaryLearningConstants.ONE);
+    symmetry7.putScalar(TicTacToeConstants.MIN_PLAYER_CHANNEL, 1, 0, AdversaryLearningConstants.ONE);
     
     assertTrue(uniqueSymmetries.contains(symmetry0Example));
     assertTrue(uniqueSymmetries.contains(

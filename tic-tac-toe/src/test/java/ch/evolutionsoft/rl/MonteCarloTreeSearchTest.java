@@ -8,8 +8,6 @@ import org.junit.jupiter.api.Test;
 import org.nd4j.linalg.api.ndarray.INDArray;
 import org.nd4j.linalg.factory.Nd4j;
 
-import ch.evolutionsoft.net.game.NeuralNetConstants;
-
 public class MonteCarloTreeSearchTest {
 
   MonteCarloSearch mcts;
@@ -29,14 +27,14 @@ public class MonteCarloTreeSearchTest {
     
     Game game = TestHelper.createMiddlePositionBoardWithThreat();
     
-    INDArray actionProbabilities = this.mcts.getActionValues(game, NeuralNetConstants.ONE);
+    INDArray actionProbabilities = this.mcts.getActionValues(game, AdversaryLearningConstants.ONE);
     
     TreeNode currentNode = this.mcts.rootNode;
     
-    INDArray nonZeroIndices = actionProbabilities.lte(0);
+    INDArray zeroProbabilityIndices = actionProbabilities.lte(0);
 
     assertEquals(Nd4j.createFromArray(
-        new boolean[] {true, false, true, true, true, false, true, false, false}), nonZeroIndices);
+        new boolean[] {true, false, true, true, true, false, true, false, false}), zeroProbabilityIndices);
     
     int visitedCountsChildren = 0;
     for (TreeNode rootChildEntry : currentNode.children.values()) {

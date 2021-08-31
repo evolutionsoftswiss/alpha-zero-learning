@@ -28,7 +28,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import cc.mallet.types.Dirichlet;
-import ch.evolutionsoft.net.game.NeuralNetConstants;
 
 /**
  * {@link AdversaryLearning} is the main class to perform alpha zero learning.
@@ -43,8 +42,8 @@ public class AdversaryLearning {
 
   public static final double DRAW_VALUE = 0.5;
   public static final double DRAW_WEIGHT = 0.5;
-  public static final double MAX_WIN = NeuralNetConstants.ONE;
-  public static final double MIN_WIN = NeuralNetConstants.ZERO;
+  public static final double MAX_WIN = AdversaryLearningConstants.ONE;
+  public static final double MIN_WIN = AdversaryLearningConstants.ZERO;
 
   public static final int NO_MOVE = -2;
   
@@ -270,11 +269,11 @@ public class AdversaryLearning {
       double newModelWinDrawRatio = (gameResults[1] + DRAW_WEIGHT * gameResults[2])
           / (gameResults[0] + gameResults[1] + DRAW_WEIGHT * gameResults[2]);
       updateAfterBetterPlayout = newModelWinDrawRatio > adversaryLearningConfiguration
-              .getUpdateGamesNewNetworkWinRatioThreshold();
+              .getGamesWinRatioThresholdNewNetworkUpdate();
 
       log.info("New model win/draw ratio against previous model is {} vs configured threshold {}",
           newModelWinDrawRatio,
-          adversaryLearningConfiguration.getUpdateGamesNewNetworkWinRatioThreshold());
+          adversaryLearningConfiguration.getGamesWinRatioThresholdNewNetworkUpdate());
       
       if (!updateAfterBetterPlayout) {
 

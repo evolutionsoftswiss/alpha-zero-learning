@@ -11,8 +11,6 @@ import org.nd4j.linalg.factory.Nd4j;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import ch.evolutionsoft.net.game.NeuralNetConstants;
-
 public class MonteCarloSearch {
   
   Logger logger = LoggerFactory.getLogger(MonteCarloSearch.class);
@@ -119,8 +117,8 @@ public class MonteCarloSearch {
       
       moveProbabilities.putScalar(
           visitedCountsMaximums.getInt(
-              NeuralNetConstants.randomGenerator.nextInt((int) visitedCountsMaximums.length())),
-          NeuralNetConstants.ONE);
+              AdversaryLearningConstants.randomGenerator.nextInt((int) visitedCountsMaximums.length())),
+          AdversaryLearningConstants.ONE);
       
       return moveProbabilities;
     }

@@ -39,6 +39,8 @@ public class AdversaryTrainingExample implements Serializable {
   
   int iteration;
 
+  private static final long serialVersionUID = -4030724836317206807L;
+
   public AdversaryTrainingExample(INDArray board, int currentPlayer, 
       INDArray actionIndexProbabilities, int iteration) {
     

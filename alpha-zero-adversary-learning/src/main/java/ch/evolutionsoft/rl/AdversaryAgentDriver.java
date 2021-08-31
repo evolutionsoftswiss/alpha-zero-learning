@@ -9,9 +9,6 @@ import org.deeplearning4j.nn.graph.ComputationGraph;
 import org.nd4j.linalg.api.ndarray.INDArray;
 import org.nd4j.linalg.factory.Nd4j;
 
-import ch.evolutionsoft.net.game.NeuralNetConstants;
-import ch.evolutionsoft.net.game.tictactoe.TicTacToeConstants;
-
 /**
  * {@link AdversaryAgentDriver} is only relevant if {@link AdversaryLearningConfiguration} has alwaysUpdateNeuralNetwork = false.
  * In that case, a configured number of games and win rate decide if the alpha zero network gets updated with newest version of
@@ -87,10 +84,9 @@ public class AdversaryAgentDriver {
     MonteCarloSearch player1 = new MonteCarloSearch(this.player1Policy, configuration);
     MonteCarloSearch player2 = new MonteCarloSearch(this.player2Policy, configuration);
     
-    game.doFirstMove(gameNumber % TicTacToeConstants.COLUMN_COUNT);
     Set<Integer> emptyFields = game.getValidMoveIndices();
     
-    int currentPlayer = Game.MIN_PLAYER;
+    int currentPlayer = Game.MAX_PLAYER;
 
     while (!game.gameEnded()) {
     
@@ -107,7 +103,7 @@ public class AdversaryAgentDriver {
       int moveAction = moveActionValues.argMax(0).getInt(0);
 
       if (!emptyFields.contains(moveAction)) {
-        moveAction = new ArrayList<>(emptyFields).get(NeuralNetConstants.randomGenerator.nextInt(emptyFields.size()));
+        moveAction = new ArrayList<>(emptyFields).get(AdversaryLearningConstants.randomGenerator.nextInt(emptyFields.size()));
       }
       
       game.makeMove(moveAction, currentPlayer);

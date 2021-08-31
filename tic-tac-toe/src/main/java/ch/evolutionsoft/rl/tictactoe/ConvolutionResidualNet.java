@@ -1,8 +1,5 @@
 package ch.evolutionsoft.rl.tictactoe;
 
-import static ch.evolutionsoft.net.game.NeuralNetConstants.DEFAULT_OUTPUT_LAYER_NAME;
-import static ch.evolutionsoft.net.game.NeuralNetConstants.DEFAULT_SEED;
-
 import org.deeplearning4j.nn.conf.ComputationGraphConfiguration;
 import org.deeplearning4j.nn.conf.ConvolutionMode;
 import org.deeplearning4j.nn.conf.NeuralNetConfiguration;
@@ -20,6 +17,8 @@ import org.nd4j.linalg.activations.Activation;
 import org.nd4j.linalg.learning.config.Adam;
 import org.nd4j.linalg.lossfunctions.LossFunctions.LossFunction;
 import org.nd4j.linalg.schedule.ISchedule;
+
+import ch.evolutionsoft.rl.AdversaryLearningConstants;
 
 public class ConvolutionResidualNet {
 
@@ -80,14 +79,14 @@ public class ConvolutionResidualNet {
     if (null != this.learningRateSchedule) {
 
       return new NeuralNetConfiguration.Builder()
-          .seed(DEFAULT_SEED)
+          .seed(AdversaryLearningConstants.DEFAULT_SEED)
           .updater(new Adam(learningRateSchedule))
           .convolutionMode(ConvolutionMode.Strict)
           .weightInit(WeightInit.RELU); 
     }
 
     return new NeuralNetConfiguration.Builder()
-        .seed(DEFAULT_SEED)
+        .seed(AdversaryLearningConstants.DEFAULT_SEED)
         .updater(new Adam(learningRate))
         .convolutionMode(ConvolutionMode.Strict)
         .weightInit(WeightInit.RELU);
@@ -155,18 +154,18 @@ public class ConvolutionResidualNet {
             activation(Activation.LEAKYRELU).
             build(), "value_conv")
         
-        .addLayer(DEFAULT_OUTPUT_LAYER_NAME, new OutputLayer.Builder()
+        .addLayer(AdversaryLearningConstants.DEFAULT_OUTPUT_LAYER_NAME, new OutputLayer.Builder()
             .nOut(9)
             .activation(Activation.SOFTMAX)
             .build(), "dense1")
         
-        .addLayer(DEFAULT_OUTPUT_LAYER_NAME + "_value", new OutputLayer.Builder()
+        .addLayer(AdversaryLearningConstants.DEFAULT_OUTPUT_LAYER_NAME + "_value", new OutputLayer.Builder()
             .nOut(1)
             .activation(Activation.SIGMOID)
             .lossFunction(LossFunction.MSE)
             .build(), "dense2")
  
-        .setOutputs(DEFAULT_OUTPUT_LAYER_NAME, DEFAULT_OUTPUT_LAYER_NAME + "_value")
+        .setOutputs(AdversaryLearningConstants.DEFAULT_OUTPUT_LAYER_NAME, AdversaryLearningConstants.DEFAULT_OUTPUT_LAYER_NAME + "_value")
 
         .build();
   }

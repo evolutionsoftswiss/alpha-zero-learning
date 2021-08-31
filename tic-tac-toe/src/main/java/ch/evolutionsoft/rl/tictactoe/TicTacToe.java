@@ -1,8 +1,6 @@
 package ch.evolutionsoft.rl.tictactoe;
 
-import static ch.evolutionsoft.net.game.NeuralNetConstants.DOUBLE_COMPARISON_EPSILON;
-import static ch.evolutionsoft.net.game.tictactoe.TicTacToeConstants.*;
-import static ch.evolutionsoft.net.game.tictactoe.TicTacToeGameHelper.equalsEpsilon;
+import static ch.evolutionsoft.rl.tictactoe.TicTacToeConstants.*;
 
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -15,7 +13,7 @@ import org.nd4j.linalg.factory.Nd4j;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import ch.evolutionsoft.net.game.tictactoe.TicTacToeConstants;
+import ch.evolutionsoft.rl.AdversaryLearningConstants;
 import ch.evolutionsoft.rl.AdversaryTrainingExample;
 import ch.evolutionsoft.rl.Game;
 
@@ -217,12 +215,8 @@ public class TicTacToe extends Game {
     for (int row = 0; row < IMAGE_SIZE; row++) {
       for (int column = 0; column < IMAGE_SIZE; column++) {
   
-        if (equalsEpsilon(EMPTY_IMAGE_POINT,
-            this.currentBoard.getDouble(MAX_PLAYER_CHANNEL, row, column),
-            DOUBLE_COMPARISON_EPSILON) &&
-            equalsEpsilon(EMPTY_IMAGE_POINT,
-                this.currentBoard.getDouble(MIN_PLAYER_CHANNEL, row, column),
-                DOUBLE_COMPARISON_EPSILON)) {
+        if (AdversaryLearningConstants.ZERO == this.currentBoard.getDouble(MAX_PLAYER_CHANNEL, row, column) &&
+            AdversaryLearningConstants.ZERO == this.currentBoard.getDouble(MIN_PLAYER_CHANNEL, row, column)) {
   
           emptyFieldsIndices.add(IMAGE_SIZE * row + column);
         }
@@ -240,14 +234,10 @@ public class TicTacToe extends Game {
     for (int row = 0; row < IMAGE_SIZE; row++) {
       for (int column = 0; column < IMAGE_SIZE; column++) {
   
-        if (equalsEpsilon(EMPTY_IMAGE_POINT,
-            this.currentBoard.getDouble(MAX_PLAYER_CHANNEL, row, column),
-            DOUBLE_COMPARISON_EPSILON) && 
-            equalsEpsilon(EMPTY_IMAGE_POINT,
-                this.currentBoard.getDouble(MIN_PLAYER_CHANNEL, row, column),
-                DOUBLE_COMPARISON_EPSILON) ) {
+        if (AdversaryLearningConstants.ZERO == this.currentBoard.getDouble(MAX_PLAYER_CHANNEL, row, column) &&
+            AdversaryLearningConstants.ZERO == this.currentBoard.getDouble(MIN_PLAYER_CHANNEL, row, column)) {
           
-          validMoves.putScalar(IMAGE_SIZE * (long) row + column, 1.0);
+          validMoves.putScalar(IMAGE_SIZE * (long) row + column, AdversaryLearningConstants.ONE);
         }
       }
     }

@@ -7,8 +7,6 @@ import org.apache.commons.lang3.StringUtils;
 import org.deeplearning4j.nn.graph.ComputationGraph;
 import org.nd4j.linalg.schedule.ISchedule;
 
-import ch.evolutionsoft.net.game.NeuralNetConstants;
-
 /**
  * {@link AdversaryLearningConfiguration} defines several configuration parameters
  * affecting the behavior of alpha zero learning.
@@ -78,9 +76,9 @@ public class AdversaryLearningConfiguration {
    * 
    *  updateAfterBetterPlayout = 
    *    (newNeuralNetVersionWins + 0.5 * draws) /
-   *    (double) (newNeuralNetVersionWins + oldNeuralNetVersionWins + 0.5 * draws) > updateGamesNewNetworkWinRatioThreshold;
+   *    (double) (newNeuralNetVersionWins + oldNeuralNetVersionWins + 0.5 * draws) > gamesWinRatioThresholdNewNetworkUpdate;
    */
-  double updateGamesNewNetworkWinRatioThreshold;
+  double gamesWinRatioThresholdNewNetworkUpdate;
 
   /**
    * An Alpha Zero episode is one game from start to end. Each episode generates potentially new
@@ -171,7 +169,7 @@ public class AdversaryLearningConfiguration {
     double dirichletWeight = 0.45;
     boolean alwaysUpdateNeuralNetwork = true;
     int gamesToGetNewNetworkWinRatio = 36;
-    double updateGamesNewNetworkWinRatioThreshold = 0.55;
+    double gamesWinRatioThresholdNewNetworkUpdate = 0.55;
     int numberOfIterationsBeforePotentialUpdate = 10;
     int iterationStart = 1;
     int numberOfIterations = 250;
@@ -197,7 +195,7 @@ public class AdversaryLearningConfiguration {
       configuration.dirichletWeight = dirichletWeight;
       configuration.alwaysUpdateNeuralNetwork = alwaysUpdateNeuralNetwork;
       configuration.gamesToGetNewNetworkWinRatio = gamesToGetNewNetworkWinRatio;
-      configuration.updateGamesNewNetworkWinRatioThreshold = updateGamesNewNetworkWinRatioThreshold;
+      configuration.gamesWinRatioThresholdNewNetworkUpdate = gamesWinRatioThresholdNewNetworkUpdate;
       configuration.numberOfIterationsBeforePotentialUpdate = numberOfIterationsBeforePotentialUpdate;
       configuration.iterationStart = iterationStart;
       configuration.numberOfIterations = numberOfIterations;
@@ -258,8 +256,8 @@ public class AdversaryLearningConfiguration {
       return this;
     }
 
-    public Builder updateNeuralNetworkThreshold(double updateNeuralNetworkThreshold) {
-      this.updateGamesNewNetworkWinRatioThreshold = updateNeuralNetworkThreshold;
+    public Builder gamesWinRatioThresholdNewNetworkUpdate(double gamesWinRatioThresholdNewNetworkUpdate) {
+      this.gamesWinRatioThresholdNewNetworkUpdate = gamesWinRatioThresholdNewNetworkUpdate;
       return this;
     }
 
@@ -318,7 +316,7 @@ public class AdversaryLearningConfiguration {
         "\n dirichletWeight: " + this.dirichletWeight +
         "\n alwaysUpdateNeuralNetwork: " + this.alwaysUpdateNeuralNetwork +
         "\n gamesToGetNewNetworkWinRatio: " + (this.alwaysUpdateNeuralNetwork ? "-" : this.gamesToGetNewNetworkWinRatio) +
-        "\n updateGamesNewNetworkWinRatioThreshold: " + (this.alwaysUpdateNeuralNetwork ? "-" : this.updateGamesNewNetworkWinRatioThreshold) +
+        "\n gamesWinRatioThresholdNewNetworkUpdate: " + (this.alwaysUpdateNeuralNetwork ? "-" : this.gamesWinRatioThresholdNewNetworkUpdate) +
         "\n numberOfEpisodesBeforePotentialUpdate: " + this.numberOfIterationsBeforePotentialUpdate + 
         "\n iterationStart: " + this.iterationStart + 
         "\n numberOfIterations: " + this.numberOfIterations +
@@ -388,12 +386,12 @@ public class AdversaryLearningConfiguration {
     this.gamesToGetNewNetworkWinRatio = numberOfGamesToDecideUpdate;
   }
 
-  public double getUpdateGamesNewNetworkWinRatioThreshold() {
-    return updateGamesNewNetworkWinRatioThreshold;
+  public double getGamesWinRatioThresholdNewNetworkUpdate() {
+    return gamesWinRatioThresholdNewNetworkUpdate;
   }
 
-  public void setUpdateGamesNewNetworkWinRatioThreshold(double updateNeuralNetworkThreshold) {
-    this.updateGamesNewNetworkWinRatioThreshold = updateNeuralNetworkThreshold;
+  public void setGamesWinRatioThresholdNewNetworkUpdate(double gamesWinRatioThresholdNewNetworkUpdate) {
+    this.gamesWinRatioThresholdNewNetworkUpdate = gamesWinRatioThresholdNewNetworkUpdate;
   }
 
   public int getNumberOfIterationsBeforePotentialUpdate() {
@@ -436,7 +434,7 @@ public class AdversaryLearningConfiguration {
       return 0;
     }
     
-    return NeuralNetConstants.ONE;
+    return AdversaryLearningConstants.ONE;
   }
  
   public int getFromNumberOfIterationsTemperatureZero() {
