@@ -1,12 +1,8 @@
 package ch.evolutionsoft.rl.tictactoe;
 
-import static ch.evolutionsoft.net.game.NeuralNetConstants.DEFAULT_OUTPUT_LAYER_NAME;
-import static ch.evolutionsoft.net.game.NeuralNetConstants.DEFAULT_SEED;
-
 import org.deeplearning4j.nn.conf.ComputationGraphConfiguration;
 import org.deeplearning4j.nn.conf.ConvolutionMode;
 import org.deeplearning4j.nn.conf.NeuralNetConfiguration;
-import org.deeplearning4j.nn.conf.distribution.ConstantDistribution;
 import org.deeplearning4j.nn.conf.graph.ElementWiseVertex;
 import org.deeplearning4j.nn.conf.inputs.InputType;
 import org.deeplearning4j.nn.conf.layers.ActivationLayer;
@@ -20,6 +16,9 @@ import org.deeplearning4j.nn.weights.WeightInit;
 import org.nd4j.linalg.activations.Activation;
 import org.nd4j.linalg.learning.config.Adam;
 import org.nd4j.linalg.lossfunctions.LossFunctions.LossFunction;
+import org.nd4j.linalg.schedule.ISchedule;
+
+import ch.evolutionsoft.rl.AdversaryLearningConstants;
 
 public class ConvolutionResidualNet {
 
@@ -58,22 +57,42 @@ public class ConvolutionResidualNet {
   public static final int CNN_OUTPUT_CHANNELS = 3;
   
   private double learningRate = 1e-3;
+  
+  private ISchedule learningRateSchedule;
+  
+  public ConvolutionResidualNet() {
+    
+  }
 
   public ConvolutionResidualNet(double learningRate) {
 
     this.learningRate = learningRate;
   }
+
+  public ConvolutionResidualNet(ISchedule learningRateSchedule) {
+
+    this.learningRateSchedule = learningRateSchedule;
+  }
   
   NeuralNetConfiguration.Builder createGeneralConfiguration() {
+    
+    if (null != this.learningRateSchedule) {
+
+      return new NeuralNetConfiguration.Builder()
+          .seed(AdversaryLearningConstants.DEFAULT_SEED)
+          .updater(new Adam(learningRateSchedule))
+          .convolutionMode(ConvolutionMode.Strict)
+          .weightInit(WeightInit.RELU); 
+    }
 
     return new NeuralNetConfiguration.Builder()
-        .seed(DEFAULT_SEED)
+        .seed(AdversaryLearningConstants.DEFAULT_SEED)
         .updater(new Adam(learningRate))
         .convolutionMode(ConvolutionMode.Strict)
         .weightInit(WeightInit.RELU);
   }
 
-  ComputationGraphConfiguration createConvolutionalGraphConfiguration() {
+  public ComputationGraphConfiguration createConvolutionalGraphConfiguration() {
 
     return new ComputationGraphConfiguration.GraphBuilder(createGeneralConfiguration())
         .addInputs(INPUT).setInputTypes(InputType.convolutional(3, 3, 3))
@@ -116,31 +135,37 @@ public class ConvolutionResidualNet {
             BLOCK2_SEPARABLE_CONVOLUTION2_BATCH_NORNMALIZATION)
         
         .addVertex(ADD1, new ElementWiseVertex(ElementWiseVertex.Op.Add), BLOCK2_POOL, RESIDUAL1)
+
+        .addLayer("policy_conv",
+            new SeparableConvolution2D.Builder(1, 1).nOut(8).hasBias(false).convolutionMode(ConvolutionMode.Same)
+            .build(), ADD1)
         
         .addLayer("dense1", new DenseLayer.Builder().
             nOut(32).
             activation(Activation.LEAKYRELU).
-            build(), ADD1)
+            build(), "policy_conv")
+
+        .addLayer("value_conv",
+            new SeparableConvolution2D.Builder(1, 1).nOut(2).hasBias(false).convolutionMode(ConvolutionMode.Same)
+            .build(), ADD1)
         
         .addLayer("dense2", new DenseLayer.Builder().
             nOut(16).
             activation(Activation.LEAKYRELU).
-            build(), ADD1)
+            build(), "value_conv")
         
-        .addLayer(DEFAULT_OUTPUT_LAYER_NAME, new OutputLayer.Builder()
+        .addLayer(AdversaryLearningConstants.DEFAULT_OUTPUT_LAYER_NAME, new OutputLayer.Builder()
             .nOut(9)
             .activation(Activation.SOFTMAX)
-            .weightInit(new ConstantDistribution(0.01))
             .build(), "dense1")
         
-        .addLayer(DEFAULT_OUTPUT_LAYER_NAME + "_value", new OutputLayer.Builder()
+        .addLayer(AdversaryLearningConstants.DEFAULT_OUTPUT_LAYER_NAME + "_value", new OutputLayer.Builder()
             .nOut(1)
             .activation(Activation.SIGMOID)
-            .weightInit(new ConstantDistribution(0.01))
             .lossFunction(LossFunction.MSE)
             .build(), "dense2")
  
-        .setOutputs(DEFAULT_OUTPUT_LAYER_NAME, DEFAULT_OUTPUT_LAYER_NAME + "_value")
+        .setOutputs(AdversaryLearningConstants.DEFAULT_OUTPUT_LAYER_NAME, AdversaryLearningConstants.DEFAULT_OUTPUT_LAYER_NAME + "_value")
 
         .build();
   }

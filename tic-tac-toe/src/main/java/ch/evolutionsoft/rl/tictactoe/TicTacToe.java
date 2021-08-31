@@ -1,8 +1,6 @@
 package ch.evolutionsoft.rl.tictactoe;
 
-import static ch.evolutionsoft.net.game.NeuralNetConstants.DOUBLE_COMPARISON_EPSILON;
-import static ch.evolutionsoft.net.game.tictactoe.TicTacToeConstants.*;
-import static ch.evolutionsoft.net.game.tictactoe.TicTacToeGameHelper.equalsEpsilon;
+import static ch.evolutionsoft.rl.tictactoe.TicTacToeConstants.*;
 
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -15,43 +13,81 @@ import org.nd4j.linalg.factory.Nd4j;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import ch.evolutionsoft.net.game.tictactoe.TicTacToeConstants;
+import ch.evolutionsoft.rl.AdversaryLearningConstants;
 import ch.evolutionsoft.rl.AdversaryTrainingExample;
 import ch.evolutionsoft.rl.Game;
 
+/**
+ * Initial board setup of the 3x3x3 INDArray.
+ * [
+ *  [
+ *   [    1.0000,    1.0000,    1.0000], 
+ *   [    1.0000,    1.0000,    1.0000], 
+ *   [    1.0000,    1.0000,    1.0000]
+ *  ], 
+ *  [
+ *   [         0,         0,         0], 
+ *   [         0,         0,         0], 
+ *   [         0,         0,         0]
+ *  ],
+ *  [ 
+ *   [         0,         0,         0], 
+ *   [         0,         0,         0], 
+ *   [         0,         0,         0]
+ *  ]
+ * ]
+ * 
+ * @author evolutionsoft
+ */
 public class TicTacToe extends Game {
-  
+
   private static final Logger log = LoggerFactory.getLogger(TicTacToe.class);
   
-  public static final int[] COLUMN_INDICES = new int[] {0, 1, 2, 3, 4, 5, 6, 7, 8};
-  
+  public TicTacToe(int currentPlayer) {
+
+    super(currentPlayer);
+  }
 
   @Override
-  public int getFieldCount() {
+  public Game createNewInstance() {
+
+    TicTacToe ticTacToe = new TicTacToe(currentPlayer); 
+    ticTacToe.currentBoard = this.currentBoard.dup();
     
+    return ticTacToe;
+  }
+  
+  @Override
+  public int getNumberOfAllAvailableMoves() {
+
     return TicTacToeConstants.COLUMN_COUNT;
   }
 
+  @Override
+  public int getNumberOfCurrentMoves() {
+
+    return TicTacToeConstants.COLUMN_COUNT;
+  }
+
+  /**
+   * Create additional symmetric {@link AdversaryTrainingExample} with the given values.
+   * Adds all symmetries obtained by horizontal mirroring and rotating 90 degrees.
+   * The seven symmetries in the returned List may be identical.
+   * 
+   * @param board a 3x3x3 INDArray for the board state in TicTacToe
+   * @param actionProbabilities 1x9 INDArray for the current move index probabilities
+   * @param currentPlayer the current player of the created {@link AdversaryTrainingExample}
+   * @param iteration the current iteration, may identify the recentness of an {@link AdversaryTrainingExample}
+   */
   @Override  
-  public List<AdversaryTrainingExample> getSymmetries(INDArray playground, INDArray actionProbabilities, int currentPlayer, int iteration) {
+  public List<AdversaryTrainingExample> getSymmetries(INDArray board, INDArray actionProbabilities, int currentPlayer, int iteration) {
     
     List<AdversaryTrainingExample> symmetries = new ArrayList<>();
     
     INDArray twoDimensionalActionProbabilities = actionProbabilities.reshape(IMAGE_SIZE, IMAGE_SIZE);
     INDArray playgroundRotation = Nd4j.create(IMAGE_CHANNELS, IMAGE_SIZE, IMAGE_SIZE);
-    Nd4j.copy(playground, playgroundRotation);
+    Nd4j.copy(board, playgroundRotation);
 
-    INDArray actionMirrorVertical = mirrorVertical(twoDimensionalActionProbabilities.dup());
-    actionMirrorVertical = actionMirrorVertical.reshape(COLUMN_COUNT);
-    INDArray boardMirrorVertical = mirrorBoardVertically(playgroundRotation.dup());
-    symmetries.add(
-        new AdversaryTrainingExample(
-            boardMirrorVertical.dup(),
-            currentPlayer,
-            actionMirrorVertical,
-            iteration)
-        );
-    
     INDArray actionMirrorHorizontal = mirrorBoardPartHorizontally(twoDimensionalActionProbabilities);
     actionMirrorHorizontal = actionMirrorHorizontal.reshape(COLUMN_COUNT);
     INDArray newPlaygroundMirrorHorizontal = mirrorBoardHorizontally(playgroundRotation);
@@ -74,17 +110,7 @@ public class TicTacToe extends Game {
               newActionRotation.reshape(COLUMN_COUNT).dup(),
               iteration)
           );
-      
-      INDArray newActionMirrorVertical = mirrorVertical(newActionRotation.dup());
-      INDArray newPlaygroundMirror = mirrorBoardVertically(newPlaygroundRotation.dup());
-      symmetries.add(
-          new AdversaryTrainingExample(
-              newPlaygroundMirror.dup(),
-              currentPlayer,
-              newActionMirrorVertical.reshape(COLUMN_COUNT).dup(),
-              iteration)
-          );
-      
+
       INDArray newActionMirrorHorizontal = mirrorBoardPartHorizontally(newActionRotation.dup());
       newActionMirrorHorizontal = newActionMirrorHorizontal.reshape(COLUMN_COUNT);
       newPlaygroundMirrorHorizontal = mirrorBoardHorizontally(newPlaygroundRotation.dup());
@@ -107,66 +133,90 @@ public class TicTacToe extends Game {
   @Override  
   public INDArray getInitialBoard() {
     
-    return TicTacToeConstants.EMPTY_CONVOLUTIONAL_PLAYGROUND;
+    return TicTacToeConstants.EMPTY_CONVOLUTIONAL_PLAYGROUND.dup();
   }
 
   @Override
-  public INDArray doFirstMove(int index) {
-
-    INDArray emptyBoard = TicTacToeConstants.EMPTY_CONVOLUTIONAL_PLAYGROUND.dup();
+  public INDArray doFirstMove(int moveIndex) {
     
-    INDArray newBoard = makeMove(emptyBoard, index, TicTacToeConstants.MAX_PLAYER_CHANNEL);
+    INDArray newBoard = makeMove(moveIndex, TicTacToeConstants.MAX_PLAYER_CHANNEL);
+
+    this.currentBoard = newBoard.dup();
+    this.currentPlayer = Game.MIN_PLAYER;
     
     return newBoard;
   }
 
+  /**
+   * TicTacToe game ended when no fields are empty or a player has won.
+   */
   @Override
-  public boolean gameEnded(INDArray board) {
+  public boolean gameEnded() {
 
-    return getEmptyFields(board).isEmpty() ||
-        hasWon(board, MAX_PLAYER_CHANNEL) ||
-        hasWon(board, MIN_PLAYER_CHANNEL);
+    return getValidMoveIndices().isEmpty() ||
+        getEndResult(-1) != 0.5;
   }
 
   @Override
-  public boolean hasWon(INDArray board, int player) {
+  public double getEndResult(int lastPlayer) {
 
-    return horizontalWin(board, player) || verticalWin(board, player) || diagonalWin(board, player);
-  }
-
-  @Override
-  public INDArray makeMove(INDArray board, int flatIndex, int player) {
-
-    int row = flatIndex / IMAGE_CHANNELS;
-    int column = flatIndex % IMAGE_CHANNELS;
+    boolean maxWin = horizontalWin(this.currentBoard, Game.MAX_PLAYER) || 
+        verticalWin(this.currentBoard, Game.MAX_PLAYER) || 
+        diagonalWin(this.currentBoard, Game.MAX_PLAYER);
     
-    INDArray newBoard = board.dup();
+    if (maxWin) {
+      
+      return 1.0;
+    }
+    
+    boolean minWin = horizontalWin(this.currentBoard, Game.MIN_PLAYER) || 
+        verticalWin(this.currentBoard, Game.MIN_PLAYER) || 
+        diagonalWin(this.currentBoard, Game.MIN_PLAYER);
+    
+    if (minWin) {
+      
+      return 0.0;
+    
+    }
+    
+    return 0.5;
+  }
+
+  @Override
+  public INDArray makeMove(int moveIndex, int player) {
+
+    int row = moveIndex / IMAGE_SIZE;
+    int column = moveIndex % IMAGE_SIZE;
+    
+    INDArray newBoard = this.currentBoard.dup();
     if (MIN_PLAYER_CHANNEL == player) {
 
-      newBoard.putRow(PLAYER_CHANNEL, ONES_PLAYGROUND_IMAGE); 
+      newBoard.putRow(CURRENT_PLAYER_CHANNEL, ONES_PLAYGROUND_IMAGE); 
     } else {
 
-      newBoard.putRow(PLAYER_CHANNEL, MINUS_ONES_PLAYGROUND_IMAGE);
+      newBoard.putRow(CURRENT_PLAYER_CHANNEL, MINUS_ONES_PLAYGROUND_IMAGE);
     }
     newBoard.putScalar(player, row, column, OCCUPIED_IMAGE_POINT);
 
+    this.currentBoard = newBoard.dup();
+    this.currentPlayer = getOtherPlayer(this.currentPlayer);
+    
     return newBoard;
   }
 
+  /**
+   * In TicTacToe the valid moves are all empty fields.
+   */
   @Override
-  public Set<Integer> getEmptyFields(INDArray playground) {
+  public Set<Integer> getValidMoveIndices() {
     
     Set<Integer> emptyFieldsIndices = new HashSet<>(SMALL_CAPACITY);
     
     for (int row = 0; row < IMAGE_SIZE; row++) {
       for (int column = 0; column < IMAGE_SIZE; column++) {
   
-        if (equalsEpsilon(EMPTY_IMAGE_POINT,
-            playground.getDouble(MAX_PLAYER_CHANNEL, row, column),
-            DOUBLE_COMPARISON_EPSILON) &&
-            equalsEpsilon(EMPTY_IMAGE_POINT,
-                playground.getDouble(MIN_PLAYER_CHANNEL, row, column),
-                DOUBLE_COMPARISON_EPSILON)) {
+        if (AdversaryLearningConstants.ZERO == this.currentBoard.getDouble(MAX_PLAYER_CHANNEL, row, column) &&
+            AdversaryLearningConstants.ZERO == this.currentBoard.getDouble(MIN_PLAYER_CHANNEL, row, column)) {
   
           emptyFieldsIndices.add(IMAGE_SIZE * row + column);
         }
@@ -177,73 +227,57 @@ public class TicTacToe extends Game {
   }
 
   @Override
-  public int getOtherPlayer(Set<Integer> emptyFields) {
-    
-    boolean evenOccupiedFields = 0 == (COLUMN_COUNT - emptyFields.size()) % 2;
-    
-    if (evenOccupiedFields) {
-      
-      return MIN_PLAYER_CHANNEL;
-    }
-    
-    return MAX_PLAYER_CHANNEL;
-  }
-
-  @Override
-  public int getOtherPlayer(int color) {
-    
-    if (TicTacToeConstants.MAX_PLAYER_CHANNEL == color) {
-      
-      return MIN_PLAYER_CHANNEL;
-    }
-    
-    return MAX_PLAYER_CHANNEL;
-  }
-
-  @Override
-  public INDArray getValidMoves(INDArray playground) {
+  public INDArray getValidMoves() {
     
     INDArray validMoves = Nd4j.zeros(COLUMN_COUNT);
     
     for (int row = 0; row < IMAGE_SIZE; row++) {
       for (int column = 0; column < IMAGE_SIZE; column++) {
   
-        if (equalsEpsilon(EMPTY_IMAGE_POINT,
-            playground.getDouble(MAX_PLAYER_CHANNEL, row, column),
-            DOUBLE_COMPARISON_EPSILON) && 
-            equalsEpsilon(EMPTY_IMAGE_POINT,
-                playground.getDouble(MIN_PLAYER_CHANNEL, row, column),
-                DOUBLE_COMPARISON_EPSILON) ) {
+        if (AdversaryLearningConstants.ZERO == this.currentBoard.getDouble(MAX_PLAYER_CHANNEL, row, column) &&
+            AdversaryLearningConstants.ZERO == this.currentBoard.getDouble(MIN_PLAYER_CHANNEL, row, column)) {
           
-          validMoves.putScalar(IMAGE_SIZE * row + column, 1f);
+          validMoves.putScalar(IMAGE_SIZE * (long) row + column, AdversaryLearningConstants.ONE);
         }
       }
     }
     
     return validMoves;
   }
-  
+
+  /**
+   * Do an evaluation against labels fom supervised learning.
+   * Only an indication for improvement during training, as symmetry equivalent moves
+   * may be learned different to the labels.
+   */
   @Override
   public void evaluateNetwork(ComputationGraph computationGraph) {
 
     EvaluationMain.evaluateNetwork(computationGraph);
   }
 
+  /**
+   * Log the move probabilities for a few moves during training.
+   */
   @Override
-  public void evaluateOpeningAnswers(ComputationGraph convolutionalNetwork) {
+  public void evaluateBoardActionExamples(ComputationGraph convolutionalNetwork) {
 
-    INDArray centerFieldOpeningAnswer = convolutionalNetwork.output(generateCenterFieldInputImagesConvolutional())[0];
-    INDArray cornerFieldOpeningAnswer = convolutionalNetwork
-        .output(generateLastCornerFieldInputImagesConvolutional())[0];
-    INDArray fieldOneOpeningAnswer = convolutionalNetwork
-        .output(generateFieldOneInputImagesConvolutional())[0];
-    INDArray fieldOneCenterTwoOpeningAnswer = convolutionalNetwork
-        .output(generateFieldOneCenterAndTwoThreatConvolutional())[0];
-
-    log.info("Answer to center field opening: {}", centerFieldOpeningAnswer);
-    log.info("Answer to last corner field opening: {}", cornerFieldOpeningAnswer);
-    log.info("Answer to field one, center and two threat: {}", fieldOneCenterTwoOpeningAnswer);
-    log.info("Answer to field one opening: {}", fieldOneOpeningAnswer);
+    INDArray[] centerFieldOpeningAnswer = convolutionalNetwork.output(generateCenterFieldInputImagesConvolutional());
+    INDArray[] cornerFieldOpeningAnswer = convolutionalNetwork
+        .output(generateLastCornerFieldInputImagesConvolutional());
+    INDArray[] fieldOneOpeningAnswer = convolutionalNetwork
+        .output(generateFieldOneInputImagesConvolutional());
+    INDArray[] fieldOneCenterTwoOpeningAnswer = convolutionalNetwork
+        .output(generateFieldOneCenterAndTwoThreatConvolutional());
+    INDArray emptyFieldBatch = Nd4j.create(1, IMAGE_CHANNELS, IMAGE_SIZE, IMAGE_SIZE);
+    emptyFieldBatch.putRow(0, TicTacToeConstants.EMPTY_CONVOLUTIONAL_PLAYGROUND);
+    INDArray[] emptyFieldProbs = convolutionalNetwork.output(emptyFieldBatch);
+    
+    log.info("Answer to center field opening: {}\nValue: {}", centerFieldOpeningAnswer[0], centerFieldOpeningAnswer[1]);
+    log.info("Answer to last corner field opening: {}\nValue: {}", cornerFieldOpeningAnswer[0], cornerFieldOpeningAnswer[1]);
+    log.info("Answer to field one, center and two threat: {}\nValue: {}", fieldOneCenterTwoOpeningAnswer[0], fieldOneCenterTwoOpeningAnswer[1]);
+    log.info("Answer to field one opening: {}\nValue: {}", fieldOneOpeningAnswer[0], fieldOneOpeningAnswer[1]);
+    log.info("Opening probailities: {}\nValue: {}", emptyFieldProbs[0], emptyFieldProbs[1]);
   }
 
   INDArray generateCenterFieldInputImagesConvolutional() {
@@ -291,17 +325,10 @@ public class TicTacToe extends Game {
     graphSingleBatchInput2.putRow(0, fieldOneCenterTwoMoves);
     return graphSingleBatchInput2;
   }
-  
-  public int getCurrentPlayer(Set<Integer> emptyFields) {
+
+  public String toString() {
     
-    boolean oddOccupiedFields = 1 == (COLUMN_COUNT - emptyFields.size()) % 2;
-    
-    if (oddOccupiedFields) {
-      
-      return MIN_PLAYER_CHANNEL;
-    }
-    
-    return MAX_PLAYER_CHANNEL;
+    return "player: " + this.currentPlayer + System.lineSeparator() + this.currentBoard;
   }
 
   static boolean horizontalWin(INDArray board, int player) {
@@ -342,14 +369,12 @@ public class TicTacToe extends Game {
 
   static INDArray mirrorBoardHorizontally(INDArray playgroundRotation) {
 
-    INDArray boardEmptyMirrorHorizontal = playgroundRotation.slice(PLAYER_CHANNEL);
+    INDArray boardPlayerMirrorHorizontal = playgroundRotation.slice(CURRENT_PLAYER_CHANNEL);
     INDArray maxPlayerMirrorHorizontal = mirrorBoardPartHorizontally(playgroundRotation.slice(MAX_PLAYER_CHANNEL));
     INDArray minPlayerMirrorHorizontal = mirrorBoardPartHorizontally(playgroundRotation.slice(MIN_PLAYER_CHANNEL));
     
-    INDArray newPlaygroundMirrorHorizontal = createNewBoard(boardEmptyMirrorHorizontal, maxPlayerMirrorHorizontal,
+    return createNewBoard(boardPlayerMirrorHorizontal, maxPlayerMirrorHorizontal,
         minPlayerMirrorHorizontal);
-
-    return newPlaygroundMirrorHorizontal;
   }
   
   static INDArray mirrorBoardPartHorizontally(INDArray toMirror) {
@@ -361,45 +386,20 @@ public class TicTacToe extends Game {
     
     return mirrorHorizontal;
   }
-  
-  static INDArray mirrorBoardVertically(INDArray boardToMirror) {
-
-    INDArray boardEmptyMirror = boardToMirror.slice(PLAYER_CHANNEL);
-    INDArray maxPlayerMirror = mirrorVertical(boardToMirror.slice(MAX_PLAYER_CHANNEL));
-    INDArray minPlayerMirror = mirrorVertical(boardToMirror.slice(MIN_PLAYER_CHANNEL));
-    
-    INDArray boardMirrorVertical = createNewBoard(boardEmptyMirror, maxPlayerMirror, minPlayerMirror);
-    
-    return boardMirrorVertical;
-  }
-  
-  static INDArray mirrorVertical(INDArray toMirror) {
-    
-    INDArray mirroredVertical = Nd4j.ones(toMirror.shape()).neg();
-    
-    for (int row = 0; row < toMirror.shape()[0]; row++) {
-      
-      mirroredVertical.putRow(row, Nd4j.reverse(toMirror.getRow(row)));
-    }
-    
-    return mirroredVertical;
-  }
 
   static INDArray rotateBoard90(INDArray playgroundRotation) {
 
-    INDArray boardEmptyRotation = playgroundRotation.slice(PLAYER_CHANNEL);
+    INDArray boardEmptyRotation = playgroundRotation.slice(CURRENT_PLAYER_CHANNEL);
     INDArray maxPlayerRotation = rotate90(playgroundRotation.slice(MAX_PLAYER_CHANNEL));
     INDArray minPlayerRotation = rotate90(playgroundRotation.slice(MIN_PLAYER_CHANNEL));
     
-    INDArray newPlaygroundRotation = createNewBoard(boardEmptyRotation, maxPlayerRotation, minPlayerRotation);
-
-    return newPlaygroundRotation;
+    return createNewBoard(boardEmptyRotation, maxPlayerRotation, minPlayerRotation);
   }
 
   static INDArray createNewBoard(INDArray newEmptyBoardPart, INDArray newMaxPlayerBoardPart, INDArray newMinPlayerBoardPart) {
 
     INDArray newPlaygroundRotation = Nd4j.create(IMAGE_CHANNELS, IMAGE_SIZE, IMAGE_SIZE);
-    newPlaygroundRotation.putRow(PLAYER_CHANNEL, newEmptyBoardPart);
+    newPlaygroundRotation.putRow(CURRENT_PLAYER_CHANNEL, newEmptyBoardPart);
     newPlaygroundRotation.putRow(MAX_PLAYER_CHANNEL, newMaxPlayerBoardPart);
     newPlaygroundRotation.putRow(MIN_PLAYER_CHANNEL, newMinPlayerBoardPart);
 
@@ -408,33 +408,13 @@ public class TicTacToe extends Game {
   
   static INDArray rotate90(INDArray toRotate) {
     
-    INDArray rotated90 = Nd4j.ones(toRotate.shape()).neg();
+    INDArray rotated90 = Nd4j.ones(toRotate.shape());
     
-    int middle = (int) (toRotate.shape()[0] / 2);
-    for (int row = 0; row < toRotate.shape()[0]; row++) {
-      
-      for (int col = 0; col < toRotate.shape()[1]; col++) {
-        
-        if (row != middle && col != middle) {
-          
-          if (row == col) {
-            
-            INDArray slice = toRotate.getColumn(col).dup();
-            rotated90.putRow(row, Nd4j.reverse(slice));
-          
-          } else {
-          
-            INDArray slice = toRotate.getRow(row).dup();
-            rotated90.putColumn(col, slice);
-          }
-        
-        } else if (row == middle && col == middle) {
-          
-          rotated90.putScalar(new int[]{middle, middle}, toRotate.getDouble(middle, middle));
-        }
-      }
-    }
-    
+    for (int col = 0; col < toRotate.shape()[1]; col++) {
+     
+      INDArray slice = toRotate.getColumn(col).dup();
+      rotated90.putRow(col, Nd4j.reverse(slice));
+    } 
     return rotated90;
   }
 }
