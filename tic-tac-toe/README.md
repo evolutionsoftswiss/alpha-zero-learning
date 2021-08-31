@@ -68,6 +68,8 @@ For training only TicTacToeReinforcementLearningMain.java is necessary. Here two
 
 There is no possibility to play against the alpha zero trained model as human yet.
 
+For examples and hints about executing the main methods see the parent module [README.md](../README.md#running-the-tic-tac-toe-implementation)
+
 ### EvaluationMain.java
 With Tic Tac Toe as a special case, because the simplicity allows a full min max search, there are generated labels from the [supervised dl4j learning project](https://github.com/evolutionsoftswiss/dl4j). This evaluation is done after each iteration and shows also a learning progress. Alpha zero learns some same moves, but probably also find different correct moves.
 

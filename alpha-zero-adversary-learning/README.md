@@ -11,7 +11,7 @@ Keep this in mind when using position values or defining the activation function
 ## Implement your own new board game
 You need at least the following to implement your own new game and perform trainings.
 
-1. Provide a subclass of [Game.java](https://github.com/evolutionsoftswiss/alpha-zero-learning/blob/master/alpha-zero-adversary-learning/src/main/java/ch/evolutionsoft/rl/Game.java)
+1. Provide a subclass of [Game.java](https://github.com/evolutionsoftswiss/alpha-zero-learning/blob/master/alpha-zero-adversary-learning/src/main/java/ch/evolutionsoft/rl/Game.java) like [TicTacToe.java](https://github.com/evolutionsoftswiss/alpha-zero-learning/blob/master/tic-tac-toe/src/main/java/ch/evolutionsoft/rl/tictactoe/TicTacToe.java)
 2. Design a ComputationGraph, potentially a convolution residual net, adapted to the game complexity.
 3. Provide an adapted [AdversaryLearningConfiguration.java](https://github.com/evolutionsoftswiss/alpha-zero-learning/blob/master/alpha-zero-adversary-learning/src/main/java/ch/evolutionsoft/rl/AdversaryLearningConfiguration.java) to configure parameters of the training.
 4. Put 1.-3. together in a main method and let the computer learn the game
@@ -79,4 +79,6 @@ Deeplearning4j uses ComputationGraph as a generalization of MultiLayerNetwork. W
 Generally you should start with a small ComputationGraph architecture as it consumes less training time. For less complex games it should not be necessary to use a 20 or 40 layer deep architecture like it was used for 19x19 Go.
 
 ### The AdversaryLearningConfiguration
-It is configurable by a manually implemented Builder. See the source for a description of the available training parameters: [AdversaryLearningConfiguration.java](https://github.com/evolutionsoftswiss/alpha-zero-learning/blob/master/alpha-zero-adversary-learning/src/main/java/ch/evolutionsoft/rl/AdversaryLearningConfiguration.java)
+It is configurable by a manually implemented Builder. The current defaults are working to learn Tic Tac Toe. For another game you should probable use different values for all available configuration parameters.
+
+See the source for a description of the available training parameters: [AdversaryLearningConfiguration.java](https://github.com/evolutionsoftswiss/alpha-zero-learning/blob/master/alpha-zero-adversary-learning/src/main/java/ch/evolutionsoft/rl/AdversaryLearningConfiguration.java)
