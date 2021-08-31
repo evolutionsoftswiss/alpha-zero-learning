@@ -12,7 +12,7 @@ import org.slf4j.LoggerFactory;
 import ch.evolutionsoft.rl.AdversaryLearning;
 import ch.evolutionsoft.rl.AdversaryLearningConfiguration;
 import ch.evolutionsoft.rl.Game;
-import ch.evolutionsoft.rl.MonteCarloSearch;
+import ch.evolutionsoft.rl.MonteCarloTreeSearch;
 
 public class TicTacToeGamesMain {
 
@@ -89,7 +89,7 @@ public class TicTacToeGamesMain {
 
   static INDArray doMoveFromAlphaZeroNet(ComputationGraph alphaNet, Game ticTacToe, boolean xPlayer) {
 
-    int moveIndex = new MonteCarloSearch(alphaNet, new AdversaryLearningConfiguration.
+    int moveIndex = new MonteCarloTreeSearch(alphaNet, new AdversaryLearningConfiguration.
         Builder().build()).getActionValues(ticTacToe, 0).argMax(0).getInt(0);
     
     if (!ticTacToe.getValidMoveIndices().contains(moveIndex)) {

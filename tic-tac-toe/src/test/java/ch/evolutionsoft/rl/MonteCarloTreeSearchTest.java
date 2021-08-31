@@ -10,7 +10,7 @@ import org.nd4j.linalg.factory.Nd4j;
 
 public class MonteCarloTreeSearchTest {
 
-  MonteCarloSearch mcts;
+  MonteCarloTreeSearch mcts;
   
   @BeforeEach
   void initMonteCarloTreeSearch() {
@@ -19,7 +19,7 @@ public class MonteCarloTreeSearchTest {
     AdversaryLearningConfiguration adversaryLearningConfiguration =
         new AdversaryLearningConfiguration.Builder().numberOfMonteCarloSimulations(1000).build();
     
-    this.mcts = new MonteCarloSearch(computationGraph, adversaryLearningConfiguration);
+    this.mcts = new MonteCarloTreeSearch(computationGraph, adversaryLearningConfiguration);
   }
 
   @Test

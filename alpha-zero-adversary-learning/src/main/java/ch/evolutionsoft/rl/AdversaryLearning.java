@@ -62,7 +62,7 @@ public class AdversaryLearning {
 
   AdversaryLearningConfiguration adversaryLearningConfiguration;
 
-  MonteCarloSearch mcts;
+  MonteCarloTreeSearch mcts;
 
   boolean restoreTrainingExamples;
 
@@ -133,7 +133,7 @@ public class AdversaryLearning {
     Game currentGame = this.initialGame.createNewInstance();
     int currentPlayer = Game.MAX_PLAYER;
 
-    this.mcts = new MonteCarloSearch(computationGraph, adversaryLearningConfiguration);
+    this.mcts = new MonteCarloTreeSearch(computationGraph, adversaryLearningConfiguration);
     int moveNumber = 1;
 
     while (!currentGame.gameEnded()) {

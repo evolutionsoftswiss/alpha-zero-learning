@@ -81,8 +81,8 @@ public class AdversaryAgentDriver {
   
   public double playGame(Game game, AdversaryLearningConfiguration configuration, int gameNumber) {
     
-    MonteCarloSearch player1 = new MonteCarloSearch(this.player1Policy, configuration);
-    MonteCarloSearch player2 = new MonteCarloSearch(this.player2Policy, configuration);
+    MonteCarloTreeSearch player1 = new MonteCarloTreeSearch(this.player1Policy, configuration);
+    MonteCarloTreeSearch player2 = new MonteCarloTreeSearch(this.player2Policy, configuration);
     
     Set<Integer> emptyFields = game.getValidMoveIndices();
     

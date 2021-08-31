@@ -11,13 +11,10 @@ import org.nd4j.linalg.factory.Nd4j;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class MonteCarloSearch {
+public class MonteCarloTreeSearch {
   
-  Logger logger = LoggerFactory.getLogger(MonteCarloSearch.class);
+  Logger logger = LoggerFactory.getLogger(MonteCarloTreeSearch.class);
 
-  /**
-   * Use constant cUct at the moment.
-   */
   double currentUctConstant = 1.5;
   
   int numberOfSimulations;
@@ -28,7 +25,7 @@ public class MonteCarloSearch {
   
   Map<INDArray, INDArray[]> neuralNetOutputsByBoardInputs = new HashMap<>();
   
-  public MonteCarloSearch(ComputationGraph computationGraph, AdversaryLearningConfiguration configuration) {
+  public MonteCarloTreeSearch(ComputationGraph computationGraph, AdversaryLearningConfiguration configuration) {
     
     this.computationGraph = computationGraph;
     this.currentUctConstant = configuration.getuctConstantFactor();

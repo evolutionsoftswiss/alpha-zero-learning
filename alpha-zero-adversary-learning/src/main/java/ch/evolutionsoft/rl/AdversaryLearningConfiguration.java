@@ -108,11 +108,11 @@ public class AdversaryLearningConfiguration {
   int checkPointIterationsFrequency;
 
   /**
-   * When the temperature used in {@link MonteCarloSearch} getActionValues() should become 0.
+   * When the temperature used in {@link MonteCarloTreeSearch} getActionValues() should become 0.
    * Currently only 1 or 0 are used. Too small values > 0 can cause overflows.
    * A temperature == 0 will lead to move action probabilities all zero, expect
    * one being one. Temperatures > 0 keep probabilities > 0 for all move actions
-   * in function of the number of visits during {@link MonteCarloSearch}.
+   * in function of the number of visits during {@link MonteCarloTreeSearch}.
    */
   int fromNumberOfIterationsTemperatureZero;
   
@@ -131,13 +131,13 @@ public class AdversaryLearningConfiguration {
   int maxTrainExamplesHistory;
 
   /**
-   * {@link MonteCarloSearch} parameter influencing exploration / exploitation of
+   * {@link MonteCarloTreeSearch} parameter influencing exploration / exploitation of
    * different move actions. TicTacToe uses 0.8.
    */
   double uctConstantFactor;
 
   /**
-   * How much single playout steps should {@link MonteCarloSearch} perform.
+   * How much single playout steps should {@link MonteCarloTreeSearch} perform.
    * TicTacToe example implementation uses 30.
    * Typical values for Go 9x9 and Go 19x19 would be 400 and 1600.
    */
