@@ -256,7 +256,7 @@ public class AdversaryLearning {
 
       this.computationGraph = this.fitNeuralNet(this.computationGraph, trainExamples);
 
-      log.info("Challenge new model version with previous model in {} games", adversaryLearningConfiguration.gamesToGetNewNetworkWinRatio);
+      log.info("Challenge new model version with previous model in {} games", adversaryLearningConfiguration.getNumberOfGamesToDecideUpdate());
       
       AdversaryAgentDriver adversaryAgentDriver = new AdversaryAgentDriver(
           this.previousComputationGraph,

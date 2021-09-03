@@ -20,17 +20,17 @@ import ch.evolutionsoft.rl.Game;
 /**
  * Initial board setup of the 3x3x3 INDArray.
  * [
- *  [
+ *  [ // Current player max has all 1, current player min has all -1
  *   [    1.0000,    1.0000,    1.0000], 
  *   [    1.0000,    1.0000,    1.0000], 
  *   [    1.0000,    1.0000,    1.0000]
  *  ], 
- *  [
+ *  [ // Max stones X's
  *   [         0,         0,         0], 
  *   [         0,         0,         0], 
  *   [         0,         0,         0]
  *  ],
- *  [ 
+ *  [ // Min stones O's
  *   [         0,         0,         0], 
  *   [         0,         0,         0], 
  *   [         0,         0,         0]
@@ -198,10 +198,10 @@ public class TicTacToe extends Game {
     }
     newBoard.putScalar(player, row, column, OCCUPIED_IMAGE_POINT);
 
-    this.currentBoard = newBoard.dup();
+    this.currentBoard = newBoard;
     this.currentPlayer = getOtherPlayer(this.currentPlayer);
     
-    return newBoard;
+    return newBoard.dup();
   }
 
   /**
@@ -248,7 +248,7 @@ public class TicTacToe extends Game {
   /**
    * Do an evaluation against labels fom supervised learning.
    * Only an indication for improvement during training, as symmetry equivalent moves
-   * may be learned different to the labels.
+   * or other correct moves may be learned different to the labels.
    */
   @Override
   public void evaluateNetwork(ComputationGraph computationGraph) {

@@ -47,7 +47,7 @@ public abstract class Game {
 
   public INDArray getCurrentBoard() {
     
-    return this.currentBoard;
+    return this.currentBoard.dup();
   }
   
   public int getCurrentPlayer() {

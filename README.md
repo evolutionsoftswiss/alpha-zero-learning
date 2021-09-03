@@ -12,10 +12,10 @@ During almost 20 years after IBM DeepBlue defeated Kasparov 1997 in chess, 19x19
 
 The AlphaGo algorithm was further adapted and improved with AlphaGo Zero [Mastering the game of Go without human knowledge](https://www.nature.com/articles/nature24270) and Alpha Zero [Mastering Chess and Shogi by Self-Play with a General Reinforcement Learning Algorithm](https://arxiv.org/pdf/1712.01815.pdf).
 
-### Why there are not tons of strong Go AI's now ?
+### Why there are not thousands of strong artificial Go intelligences now ?
 It is not enough to know the algorithm and having an implementation ready. A rough calculation [Computer-Go zero performance](http://web.archive.org/web/20190205013627/http://computer-go.org/pipermail/computer-go/2017-October/010307.html) estimates the training time to generate as much positions as AlphaGo zero could take 1700 years on a single machine with standard hardware.
 
-There are efforts like [leela-zero](https://github.com/leela-zero/leela-zero) to repeat the training efforts in a public and distributed manner.
+There are efforts like [leela-zero](https://github.com/leela-zero/leela-zero) to repeat the training efforts in a public and distributed manner. Similarly [minigo](https://github.com/tensorflow/minigo) tried to reproduce the learning progress.
 
 You can more easily adapt the algorithm to less complex board games like connect four, Gomoku, Othello and others. With such games it is more realistic to perform the necessary training to obtain a strong artificial intelligence.
 
@@ -23,12 +23,12 @@ You can more easily adapt the algorithm to less complex board games like connect
 Also the first goal of Java alpha-zero-learning is to enable alpha zero for less complex games. The implementation does not yet enable distributed learning and even omits some parallelization possibilities on a single machine yet.
 
 ### Generic release build
-You can use the existing Java alpha-zero-learning with the generic published release builds. With ch.evolutionsoft.rl.alphazero.tictactoe-1.1.0-jar-with-dependencies you can directly repeat the training for the tic-tac-toe prototype. See also the submodule (tic-tac-toe/README.md)[tic-tac-toe/README.md] for a few more information.
+You can use the existing Java alpha-zero-learning with the generic published release builds. With ch.evolutionsoft.rl.alphazero.tictactoe-1.1.0-jar-with-dependencies you can directly repeat the training for the Tic Tac Toe prototype. See also the submodule [tic-tac-toe/README.md](./tic-tac-toe/README.md) for a few more information.
 
-ch.evolutionsoft.rl.alphazero.adversary-learning-1.1.0-jar-with-dependencies would let you reuse the general part of the implementation for other board games. The submodule (alpha-zero-adversary-learning/README.md)[alpha-zero-adversary-learning/README.md] contains hints about a new board game implementation.
+ch.evolutionsoft.rl.alphazero.adversary-learning-1.1.0-jar-with-dependencies would let you reuse the general part of the implementation for other board games. The submodule [alpha-zero-adversary-learning/README.md](./alpha-zero-adversary-learning/README.md) contains hints about a new board game implementation.
 
 ### Running the Tic Tac Toe implementation
-You should run the different main methods from within the same directory. The created alpha zero learning files, bestmodel.bin and trainexamples.obj, are searched or created in the current directory.
+You should run the different main methods from within the same directory. The alpha zero learning files, bestmodel.bin and trainexamples.obj, are searched or created in the current directory.
 
 If you download the generic release build without doing a local mvn build, your -cp classpath value needs to point to the correct location of the jar file with dependencies.
 
@@ -100,6 +100,3 @@ The mvn builds for each submodule take several minutes and a lot of different sy
 
 ### Provide a Connect Four game
 Ii is foreseen to provide a connect four implementation as the next step.
-
-### Trial with 9x9 Go
-Maybe I'll give it a try later with 9x9 Go after getting a NVIDIA RTX A6000 or similar.
