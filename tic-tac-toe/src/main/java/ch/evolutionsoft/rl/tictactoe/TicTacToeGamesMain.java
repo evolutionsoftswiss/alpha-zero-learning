@@ -25,7 +25,7 @@ public class TicTacToeGamesMain {
     ComputationGraph perfectResNet = ModelSerializer.restoreComputationGraph(
         configuration.getAbsoluteModelPathFrom("TicTacToePerfectResidualNet.bin"));
     ComputationGraph alphaNet = ModelSerializer.restoreComputationGraph(
-        configuration.getAbsoluteModelPathFrom("bestmodel.bin"));
+        configuration.getAbsoluteModelPathFrom(configuration.getBestModelFileName()));
     
     int[] results1 = playGames(perfectResNet, alphaNet, false);
     int[] results2 = playGames(perfectResNet, alphaNet, true);
