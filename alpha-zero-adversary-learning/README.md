@@ -6,7 +6,7 @@ This is the main submodule providing the general parts of Java alpha zero learni
 Alpha zero adversary learning uses 1 for a winning position, 0.5 for a draw and 0 for a losing position.
 These differ from the often used 1, 0, -1.
 
-Keep this in mind when using position values or defining the activation function of the value output: TANH does fit a range from -1 to 1, while SIGMOID can be used for 0 to 1.
+Keep this in mind when using position values or defining the activation function of the neural net value output: TANH does fit a range from -1 to 1, while SIGMOID can be used for 0 to 1.
 
 ## Implement your own new board game
 You need at least the following to implement your own new game and perform trainings.
@@ -70,7 +70,7 @@ Here's the main class of tic-tac-toe giving an overview:
 Important hints:
 * A concrete Game implementation must keep track of the current board and current player. That means also that you need to update those members after a move.
 * You should ensure in the concrete Game implementation that only copies of the member board state are returned. Otherwise you may have unexpected changes to the Game board state.
-* A new Game Subclass may use your existing Java classes to manage a board and other variables of the Game, it would then e kind of bridge between your existing board implementation and the alpha zero learning.
+* A new Game Subclass may use your existing Java classes to manage a board and other variables of the Game, it would then be kind of bridge between your existing board implementation and the alpha zero learning.
 * In the case of Tic Tac Toe the whole state about the Game is kept in the Subclass and there is no additional board or Game management necessary
 
 ### The ComputationGraph
@@ -79,6 +79,6 @@ Deeplearning4j uses ComputationGraph as a generalization of MultiLayerNetwork. W
 Generally you should start with a small ComputationGraph architecture as it consumes less training time. For less complex games it should not be necessary to use a 20 or 40 layer deep architecture like it was used for 19x19 Go.
 
 ### The AdversaryLearningConfiguration
-It is configurable by a manually implemented Builder. The current defaults are working to learn Tic Tac Toe. For another game you should probable use different values for all available configuration parameters.
+It is configurable by a manually implemented Builder. The current defaults are working to learn Tic Tac Toe. For another game you should probably use different values for all available configuration parameters.
 
 See the source for a description of the available training parameters: [AdversaryLearningConfiguration.java](https://github.com/evolutionsoftswiss/alpha-zero-learning/blob/master/alpha-zero-adversary-learning/src/main/java/ch/evolutionsoft/rl/AdversaryLearningConfiguration.java)

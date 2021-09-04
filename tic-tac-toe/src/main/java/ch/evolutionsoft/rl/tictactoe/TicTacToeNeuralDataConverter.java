@@ -235,27 +235,23 @@ public class TicTacToeNeuralDataConverter {
           SMALLEST_MAX_WIN <= upcomingFieldResult) {
 
         numberOfMaxWins++;
-        if (currentFastestMaxWin > upcomingFieldResult) {
+        if (currentFastestMaxWin < upcomingFieldResult ||
+            bestMaxIndex == -1) {
           currentFastestMaxWin = upcomingFieldResult;
           bestMaxIndex = arrayIndex;
         
-        } else if (bestMaxIndex == -1) {
-
-          bestMaxIndex = arrayIndex;
         }
 
       } else if (EMPTY_FIELD_VALUE == playgroundOccupation &&
           BIGGEST_MIN_WIN >= upcomingFieldResult) {
 
         numberOfMinWins++;
-        if (currentFastestMinWin < upcomingFieldResult) {
+        if (currentFastestMinWin > upcomingFieldResult ||
+            bestMinIndex == -1) {
 
           currentFastestMinWin = upcomingFieldResult;
           bestMinIndex = arrayIndex;
 
-        } else if (bestMinIndex == -1) {
-
-          bestMinIndex = arrayIndex;
         }
       }
     }

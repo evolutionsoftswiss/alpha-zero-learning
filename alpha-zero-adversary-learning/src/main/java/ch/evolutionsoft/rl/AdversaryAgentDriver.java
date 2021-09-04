@@ -29,8 +29,8 @@ public class AdversaryAgentDriver {
 
   public int[] playGames(Game game, AdversaryLearningConfiguration configuration) {
     
-    int numberOfEpisodesPlayer1Starts = configuration.getGamesToGetNewNetworkWinRatio() / 2;
-    int numberOfEpisodesPlayer2Starts = configuration.getGamesToGetNewNetworkWinRatio() - numberOfEpisodesPlayer1Starts;
+    int numberOfEpisodesPlayer1Starts = configuration.getNumberOfGamesToDecideUpdate() / 2;
+    int numberOfEpisodesPlayer2Starts = configuration.getNumberOfGamesToDecideUpdate() - numberOfEpisodesPlayer1Starts;
     
     int player1Wins = 0;
     int player2Wins = 0;
@@ -38,7 +38,7 @@ public class AdversaryAgentDriver {
     
     for (int gameNumber = 1; gameNumber <= numberOfEpisodesPlayer1Starts; gameNumber++) {
       
-      double gameResult = this.playGame(game.createNewInstance(), configuration, gameNumber);
+      double gameResult = this.playGame(game.createNewInstance(), configuration);
       
       if (gameResult >= MAX_WIN) {
         
@@ -60,7 +60,7 @@ public class AdversaryAgentDriver {
 
     for (int gameNumber = 1; gameNumber <= numberOfEpisodesPlayer2Starts; gameNumber++) {
       
-      double gameResult = this.playGame(game.createNewInstance(), configuration, gameNumber);
+      double gameResult = this.playGame(game.createNewInstance(), configuration);
       
       if (gameResult <= MIN_WIN) {
         
@@ -79,7 +79,7 @@ public class AdversaryAgentDriver {
     return new int[] {player1Wins, player2Wins, draws};
   }
   
-  public double playGame(Game game, AdversaryLearningConfiguration configuration, int gameNumber) {
+  public double playGame(Game game, AdversaryLearningConfiguration configuration) {
     
     MonteCarloTreeSearch player1 = new MonteCarloTreeSearch(this.player1Policy, configuration);
     MonteCarloTreeSearch player2 = new MonteCarloTreeSearch(this.player2Policy, configuration);

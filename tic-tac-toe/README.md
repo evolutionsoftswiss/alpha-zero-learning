@@ -1,7 +1,7 @@
 Alpha Zero learning TicTacToe
 =============================
 
-This submodule is an example implementation using the general other module [alpha-zero-adversary-learning](../alpha-zero-learning/tree/master/alpha-zero-adversary-learning).
+This submodule is an example implementation using the general other module [alpha-zero-adversary-learning](../alpha-zero-adversary-learning).
 
 ## Implementation details
 
@@ -61,7 +61,7 @@ This submodule is an example implementation using the general other module [alph
 
 With the above configuration 250 iterations with 10 self play episodes take around 45 minutes on i7-5700 with avx2 enabled build. After those 250 iterations ~4000 of 4520 play through examples from [supervised learning](https://github.com/evolutionsoftswiss/dl4j) are generated.
 
-With 250 iterations the trained model holds the draw with any of the nine opening moves playing as first or as second player.
+With 250 iterations the trained model often holds the draw with any or almost any of the nine opening moves playing as first or as second player.
 
 ## Additional classes with main methods
 For training only TicTacToeReinforcementLearningMain.java is necessary. Here two additional classes with main methods are provided. They help interpreting the progress of the performed alpha zero training.
@@ -71,7 +71,7 @@ There is no possibility to play against the alpha zero trained model as human ye
 For examples and hints about executing the main methods see the parent module [README.md](../README.md#running-the-tic-tac-toe-implementation)
 
 ### EvaluationMain.java
-With Tic Tac Toe as a special case, because the simplicity allows a full min max search, there are generated labels from the [supervised dl4j learning project](https://github.com/evolutionsoftswiss/dl4j). This evaluation is done after each iteration and shows also a learning progress. Alpha zero learns some same moves, but probably also find different correct moves.
+With Tic Tac Toe as a special case, because the simplicity allows a full minimax search, there are generated labels from the [supervised dl4j learning project](https://github.com/evolutionsoftswiss/dl4j). This evaluation is done after each iteration and shows also a learning progress. Alpha zero learns some same moves, but probably also find different correct moves.
 
 	========================Evaluation Metrics========================
 	 # of classes:    9
@@ -99,6 +99,6 @@ With Tic Tac Toe as a special case, because the simplicity allows a full min max
 	==================================================================
 
 ### TicTacToeGamesMain.java
-Play 3*9 games with all possible opening moves as X and O player, a total of 54 games. The model from alpha zero holds always the draw against the perfect TicTacToePerfectResidualNet.bin.
+Play 3*9 games with all possible opening moves as X and O player, a total of 54 games. Most of the games should end with a draw after successful training or with the provided bestmodel.bin. If an alpha zero model would win, there would be a bug in the TicTacToePerfectResidualNet.bin.
 
 Experience showed that around 50-60% accuracy compared with the generated labels are enough to always reach the draw. There may still be different play through's with other moves than from TicTacToePerfectResidualNet.bin after the first move, where the alpha zero model not has the correct answer learned yet.
