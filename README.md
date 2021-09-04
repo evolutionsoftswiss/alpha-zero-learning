@@ -36,11 +36,11 @@ Change to the tic-tac-toe submodule directory and execute one of the following c
 
 #### Evaluation method
 
-	~/git/alpha-zero-learning/tic-tac-toe$ java -cp target/ch.evolutionsoft.rl.alphazero.tictactoe-1.1.0-SNAPSHOT-jar-with-dependencies.jar ch.evolutionsoft.rl.tictactoe.TicTacToeGamesMain
+	~/git/alpha-zero-learning/tic-tac-toe$ java -cp target/ch.evolutionsoft.rl.alphazero.tictactoe-1.1.0-jar-with-dependencies.jar ch.evolutionsoft.rl.tictactoe.TicTacToeGamesMain
 
 #### Restart the learning progress from scratch
 
-	~/git/alpha-zero-learning/tic-tac-toe$ java -cp target/ch.evolutionsoft.rl.alphazero.tictactoe-1.1.0-SNAPSHOT-jar-with-dependencies.jar ch.evolutionsoft.rl.tictactoe.TicTacToeReinforcementLearningMain
+	~/git/alpha-zero-learning/tic-tac-toe$ java -cp target/ch.evolutionsoft.rl.alphazero.tictactoe-1.1.0-jar-with-dependencies.jar ch.evolutionsoft.rl.tictactoe.TicTacToeReinforcementLearningMain
 	
 #### Continue the learning progress from an iteration
 By changing the iterationStart to a value greater than 1, you can continue a training progress. The latest bestmodel.bin and trainExamples.obj are loaded from the current directory
@@ -52,7 +52,7 @@ By changing the iterationStart to a value greater than 1, you can continue a tra
 
 And then after rebuilding with 'mvn package':        
 
-		~/git/alpha-zero-learning/tic-tac-toe$ java -cp target/ch.evolutionsoft.rl.alphazero.tictactoe-1.1.0-SNAPSHOT-jar-with-dependencies.jar ch.evolutionsoft.rl.tictactoe.TicTacToeReinforcementLearningMain
+		~/git/alpha-zero-learning/tic-tac-toe$ java -cp target/ch.evolutionsoft.rl.alphazero.tictactoe-1.1.0-jar-with-dependencies.jar ch.evolutionsoft.rl.tictactoe.TicTacToeReinforcementLearningMain
 	
 
 ### Rebuild for your hardware
