@@ -83,7 +83,7 @@ Refer to the submodule [alpha-zero-adversary-learning/README.md](alpha-zero-adve
 
 ### Missing parallelization
 #### Single threaded Monte Carlo Tree Search
-The Monte Carlo Tree Search implementation [MonteCarloSearch.java](https://github.com/evolutionsoftswiss/alpha-zero-learning/blob/master/alpha-zero-adversary-learning/src/main/java/ch/evolutionsoft/rl/MonteCarloSearch.java) is not yet implemented to support multi-threads. First trials with parallelized playout method let [MonteCarloTreeSearchTest.java](https://github.com/evolutionsoftswiss/alpha-zero-learning/blob/master/tic-tac-toe/src/test/java/ch/evolutionsoft/rl/MonteCarloTreeSearchTest.java) fail. The mismatch in real visit counts versus expected visit counts of direct root child nodes shows the existence of problems in parallelized runs.
+The Monte Carlo Tree Search implementation [MonteCarloTreeSearch.java](https://github.com/evolutionsoftswiss/alpha-zero-learning/blob/master/alpha-zero-adversary-learning/src/main/java/ch/evolutionsoft/rl/MonteCarloTreeSearch.java) is not yet implemented to support multi-threads. First trials with parallelized playout method let [MonteCarloTreeSearchTest.java](https://github.com/evolutionsoftswiss/alpha-zero-learning/blob/master/tic-tac-toe/src/test/java/ch/evolutionsoft/rl/MonteCarloTreeSearchTest.java) fail. The mismatch in real visit counts versus expected visit counts of direct root child nodes shows the existence of problems in parallelized runs.
 
 Without synchronizing almost all of the code that should run in parallel, those issues and the failing test case remained.
 
