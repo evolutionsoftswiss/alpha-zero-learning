@@ -1,7 +1,7 @@
 Alpha Zero learning TicTacToe
 =============================
 
-This submodule is an example implementation using the general other module [alpha-zero-adversary-learning](../alpha-zero-learning/alpha-zero-adversary-learning).
+This submodule is an example implementation using the general other module [alpha-zero-adversary-learning](../alpha-zero-adversary-learning).
 
 ## Implementation details
 
