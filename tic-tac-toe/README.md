@@ -1,5 +1,5 @@
-Alpha Zero learning TicTacToe
-=============================
+Alpha Zero learning Tic Tac Toe
+===============================
 
 This submodule is an example implementation using the general other module [alpha-zero-adversary-learning](../alpha-zero-adversary-learning).
 
@@ -54,14 +54,14 @@ This submodule is an example implementation using the general other module [alph
 	 maxTrainExamplesHistory: 5000
 	 cpUct: 0.8
 	 numberOfMonteCarloSimulations: 30
-	 bestModelFileName: /home/evolutionsoft/git/alpha-zero-learning/tic-tac-toe/bestmodel.bin
-	 trainExamplesFileName: /home/evolutionsoft/git/alpha-zero-learning/tic-tac-toe/trainExamples.obj
+	 bestModelFileName: ~/alpha-zero-learning/tic-tac-toe/bestmodel.bin
+	 trainExamplesFileName: ~/alpha-zero-learning/tic-tac-toe/trainExamples.obj
 
 ## Learning performance
 
 With the above configuration 250 iterations with 10 self play episodes take around 45 minutes on i7-5700 with avx2 enabled build. After those 250 iterations ~4000 of 4520 play through examples from [supervised learning](https://github.com/evolutionsoftswiss/dl4j) are generated.
 
-With 250 iterations the trained model often holds the draw with any or almost any of the nine opening moves playing as first or as second player.
+With 250 iterations the trained model holds the draw with any or almost any of the nine opening moves playing as first or as second player.
 
 ## Additional classes with main methods
 For training only TicTacToeReinforcementLearningMain.java is necessary. Here two additional classes with main methods are provided. They help interpreting the progress of the performed alpha zero training.
