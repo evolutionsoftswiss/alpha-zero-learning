@@ -1,24 +1,17 @@
-/*
- * Created on 30.10.2004
- *
- * TODO To change the template for this generated file go to
- * Window - Preferences - Java - Code Style - Code Templates
- */
 package ch.evolutionsoft.rl.alphazero.connectfour.playground;
 
 /**
- * @author Markus Bloesch
+ * 
+ * @author evolutionsoft
  *
- * TODO To change the template for this generated type comment go to
- * Window - Preferences - Java - Code Style - Code Templates
  */
 public class Field{
     
-    int position_;
+    int position;
     
     public Field(int position) {
     	
-        this.position_ = position;
+        this.position = position;
     }
 
     public Field(String fieldString) {
@@ -31,29 +24,29 @@ public class Field{
         
         if (Character.isLowerCase(columnChar)) {
          
-        	this.position_ = (rowChar - '0') * ArrayPlaygroundConstants.COLUMN_COUNT  + (columnChar - 'a') + 1;
+        	this.position = (rowChar - '0') * ArrayPlaygroundConstants.COLUMN_COUNT  + (columnChar - 'a') + 1;
         }
         else{
          
-        	this.position_ = (rowChar - '0') * ArrayPlaygroundConstants.COLUMN_COUNT  + (columnChar - 'A') + 1;
+        	this.position = (rowChar - '0') * ArrayPlaygroundConstants.COLUMN_COUNT  + (columnChar - 'A') + 1;
         }
     }
     
     public int getPosition() {
     	
-    	return this.position_;
+    	return this.position;
     }
     
     
     public int getColumn(){
     	
-    	return this.position_ % ArrayPlaygroundConstants.COLUMN_COUNT - 1;
+    	return this.position % ArrayPlaygroundConstants.COLUMN_COUNT - 1;
     }
     
     
     public int getRow(){
     	
-    	return this.position_ / ArrayPlaygroundConstants.COLUMN_COUNT - 1;
+    	return this.position / ArrayPlaygroundConstants.COLUMN_COUNT - 1;
     }
     
     
@@ -67,7 +60,7 @@ public class Field{
     
     public boolean equals(Field otherField) {
     	
-        return this.position_ == otherField.position_;
+        return this.position == otherField.position;
     }
     
     public boolean equals(String fieldString) {
@@ -79,14 +72,14 @@ public class Field{
             
             if (Character.isLowerCase(columnChar)){
             	
-            	return this.position_ / ArrayPlaygroundConstants.COLUMN_COUNT == (rowChar - '0') &&
-            	       this.position_ % ArrayPlaygroundConstants.COLUMN_COUNT == (columnChar -'a') + 1;
+            	return this.position / ArrayPlaygroundConstants.COLUMN_COUNT == (rowChar - '0') &&
+            	       this.position % ArrayPlaygroundConstants.COLUMN_COUNT == (columnChar -'a') + 1;
             }
             
             if (Character.isUpperCase(columnChar)){
             	
-            	return this.position_ / ArrayPlaygroundConstants.COLUMN_COUNT == (rowChar - '0') &&
-            	       this.position_ % ArrayPlaygroundConstants.COLUMN_COUNT == (columnChar -'A') + 1;
+            	return this.position / ArrayPlaygroundConstants.COLUMN_COUNT == (rowChar - '0') &&
+            	       this.position % ArrayPlaygroundConstants.COLUMN_COUNT == (columnChar -'A') + 1;
             }
         }
         return false;

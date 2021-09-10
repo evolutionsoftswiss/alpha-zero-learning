@@ -2,49 +2,53 @@ package ch.evolutionsoft.rl.alphazero.connectfour.playground;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Observable;
 
-public class ArrayPlayground extends Observable implements Playground {
+/**
+ * 
+ * @author evolutionsoft
+ *
+ */
+public class ArrayPlayground implements Playground {
 
-	protected int[] playground_; 
+	protected int[] playground; 
 	
-	protected int[] columnHeights_;
+	protected int[] columnHeights;
 	
-	protected int fieldsLeft_;
+	protected int fieldsLeft;
 	
 	public ArrayPlayground(){
 		
-		this.playground_ = new int[72];
-		this.columnHeights_ = new int[7];
+		this.playground = new int[72];
+		this.columnHeights = new int[7];
 		
-		this.fieldsLeft_ = 42;
+		this.fieldsLeft = 42;
 		this.initializePlaygroundColors();
 	}
 	
 	
 	public ArrayPlayground(int[] position, int[] columnHeights){
 		
-		this.playground_ = position;
-		this.columnHeights_ = columnHeights;
+		this.playground = position;
+		this.columnHeights = columnHeights;
 	}
 	
 	
 	@Override	
 	public int[] getPosition(){
 		
-		return this.playground_;
+		return this.playground;
 	}
 	
 	
 	public int[] getColumnHeights(){
 		
-		return this.columnHeights_;
+		return this.columnHeights;
 	}
 
 
 	public int getFieldsLeft(){
 		
-		return this.fieldsLeft_;
+		return this.fieldsLeft;
 	}
 	
 	
@@ -55,9 +59,9 @@ public class ArrayPlayground extends Observable implements Playground {
 		
 		for (int index = 0; index < 7; index++){
 			
-			if (this.columnHeights_[Playground.columnsPrioritySorted[index]] < 6){
+			if (this.columnHeights[ArrayPlaygroundConstants.columnsPrioritySorted[index]] < 6){
 				
-				result.add(Playground.columnsPrioritySorted[index]);
+				result.add(ArrayPlaygroundConstants.columnsPrioritySorted[index]);
 			}
 		}
 		
@@ -82,20 +86,17 @@ public class ArrayPlayground extends Observable implements Playground {
 		
         if (this.checkColumn(column)){
         	
-        	if (!this.checkRow(this.columnHeights_[column])){
+        	if (!this.checkRow(this.columnHeights[column])){
         		
         		throw new IllegalArgumentException("Column already full.");
         	}
         	
         	int position = this.getPosition(column);
-        	this.playground_[position] = color;
+        	this.playground[position] = color;
 
-        	this.columnHeights_[column]++;
+        	this.columnHeights[column]++;
         	
-        	this.fieldsLeft_--;
-        	
-        	this.setChanged();
-        	this.notifyObservers("New Move");
+        	this.fieldsLeft--;
         }
 	}
 
@@ -104,11 +105,11 @@ public class ArrayPlayground extends Observable implements Playground {
 	public void trySetField(int column, int color) {
 
     	int position = this.getPosition(column);
-    	this.playground_[position] = color;
+    	this.playground[position] = color;
 
-    	this.columnHeights_[column]++;
+    	this.columnHeights[column]++;
     	
-    	this.fieldsLeft_--;
+    	this.fieldsLeft--;
 	}
 
 	
@@ -117,20 +118,17 @@ public class ArrayPlayground extends Observable implements Playground {
 		
 		if (this.checkColumn(column)){
 			
-			this.columnHeights_[column]--;
+			this.columnHeights[column]--;
 			
-			this.fieldsLeft_++;
+			this.fieldsLeft++;
 			
-			if (!this.checkRow(this.columnHeights_[column])){
+			if (!this.checkRow(this.columnHeights[column])){
 				
 				throw new IllegalArgumentException("Column already empty.");
 			}
 			
 			int position = this.getPosition(column);
-			this.playground_[position] = Playground.EMPTY;
-			
-        	this.setChanged();
-        	this.notifyObservers("Move took back");
+			this.playground[position] = ArrayPlaygroundConstants.EMPTY;
 		}
 		
 	}
@@ -139,25 +137,22 @@ public class ArrayPlayground extends Observable implements Playground {
 	@Override
 	public void trySetFieldEmpty(int column) {
 
-		this.columnHeights_[column]--;
+		this.columnHeights[column]--;
 		
-		this.fieldsLeft_++;
+		this.fieldsLeft++;
 		
 		int position = this.getPosition(column);
-		this.playground_[position] = Playground.EMPTY;
+		this.playground[position] = ArrayPlaygroundConstants.EMPTY;
 	}
 
 
 	public void reset(){
 		
-		this.playground_ = new int[72];
-		this.columnHeights_ = new int[7];
+		this.playground = new int[72];
+		this.columnHeights = new int[7];
 		
-		this.fieldsLeft_ = 42;
+		this.fieldsLeft = 42;
 		this.initializePlaygroundColors();
-		
-		this.setChanged();
-		this.notifyObservers("Reset");
 	}
 	
 	
@@ -168,7 +163,7 @@ public class ArrayPlayground extends Observable implements Playground {
 			throw new IllegalArgumentException("Column " + column + " out of range.");
 		}
 		
-		return this.columnHeights_[column] < 6;
+		return this.columnHeights[column] < 6;
 	}
 	
 	
@@ -179,13 +174,13 @@ public class ArrayPlayground extends Observable implements Playground {
 			throw new IllegalArgumentException("Column " + column + " out of range.");
 		}
 		
-		return this.columnHeights_[column];
+		return this.columnHeights[column];
 	}
 	
 	
 	public int getRowFromIndex(int index){
 		
-		if (index < 0 || index >= 72 || this.playground_[index] == Playground.GREY){
+		if (index < 0 || index >= 72 || this.playground[index] == ArrayPlaygroundConstants.GREY){
 			
 			throw new IllegalArgumentException("invalid index for row and column calculation.");
 		}
@@ -196,7 +191,7 @@ public class ArrayPlayground extends Observable implements Playground {
 	
 	public int getColumnFromIndex(int index){
 		
-		if (index < 0 || index >= 72 || this.playground_[index] == Playground.GREY){
+		if (index < 0 || index >= 72 || this.playground[index] == ArrayPlaygroundConstants.GREY){
 			
 			throw new IllegalArgumentException("invalid index for row and column calculation.");
 		}
@@ -246,7 +241,7 @@ public class ArrayPlayground extends Observable implements Playground {
 	
 	protected int countStonesForward(int position, int color, int direction){
 		
-		if (this.playground_[position] != color){
+		if (this.playground[position] != color){
 			
 			return 0;
 		}
@@ -257,7 +252,7 @@ public class ArrayPlayground extends Observable implements Playground {
 	
 	protected int countStonesBackward(int position, int color, int direction){
 		
-		if (this.playground_[position] != color){
+		if (this.playground[position] != color){
 			
 			return 0;
 		}
@@ -271,10 +266,10 @@ public class ArrayPlayground extends Observable implements Playground {
 		int stoneCount = 0;
 		
 		for (int position = lastPosition; 
-		     stoneCount < 4 && this.playground_[position] != Playground.GREY;
+		     stoneCount < 4 && this.playground[position] != ArrayPlaygroundConstants.GREY;
 		     position++){
 			
-			if (this.playground_[position] == color){
+			if (this.playground[position] == color){
 				
 				stoneCount++;
 			}
@@ -284,10 +279,10 @@ public class ArrayPlayground extends Observable implements Playground {
 		}		
 		
 		for (int position = lastPosition - 1; 
-	         stoneCount < 4 && this.playground_[position] != Playground.GREY;
+	         stoneCount < 4 && this.playground[position] != ArrayPlaygroundConstants.GREY;
 	         position--){
 		
-			if (this.playground_[position] == color){
+			if (this.playground[position] == color){
 			
 				stoneCount++;
 			}
@@ -305,10 +300,10 @@ public class ArrayPlayground extends Observable implements Playground {
 		int stoneCount = 0;
 		
 		for (int position = lastPosition; 
-		     stoneCount < 4 && this.playground_[position] != Playground.GREY;
+		     stoneCount < 4 && this.playground[position] != ArrayPlaygroundConstants.GREY;
 		     position += ArrayPlaygroundConstants.COLUMN_COUNT + 1){
 			
-			if (this.playground_[position] == color){
+			if (this.playground[position] == color){
 				
 				stoneCount++;
 			}
@@ -318,10 +313,10 @@ public class ArrayPlayground extends Observable implements Playground {
 		}		
 		
 		for (int position = lastPosition - ArrayPlaygroundConstants.COLUMN_COUNT - 1; 
-	         stoneCount < 4 && this.playground_[position] != Playground.GREY;
+	         stoneCount < 4 && this.playground[position] != ArrayPlaygroundConstants.GREY;
 	         position -= ArrayPlaygroundConstants.COLUMN_COUNT + 1){
 		
-			if (this.playground_[position] == color){
+			if (this.playground[position] == color){
 			
 				stoneCount++;
 			}
@@ -339,10 +334,10 @@ public class ArrayPlayground extends Observable implements Playground {
 		int stoneCount = 0;
 		
 		for (int position = lastPosition; 
-		     stoneCount < 4 && this.playground_[position] != Playground.GREY;
+		     stoneCount < 4 && this.playground[position] != ArrayPlaygroundConstants.GREY;
 		     position += ArrayPlaygroundConstants.COLUMN_COUNT - 1){
 			
-			if (this.playground_[position] == color){
+			if (this.playground[position] == color){
 				
 				stoneCount++;
 			}
@@ -352,10 +347,10 @@ public class ArrayPlayground extends Observable implements Playground {
 		}		
 		
 		for (int position = lastPosition - ArrayPlaygroundConstants.COLUMN_COUNT + 1; 
-	         stoneCount < 4 && this.playground_[position] != Playground.GREY;
+	         stoneCount < 4 && this.playground[position] != ArrayPlaygroundConstants.GREY;
 	         position -= ArrayPlaygroundConstants.COLUMN_COUNT - 1){
 		
-			if (this.playground_[position] == color){
+			if (this.playground[position] == color){
 			
 				stoneCount++;
 			}
@@ -373,10 +368,10 @@ public class ArrayPlayground extends Observable implements Playground {
 		int stoneCount = 0;
 		
 		for (int position = lastPosition; 
-		     stoneCount < 4 && this.playground_[position] != Playground.GREY;
+		     stoneCount < 4 && this.playground[position] != ArrayPlaygroundConstants.GREY;
 		     position += ArrayPlaygroundConstants.COLUMN_COUNT){
 			
-			if (this.playground_[position] == color){
+			if (this.playground[position] == color){
 				
 				stoneCount++;
 			}
@@ -386,10 +381,10 @@ public class ArrayPlayground extends Observable implements Playground {
 		}		
 		
 		for (int position = lastPosition - ArrayPlaygroundConstants.COLUMN_COUNT; 
-	         stoneCount < 4 && this.playground_[position] != Playground.GREY;
+	         stoneCount < 4 && this.playground[position] != ArrayPlaygroundConstants.GREY;
 	         position -= ArrayPlaygroundConstants.COLUMN_COUNT){
 		
-			if (this.playground_[position] == color){
+			if (this.playground[position] == color){
 			
 				stoneCount++;
 			}
@@ -404,13 +399,13 @@ public class ArrayPlayground extends Observable implements Playground {
 	
 	protected int getPosition(int column){
 		
-		return (this.columnHeights_[column] + 1) * ArrayPlaygroundConstants.COLUMN_COUNT + column + 1;
+		return (this.columnHeights[column] + 1) * ArrayPlaygroundConstants.COLUMN_COUNT + column + 1;
 	}
 	
 	
 	protected int getLastPosition(int column){
 		
-		return this.columnHeights_[column] * ArrayPlaygroundConstants.COLUMN_COUNT + column + 1;
+		return this.columnHeights[column] * ArrayPlaygroundConstants.COLUMN_COUNT + column + 1;
 	}
 	
 	
@@ -428,44 +423,44 @@ public class ArrayPlayground extends Observable implements Playground {
 	
 	protected boolean checkColor(int color){
 		
-		return color == Playground.YELLOW || color == Playground.RED;
+		return color == ArrayPlaygroundConstants.YELLOW || color == ArrayPlaygroundConstants.RED;
 	}
 	
 	
 	protected int otherColor(int color){
 		
-		if (color == Playground.YELLOW){
+		if (color == ArrayPlaygroundConstants.YELLOW){
 			
-			return Playground.RED;
+			return ArrayPlaygroundConstants.RED;
 		}
 		
-		return Playground.YELLOW;
+		return ArrayPlaygroundConstants.YELLOW;
 	}
 	
 	
 	private void initializePlaygroundColors(){
 
-		for (int index = 0; index < this.playground_.length; index ++){
+		for (int index = 0; index < this.playground.length; index ++){
 			
-			this.playground_[index] = Playground.EMPTY;
+			this.playground[index] = ArrayPlaygroundConstants.EMPTY;
 		} 
 		
 		for (int position = ArrayPlaygroundConstants.UPPER_LEFT; position <= ArrayPlaygroundConstants.UPPER_RIGHT; position++){
 			
-			this.playground_[position] = Playground.GREY;
+			this.playground[position] = ArrayPlaygroundConstants.GREY;
 		}
         for (int position = ArrayPlaygroundConstants.LOWER_LEFT; position <= ArrayPlaygroundConstants.LOWER_RIGHT; position++){
 			
-			this.playground_[position] = Playground.GREY;
+			this.playground[position] = ArrayPlaygroundConstants.GREY;
 		}
         
         for (int position = ArrayPlaygroundConstants.UPPER_LEFT; position <= ArrayPlaygroundConstants.LOWER_LEFT; position += ArrayPlaygroundConstants.COLUMN_COUNT){
 			
-			this.playground_[position] = Playground.GREY;
+			this.playground[position] = ArrayPlaygroundConstants.GREY;
 		}     
         for (int position = ArrayPlaygroundConstants.UPPER_RIGHT; position <= ArrayPlaygroundConstants.LOWER_RIGHT; position += ArrayPlaygroundConstants.COLUMN_COUNT){
 			
-			this.playground_[position] = Playground.GREY;
+			this.playground[position] = ArrayPlaygroundConstants.GREY;
 		}
 	}
 	
@@ -478,21 +473,21 @@ public class ArrayPlayground extends Observable implements Playground {
 			
 			for (int column = 0; column < ArrayPlaygroundConstants.COLUMN_COUNT; column++){
 				
-				int fieldColor = this.playground_[row * ArrayPlaygroundConstants.COLUMN_COUNT + column];
+				int fieldColor = this.playground[row * ArrayPlaygroundConstants.COLUMN_COUNT + column];
 				
 				switch(fieldColor){
 					
-					case Playground.EMPTY : {
+					case ArrayPlaygroundConstants.EMPTY : {
 						
 						result += ". ";
 						break;
 					}
-					case Playground.YELLOW : {
+					case ArrayPlaygroundConstants.YELLOW : {
 						
 						result += "X ";
 						break;
 					}
-					case Playground.RED : {
+					case ArrayPlaygroundConstants.RED : {
 						
 						result += "O ";
 						break;

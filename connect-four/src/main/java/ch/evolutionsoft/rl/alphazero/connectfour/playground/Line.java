@@ -1,42 +1,36 @@
-/*
- * Created on 30.10.2004
- *
- * TODO To change the template for this generated file go to
- * Window - Preferences - Java - Code Style - Code Templates
- */
 package ch.evolutionsoft.rl.alphazero.connectfour.playground;
 
 /**
- * @author Markus Bloesch
+ * 
+ * @author evolutionsoft
  *
- * TODO To change the template for this generated type comment go to
- * Window - Preferences - Java - Code Style - Code Templates
  */
 public class Line{
     
-    protected Field beginning_, end_;
-    protected int color_;
+    protected Field beginning;
+    protected Field end;
+    protected int color;
     
     public Line(Field beginning, Field end, int color) {
     	
-    	this.beginning_ = beginning;
-    	this.end_ = end;
-    	this.color_ = color;
+    	this.beginning = beginning;
+    	this.end = end;
+    	this.color = color;
     }
     
     public Field getBeginning() {
     	
-        return this.beginning_;   
+        return this.beginning;   
     }
     
     public Field getEnd() {
     	
-        return this.end_;   
+        return this.end;   
     }
     
     public int getColor() {
     	
-        return this.color_;   
+        return this.color;   
     }
     
     public boolean equals(Object object) {
@@ -49,16 +43,16 @@ public class Line{
     
     public boolean equals(Line otherThreat) {
     	
-        return this.beginning_.equals(otherThreat.beginning_)
-            && this.end_.equals(otherThreat.end_)
-            && this.color_ == otherThreat.getColor();
+        return this.beginning.equals(otherThreat.beginning)
+            && this.end.equals(otherThreat.end)
+            && this.color == otherThreat.getColor();
     }
     
     public String toString() {
     	
-        return "beginning: " + this.beginning_.toString() +
-               "end: " + this.end_.toString() +
-               this.color_;
+        return "beginning: " + this.beginning.toString() +
+               "end: " + this.end.toString() +
+               this.color;
     }
 
 

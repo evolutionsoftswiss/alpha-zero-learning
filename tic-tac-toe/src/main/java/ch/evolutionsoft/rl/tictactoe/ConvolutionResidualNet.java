@@ -1,5 +1,7 @@
 package ch.evolutionsoft.rl.tictactoe;
 
+import static ch.evolutionsoft.rl.ConvolutionalResidualNetConstants.*;
+
 import org.deeplearning4j.nn.conf.ComputationGraphConfiguration;
 import org.deeplearning4j.nn.conf.ConvolutionMode;
 import org.deeplearning4j.nn.conf.NeuralNetConfiguration;
@@ -21,40 +23,6 @@ import org.nd4j.linalg.schedule.ISchedule;
 import ch.evolutionsoft.rl.AdversaryLearningConstants;
 
 public class ConvolutionResidualNet {
-
-  private static final String BLOCK2_SEPARABLE_CONVOLUTION1 = "block2_sepconv1";
-
-  private static final String BLOCK2_SEPARABLE_CONVOLUTION1_BATCH_NORMALIZATION = "block2_sepconv1_bn";
-
-  private static final String BLOCK2_SEPARABLE_CONVOLUTION2 = "block2_sepconv2";
-
-  private static final String BLOCK2_SEPARABLE_CONVOLUTION2_BATCH_NORNMALIZATION = "block2_sepconv2_bn";
-
-  private static final String ADD1 = "add1";
-
-  private static final String BLOCK2_POOL = "block2_pool";
-
-  private static final String RESIDUAL1 = "residual1";
-
-  private static final String RESIDUAL1_CONVOLUTION = "residual1_conv";
-
-  private static final String BLOCK1_CONVOLUTION2_BATCH_NORMALIZATION = "block1_conv2_bn";
-
-  private static final String BLOCK1_CONVOLUTION2 = "block1_conv2";
-
-  private static final String BLOCK1_CONVOLUTION1_ACTIVATION = "block1_conv1_act";
-
-  private static final String BLOCK1_CONVOLUTION1 = "block1_conv1";
-
-  private static final String INPUT = "input";
-
-  private static final String BLOCK2_SEPCONV1_ACTIVATION = "block2_sepconv1_act";
-
-  private static final String BLOCK1_CONV2_ACTIVATION = "block1_conv2_act";
-
-  private static final String BLOCK1_CONV1_BATCH_NORMALIZATION = "block1_conv1_bn";
-
-  public static final int CNN_OUTPUT_CHANNELS = 3;
   
   private double learningRate = 1e-3;
   

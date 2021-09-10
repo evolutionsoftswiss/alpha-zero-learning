@@ -43,22 +43,22 @@ public class FieldTest {
         assertFalse(this.fieldE5.equals(this.fieldE6));
 		
         assertEquals(fieldC2, fieldC2);
-		assertEquals(fieldC2, new Field(21));
-        assertEquals(fieldD2, new Field(22));
-        assertEquals(fieldE5, new Field(50));
-        assertEquals(fieldE6, new Field(59));
+		assertEquals(new Field(21), fieldC2);
+        assertEquals(new Field(22), fieldD2);
+        assertEquals(new Field(50), fieldE5);
+        assertEquals(new Field(59), fieldE6);
 	}
 
     @Test
 	public void testEqualsString() {
-		assertEquals(fieldC2, "c2");
-		assertEquals(fieldC2, "C2");
-        assertEquals(fieldD2, "d2");
-        assertEquals(fieldD2, "D2");
-        assertEquals(fieldE5, "e5");
-        assertEquals(fieldE5, "E5");
-        assertEquals(fieldE6, "e6");
-        assertEquals(fieldE6, "E6");
+		assertTrue(fieldC2.equals("c2"));
+		assertTrue(fieldC2.equals("C2"));
+		assertTrue(fieldD2.equals("d2"));
+		assertTrue(fieldD2.equals("D2"));
+		assertTrue(fieldE5.equals("e5"));
+		assertTrue(fieldE5.equals("E5"));
+		assertTrue(fieldE6.equals("e6"));
+		assertTrue(fieldE6.equals("E6"));
 	}
 
     @Test
@@ -86,27 +86,4 @@ public class FieldTest {
 		} 
         catch (IllegalArgumentException IAE) {}
 	}
-
-	/*public void testConstructorWithArgumentsOutOfRange() {
-		try {
-			new Field(-1, 0);
-			FieldTest.fail("Should never reach this statement");
-		} 
-        catch (IllegalArgumentException IAE) {}
-		try {
-			new Field(0, -1);
-			FieldTest.fail("Should never reach this statement");
-		} 
-        catch (IllegalArgumentException IAE) {}
-		try {
-			new Field(6, 0);
-			FieldTest.fail("Should never reach this statement");
-		} 
-        catch (IllegalArgumentException IAE) {}
-		try {
-			new Field(0, 7);
-			FieldTest.fail("Should never reach this statement");
-		} 
-        catch (IllegalArgumentException IAE) {}
-	}*/
 }
