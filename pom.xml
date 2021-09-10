@@ -90,6 +90,7 @@
 	<modules>
     	<module>alpha-zero-adversary-learning</module>
 		<module>tic-tac-toe</module>
+		<module>connect-four</module>
   	</modules>
 
 	<dependencyManagement>
