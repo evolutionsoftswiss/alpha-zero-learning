@@ -83,7 +83,7 @@ class AdversaryLearningConfigurationTest {
 
     assertAll(
         () -> assertEquals(String.valueOf(Paths.get("").toAbsolutePath()) + File.separator + "alphaModel.bin", 
-            adversaryLearningConfiguration.getAbsoluteModelPathFrom(adversaryLearningConfiguration.getBestModelFileName())),
+            adversaryLearningConfiguration.getAbsolutePathFrom(adversaryLearningConfiguration.getBestModelFileName())),
         () -> assertEquals(false, adversaryLearningConfiguration.isAlwaysUpdateNeuralNetwork()),
         () -> assertEquals(1024, adversaryLearningConfiguration.getBatchSize()),
         () -> assertEquals("alphaModel.bin", adversaryLearningConfiguration.getBestModelFileName()),

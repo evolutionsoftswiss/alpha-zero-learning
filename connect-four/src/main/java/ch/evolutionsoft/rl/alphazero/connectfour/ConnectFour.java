@@ -1,79 +1,280 @@
 package ch.evolutionsoft.rl.alphazero.connectfour;
 
+import static ch.evolutionsoft.rl.alphazero.connectfour.playground.ArrayPlaygroundConstants.*;
+
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 import org.nd4j.linalg.api.ndarray.INDArray;
+import org.nd4j.linalg.factory.Nd4j;
 
+import ch.evolutionsoft.rl.AdversaryLearningConstants;
+import ch.evolutionsoft.rl.AdversaryTrainingExample;
 import ch.evolutionsoft.rl.Game;
+import ch.evolutionsoft.rl.alphazero.connectfour.playground.ArrayPlayground;
 
 public class ConnectFour extends Game {
 
+  public static final int CURRENT_PLAYER_CHANNEL = 2;
+  public static final int NUMBER_OF_BOARD_CHANNELS = 3;
+  
+  public static final INDArray ZEROS_PLAYGROUND_IMAGE = Nd4j.zeros(1, ROW_COUNT, COLUMN_COUNT);
+  public static final INDArray ONES_PLAYGROUND_IMAGE = Nd4j.ones(1, ROW_COUNT, COLUMN_COUNT);
+  public static final INDArray MINUS_ONES_PLAYGROUND_IMAGE = ZEROS_PLAYGROUND_IMAGE.sub(1);
+  
+  public static final INDArray EMPTY_CONVOLUTIONAL_PLAYGROUND = Nd4j.create(3, ROW_COUNT, COLUMN_COUNT);
+  static {
+    EMPTY_CONVOLUTIONAL_PLAYGROUND.putRow(YELLOW, ZEROS_PLAYGROUND_IMAGE);
+    EMPTY_CONVOLUTIONAL_PLAYGROUND.putRow(RED, ZEROS_PLAYGROUND_IMAGE);
+    EMPTY_CONVOLUTIONAL_PLAYGROUND.putRow(EMPTY, ONES_PLAYGROUND_IMAGE);
+  }
+  
+  ArrayPlayground arrayPlayground = new ArrayPlayground();
+  int lastMoveColumn = -1;
+
   public ConnectFour() {
-    // TODO Auto-generated constructor stub
+    
   }
 
   public ConnectFour(int currentPlayer) {
-    super(currentPlayer);
-    // TODO Auto-generated constructor stub
-  }
 
-  public ConnectFour(int currentPlayer, INDArray currentBoard) {
-    super(currentPlayer, currentBoard);
-    // TODO Auto-generated constructor stub
+    super(currentPlayer);
+  }
+  
+  @Override
+  public Game createNewInstance() {
+    
+    ConnectFour connectFour = new ConnectFour(this.currentPlayer);
+    
+    int[] boardPosition = new int[ARRAY_ROW_COUNT * ARRAY_COLUMN_COUNT];
+    System.arraycopy(this.arrayPlayground.getPosition(), 0, boardPosition, 0, boardPosition.length);
+    int[] columnHeights = new int[COLUMN_COUNT];
+    System.arraycopy(this.arrayPlayground.getColumnHeights(), 0, columnHeights, 0, columnHeights.length);
+    connectFour.arrayPlayground = new ArrayPlayground(boardPosition, columnHeights);
+    
+    connectFour.lastMoveColumn = this.lastMoveColumn;
+    connectFour.currentBoard = this.currentBoard.dup();
+    
+    return connectFour;
+  }
+  
+  public Game createNewInstance(ArrayPlayground arrayPlayground) {
+    
+    ConnectFour connectFour = new ConnectFour();
+    
+    int[] boardPosition = new int[ARRAY_ROW_COUNT * ARRAY_COLUMN_COUNT];
+    System.arraycopy(arrayPlayground.getPosition(), 0, boardPosition, 0, boardPosition.length);
+    int[] columnHeights = new int[COLUMN_COUNT];
+    System.arraycopy(arrayPlayground.getColumnHeights(), 0, columnHeights, 0, columnHeights.length);
+    connectFour.arrayPlayground = new ArrayPlayground(boardPosition, columnHeights);
+    
+    connectFour.lastMoveColumn = -1;
+    int yellowStones = 0;
+    int redStones = 0;
+    for (int index = 0; index < arrayPlayground.getPosition().length; index++) {
+      
+      if (GREY != arrayPlayground.getPosition()[index]) {
+
+        int connectFourColor = arrayPlayground.getPosition()[index];
+        int row = arrayPlayground.getRowFromIndex(index);
+        int column = arrayPlayground.getColumnFromIndex(index);
+        int conversedRowIndex = ROW_COUNT - row - 1;
+
+        if ( YELLOW == connectFourColor) {
+        
+          connectFour.currentBoard.putScalar(
+                YELLOW,
+                conversedRowIndex,
+                column,
+                AdversaryLearningConstants.ONE);
+            yellowStones++;
+
+        } else if (RED == connectFourColor) { 
+  
+            connectFour.currentBoard.putScalar(
+                RED,
+                conversedRowIndex,
+                column,
+                AdversaryLearningConstants.ONE);
+            redStones++;
+        }
+      }
+    }
+    if (yellowStones == redStones) {
+
+      connectFour.currentBoard.putRow(
+          CURRENT_PLAYER_CHANNEL,
+          ONES_PLAYGROUND_IMAGE); 
+    
+    } else {
+
+      connectFour.currentBoard.putRow(
+          CURRENT_PLAYER_CHANNEL,
+          MINUS_ONES_PLAYGROUND_IMAGE);
+      connectFour.currentPlayer = Game.MIN_PLAYER;
+    }
+    
+    return connectFour;
   }
 
   @Override
   public int getNumberOfAllAvailableMoves() {
-    // TODO Auto-generated method stub
-    return 0;
+
+    return COLUMN_COUNT;
   }
 
   @Override
   public int getNumberOfCurrentMoves() {
-    // TODO Auto-generated method stub
-    return 0;
+
+    return COLUMN_COUNT;
   }
 
   @Override
   public INDArray getInitialBoard() {
-    // TODO Auto-generated method stub
-    return null;
+
+    return EMPTY_CONVOLUTIONAL_PLAYGROUND.dup();
   }
 
   @Override
   public INDArray doFirstMove(int moveIndex) {
-    // TODO Auto-generated method stub
-    return null;
+ 
+    return makeMove(moveIndex, Game.MAX_PLAYER);
   }
 
   @Override
   public Set<Integer> getValidMoveIndices() {
-    // TODO Auto-generated method stub
-    return null;
+
+    Set<Integer> emptyFieldsIndices = new HashSet<>(10);
+    
+    for (int column = 0; column < COLUMN_COUNT; column++) {
+  
+      if (AdversaryLearningConstants.ZERO == this.currentBoard.getDouble(YELLOW, 0, column) &&
+          AdversaryLearningConstants.ZERO == this.currentBoard.getDouble(RED, 0, column)) {
+  
+        emptyFieldsIndices.add(column);
+      }
+    }
+    
+    return emptyFieldsIndices;
   }
 
   @Override
   public INDArray getValidMoves() {
-    // TODO Auto-generated method stub
-    return null;
+
+    INDArray validMoves = Nd4j.zeros(COLUMN_COUNT);
+    
+    Set<Integer> validMoveIndices = getValidMoveIndices();
+    validMoveIndices.stream().forEach(index -> validMoves.putScalar(index, AdversaryLearningConstants.ONE));
+    
+    return validMoves;
   }
 
   @Override
   public boolean gameEnded() {
-    // TODO Auto-generated method stub
-    return false;
+
+    int otherConnectFourPlayer = this.convertGamePlayerToConnectFourPlayer(
+        this.getOtherPlayer(this.currentPlayer)
+        );
+
+    return this.arrayPlayground.fourInARow(this.lastMoveColumn, otherConnectFourPlayer) ||
+                this.arrayPlayground.getAvailableColumns().isEmpty();
   }
 
   @Override
   public INDArray makeMove(int moveIndex, int player) {
-    // TODO Auto-generated method stub
-    return null;
+
+    int connectFourPlayer = convertGamePlayerToConnectFourPlayer(player);
+    int playedRow = this.arrayPlayground.trySetField(moveIndex, connectFourPlayer);
+    this.lastMoveColumn = moveIndex;
+    
+    INDArray newBoard = this.currentBoard.dup();
+    if (Game.MIN_PLAYER == player) {
+
+      newBoard.putRow(CURRENT_PLAYER_CHANNEL, ONES_PLAYGROUND_IMAGE); 
+    } else {
+
+      newBoard.putRow(CURRENT_PLAYER_CHANNEL, MINUS_ONES_PLAYGROUND_IMAGE);
+    }
+    newBoard.putScalar(connectFourPlayer, ROW_COUNT - playedRow - 1L, moveIndex, AdversaryLearningConstants.ONE);
+    
+    this.currentBoard = newBoard;
+    this.currentPlayer = getOtherPlayer(this.currentPlayer);
+    
+    return newBoard.dup();
   }
 
   @Override
   public double getEndResult(int lastPlayer) {
-    // TODO Auto-generated method stub
-    return 0;
+
+    boolean maxWin = arrayPlayground.fourInARow(this.lastMoveColumn, YELLOW);
+    
+    if (maxWin) {
+      
+      return 1.0;
+    }
+    
+    boolean minWin = arrayPlayground.fourInARow(this.lastMoveColumn, RED);
+    
+    if (minWin) {
+      
+      return 0.0;
+    
+    }
+    
+    return 0.5;
+    
   }
 
+  @Override
+  public List<AdversaryTrainingExample> getSymmetries(INDArray board, INDArray actionProbabilities, int currentPlayer,
+      int iteration) {
+
+    List<AdversaryTrainingExample> symmetries = new ArrayList<>();
+
+    INDArray actionMirrorHorizontal = Nd4j.reverse(actionProbabilities);
+    INDArray newPlaygroundMirrorHorizontal = mirrorBoardHorizontally(board);
+    symmetries.add(
+        new AdversaryTrainingExample(
+            newPlaygroundMirrorHorizontal.dup(),
+            currentPlayer,
+            actionMirrorHorizontal,
+            iteration)
+        );
+    
+    return symmetries;
+  }
+
+  static INDArray mirrorBoardHorizontally(INDArray playgroundRotation) {
+
+    INDArray boardPlayerMirrorHorizontal = playgroundRotation.slice(2).dup();
+    INDArray maxPlayerMirrorHorizontal = mirrorBoardPartVertically(playgroundRotation.slice(0).dup());
+    INDArray minPlayerMirrorHorizontal = mirrorBoardPartVertically(playgroundRotation.slice(1).dup());
+    
+    INDArray newPlaygroundRotation = Nd4j.create(3, 6, 7);
+    newPlaygroundRotation.putRow(2, boardPlayerMirrorHorizontal);
+    newPlaygroundRotation.putRow(0, maxPlayerMirrorHorizontal);
+    newPlaygroundRotation.putRow(1, minPlayerMirrorHorizontal);
+
+    return newPlaygroundRotation;
+  }
+  
+  static INDArray mirrorBoardPartVertically(INDArray toMirror) {
+    
+    INDArray mirrorVertical = Nd4j.ones(toMirror.shape()).neg();
+
+    for (int row = 0; row < toMirror.shape()[0]; row++) {
+      
+      mirrorVertical.putRow(row, Nd4j.reverse(toMirror.getRow(row)));
+    }
+
+    
+    return mirrorVertical;
+  }
+
+  int convertGamePlayerToConnectFourPlayer(int gamePlayer) {
+ 
+    return gamePlayer - 1;
+  }
 }

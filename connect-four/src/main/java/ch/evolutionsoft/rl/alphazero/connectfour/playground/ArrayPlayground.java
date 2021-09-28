@@ -4,9 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * 
  * @author evolutionsoft
- *
  */
 public class ArrayPlayground implements Playground {
 
@@ -55,7 +53,7 @@ public class ArrayPlayground implements Playground {
 	@Override
 	public List<Integer> getAvailableColumns() {
 		
-		List<Integer> result = new ArrayList<Integer>(7);
+		List<Integer> result = new ArrayList<>(7);
 		
 		for (int index = 0; index < 7; index++){
 			
@@ -71,7 +69,12 @@ public class ArrayPlayground implements Playground {
 	
 	@Override
 	public boolean fourInARow(int lastColumn, int color) {
-		
+
+	  if (0 > lastColumn) {
+	    
+	    return false;
+	  }
+	  
 		int lastPosition = this.getLastPosition(lastColumn);
 		
 		return this.fourInARowDiagonallyDown(lastPosition, color) ||
@@ -82,7 +85,7 @@ public class ArrayPlayground implements Playground {
 
 	
 	@Override
-	public void setField(int column, int color) {
+	public int setField(int column, int color) {
 		
         if (this.checkColumn(column)){
         	
@@ -94,30 +97,39 @@ public class ArrayPlayground implements Playground {
         	int position = this.getPosition(column);
         	this.playground[position] = color;
 
+        	int playedRow = this.columnHeights[column];
         	this.columnHeights[column]++;
         	
         	this.fieldsLeft--;
+        	
+        	return playedRow;
         }
+        
+        return -1;
 	}
 
 	
 	@Override
-	public void trySetField(int column, int color) {
+	public int trySetField(int column, int color) {
 
     	int position = this.getPosition(column);
     	this.playground[position] = color;
 
+        int playedRow = this.columnHeights[column];
     	this.columnHeights[column]++;
     	
     	this.fieldsLeft--;
+    	
+    	return playedRow;
 	}
 
 	
 	@Override
-	public void setFieldEmpty(int column) {
+	public int setFieldEmpty(int column) {
 		
 		if (this.checkColumn(column)){
-			
+
+          int emptiedRow = this.columnHeights[column];
 			this.columnHeights[column]--;
 			
 			this.fieldsLeft++;
@@ -129,20 +141,25 @@ public class ArrayPlayground implements Playground {
 			
 			int position = this.getPosition(column);
 			this.playground[position] = ArrayPlaygroundConstants.EMPTY;
+			
+			return emptiedRow;
 		}
-		
+		return -1;
 	}
 
 	
 	@Override
-	public void trySetFieldEmpty(int column) {
+	public int trySetFieldEmpty(int column) {
 
+      int emptiedRow = this.columnHeights[column];
 		this.columnHeights[column]--;
 		
 		this.fieldsLeft++;
 		
 		int position = this.getPosition(column);
 		this.playground[position] = ArrayPlaygroundConstants.EMPTY;
+		
+		return emptiedRow;
 	}
 
 
@@ -185,7 +202,7 @@ public class ArrayPlayground implements Playground {
 			throw new IllegalArgumentException("invalid index for row and column calculation.");
 		}
 		
-		return index - ArrayPlaygroundConstants.COLUMN_COUNT / ArrayPlaygroundConstants.COLUMN_COUNT;
+		return (index - ArrayPlaygroundConstants.ARRAY_COLUMN_COUNT) / ArrayPlaygroundConstants.ARRAY_COLUMN_COUNT;
 	}
 	
 	
@@ -196,7 +213,7 @@ public class ArrayPlayground implements Playground {
 			throw new IllegalArgumentException("invalid index for row and column calculation.");
 		}
 		
-		return (index - 1) % ArrayPlaygroundConstants.COLUMN_COUNT;
+		return (index - 1) % ArrayPlaygroundConstants.ARRAY_COLUMN_COUNT;
 	}
 
 
@@ -209,7 +226,7 @@ public class ArrayPlayground implements Playground {
 		
 		if (this.fourInARowVertically(position, color)){
 
-			direction = ArrayPlaygroundConstants.COLUMN_COUNT;
+			direction = ArrayPlaygroundConstants.ARRAY_COLUMN_COUNT;
 		}
 		else if (this.fourInARowHorizontally(position, color)){
 
@@ -217,11 +234,11 @@ public class ArrayPlayground implements Playground {
 		}
 		else if (this.fourInARowDiagonallyDown(position, color)){
 
-			direction = ArrayPlaygroundConstants.COLUMN_COUNT - 1;
+			direction = ArrayPlaygroundConstants.ARRAY_COLUMN_COUNT - 1;
 		}
 		else if (this.fourInARowDiagonallyUp(position, color)){
 			
-			direction = ArrayPlaygroundConstants.COLUMN_COUNT + 1;
+			direction = ArrayPlaygroundConstants.ARRAY_COLUMN_COUNT + 1;
 		}
 
 		forwardCount = this.countStonesForward(position + direction, color, direction);
@@ -301,7 +318,7 @@ public class ArrayPlayground implements Playground {
 		
 		for (int position = lastPosition; 
 		     stoneCount < 4 && this.playground[position] != ArrayPlaygroundConstants.GREY;
-		     position += ArrayPlaygroundConstants.COLUMN_COUNT + 1){
+		     position += ArrayPlaygroundConstants.ARRAY_COLUMN_COUNT + 1){
 			
 			if (this.playground[position] == color){
 				
@@ -312,9 +329,9 @@ public class ArrayPlayground implements Playground {
 			}
 		}		
 		
-		for (int position = lastPosition - ArrayPlaygroundConstants.COLUMN_COUNT - 1; 
+		for (int position = lastPosition - ArrayPlaygroundConstants.ARRAY_COLUMN_COUNT - 1; 
 	         stoneCount < 4 && this.playground[position] != ArrayPlaygroundConstants.GREY;
-	         position -= ArrayPlaygroundConstants.COLUMN_COUNT + 1){
+	         position -= ArrayPlaygroundConstants.ARRAY_COLUMN_COUNT + 1){
 		
 			if (this.playground[position] == color){
 			
@@ -335,7 +352,7 @@ public class ArrayPlayground implements Playground {
 		
 		for (int position = lastPosition; 
 		     stoneCount < 4 && this.playground[position] != ArrayPlaygroundConstants.GREY;
-		     position += ArrayPlaygroundConstants.COLUMN_COUNT - 1){
+		     position += ArrayPlaygroundConstants.ARRAY_COLUMN_COUNT - 1){
 			
 			if (this.playground[position] == color){
 				
@@ -346,9 +363,9 @@ public class ArrayPlayground implements Playground {
 			}
 		}		
 		
-		for (int position = lastPosition - ArrayPlaygroundConstants.COLUMN_COUNT + 1; 
+		for (int position = lastPosition - ArrayPlaygroundConstants.ARRAY_COLUMN_COUNT + 1; 
 	         stoneCount < 4 && this.playground[position] != ArrayPlaygroundConstants.GREY;
-	         position -= ArrayPlaygroundConstants.COLUMN_COUNT - 1){
+	         position -= ArrayPlaygroundConstants.ARRAY_COLUMN_COUNT - 1){
 		
 			if (this.playground[position] == color){
 			
@@ -369,7 +386,7 @@ public class ArrayPlayground implements Playground {
 		
 		for (int position = lastPosition; 
 		     stoneCount < 4 && this.playground[position] != ArrayPlaygroundConstants.GREY;
-		     position += ArrayPlaygroundConstants.COLUMN_COUNT){
+		     position += ArrayPlaygroundConstants.ARRAY_COLUMN_COUNT){
 			
 			if (this.playground[position] == color){
 				
@@ -380,9 +397,9 @@ public class ArrayPlayground implements Playground {
 			}
 		}		
 		
-		for (int position = lastPosition - ArrayPlaygroundConstants.COLUMN_COUNT; 
+		for (int position = lastPosition - ArrayPlaygroundConstants.ARRAY_COLUMN_COUNT; 
 	         stoneCount < 4 && this.playground[position] != ArrayPlaygroundConstants.GREY;
-	         position -= ArrayPlaygroundConstants.COLUMN_COUNT){
+	         position -= ArrayPlaygroundConstants.ARRAY_COLUMN_COUNT){
 		
 			if (this.playground[position] == color){
 			
@@ -399,13 +416,13 @@ public class ArrayPlayground implements Playground {
 	
 	protected int getPosition(int column){
 		
-		return (this.columnHeights[column] + 1) * ArrayPlaygroundConstants.COLUMN_COUNT + column + 1;
+		return (this.columnHeights[column] + 1) * ArrayPlaygroundConstants.ARRAY_COLUMN_COUNT + column + 1;
 	}
 	
 	
 	protected int getLastPosition(int column){
 		
-		return this.columnHeights[column] * ArrayPlaygroundConstants.COLUMN_COUNT + column + 1;
+		return this.columnHeights[column] * ArrayPlaygroundConstants.ARRAY_COLUMN_COUNT + column + 1;
 	}
 	
 	
@@ -454,11 +471,11 @@ public class ArrayPlayground implements Playground {
 			this.playground[position] = ArrayPlaygroundConstants.GREY;
 		}
         
-        for (int position = ArrayPlaygroundConstants.UPPER_LEFT; position <= ArrayPlaygroundConstants.LOWER_LEFT; position += ArrayPlaygroundConstants.COLUMN_COUNT){
+        for (int position = ArrayPlaygroundConstants.UPPER_LEFT; position <= ArrayPlaygroundConstants.LOWER_LEFT; position += ArrayPlaygroundConstants.ARRAY_COLUMN_COUNT){
 			
 			this.playground[position] = ArrayPlaygroundConstants.GREY;
 		}     
-        for (int position = ArrayPlaygroundConstants.UPPER_RIGHT; position <= ArrayPlaygroundConstants.LOWER_RIGHT; position += ArrayPlaygroundConstants.COLUMN_COUNT){
+        for (int position = ArrayPlaygroundConstants.UPPER_RIGHT; position <= ArrayPlaygroundConstants.LOWER_RIGHT; position += ArrayPlaygroundConstants.ARRAY_COLUMN_COUNT){
 			
 			this.playground[position] = ArrayPlaygroundConstants.GREY;
 		}
@@ -467,40 +484,64 @@ public class ArrayPlayground implements Playground {
 	
 	public String toString(){
 		
-		String result = "";
+		StringBuilder result = new StringBuilder();
 		
-		for (int row = ArrayPlaygroundConstants.ROW_COUNT - 1; row >= 0; row--){
+		for (int row = ArrayPlaygroundConstants.ARRAY_ROW_COUNT - 1; row >= 0; row--) {
 			
-			for (int column = 0; column < ArrayPlaygroundConstants.COLUMN_COUNT; column++){
+			for (int column = 0; column < ArrayPlaygroundConstants.ARRAY_COLUMN_COUNT; column++) {
 				
-				int fieldColor = this.playground[row * ArrayPlaygroundConstants.COLUMN_COUNT + column];
+				int fieldColor = this.playground[row * ArrayPlaygroundConstants.ARRAY_COLUMN_COUNT + column];
 				
-				switch(fieldColor){
-					
-					case ArrayPlaygroundConstants.EMPTY : {
-						
-						result += ". ";
-						break;
-					}
-					case ArrayPlaygroundConstants.YELLOW : {
-						
-						result += "X ";
-						break;
-					}
-					case ArrayPlaygroundConstants.RED : {
-						
-						result += "O ";
-						break;
-					}
-					default:{
-						
-						result += "* ";
-					}
-				}
+				result = addFieldColor(result, fieldColor);
 			}
-			result += "\n";
+			result.append(System.lineSeparator());
 		}
 		
-		return result;
+		return result.toString();
 	}
+
+
+  StringBuilder addFieldColor(StringBuilder currentPlayground, int fieldColor) {
+
+    switch(fieldColor){
+    	
+    	case ArrayPlaygroundConstants.EMPTY : {
+    		
+    		return appendFieldColorEmpty(currentPlayground);
+    	}
+    	case ArrayPlaygroundConstants.YELLOW : {
+    		
+    		return appendFieldColorYellow(currentPlayground);
+    	}
+    	case ArrayPlaygroundConstants.RED : {
+    		
+    		return appendFieldColorRed(currentPlayground);
+    	}
+    	default:{
+    		
+    		return appendFieldColorGrey(currentPlayground);
+    	}
+    }
+  }
+
+
+  StringBuilder appendFieldColorEmpty(StringBuilder currentPlayground) {
+   
+    return currentPlayground.append(". ");
+  }
+
+  StringBuilder appendFieldColorYellow(StringBuilder currentPlayground) {
+   
+    return currentPlayground.append("X ");
+  }
+
+  StringBuilder appendFieldColorRed(StringBuilder currentPlayground) {
+   
+    return currentPlayground.append("O ");
+  }
+
+  StringBuilder appendFieldColorGrey(StringBuilder currentPlayground) {
+   
+    return currentPlayground.append("* ");
+  }
 }

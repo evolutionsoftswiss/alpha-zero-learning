@@ -7,14 +7,15 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.Set;
+import java.util.SortedSet;
+import java.util.TreeSet;
 import java.util.stream.Collectors;
 
 import org.apache.commons.math3.distribution.EnumeratedIntegerDistribution;
@@ -52,8 +53,10 @@ public class AdversaryLearning {
   public static final String TEMPMODEL_NAME = "tempmodel.bin";
 
   public static final Logger log = LoggerFactory.getLogger(AdversaryLearning.class);
-
+  
   Map<INDArray, AdversaryTrainingExample> trainExamplesHistory = new HashMap<>();
+
+  Map<Integer, Set<INDArray>> trainExampleBoardsByIteration = new HashMap<>();
 
   Game initialGame;
 
@@ -81,22 +84,29 @@ public class AdversaryLearning {
   public void performLearning() throws IOException {
 
     loadComputationGraphs();
-    loadEarlierTrainingExamples(adversaryLearningConfiguration.getTrainExamplesFileName());
+    loadEarlierTrainingExamples();
 
     for (int iteration = adversaryLearningConfiguration.getIterationStart();
         iteration < adversaryLearningConfiguration.getIterationStart() + 
         adversaryLearningConfiguration.getNumberOfIterations();
         iteration++) {
+      
+      this.trainExampleBoardsByIteration.put(iteration, new HashSet<>());
 
       for (int episode = 1; episode <= adversaryLearningConfiguration.getNumberOfIterationsBeforePotentialUpdate(); episode++) {
 
         List<AdversaryTrainingExample> newExamples = this.executeEpisode(iteration);
+        
+        if (log.isDebugEnabled()) {
+          
+          log.debug("Got {} potentially new train examples", newExamples.size());
+        }
   
         replaceOldTrainingExamplesWithNewActionProbabilities(newExamples);
   
         saveTrainExamplesHistory();
         
-        log.info("Episode {}-{} ended, train examples {}", iteration, episode, this.trainExamplesHistory.size());
+        log.info("Episode {}-{} ended", iteration, episode);
       }
 
       boolean updateAfterBetterPlayout = updateNeuralNet();
@@ -106,7 +116,7 @@ public class AdversaryLearning {
 
         log.info("Accepting new model");
         String absoluteBestModelPath =
-            adversaryLearningConfiguration.getAbsoluteModelPathFrom(adversaryLearningConfiguration.getBestModelFileName());
+            adversaryLearningConfiguration.getAbsolutePathFrom(adversaryLearningConfiguration.getBestModelFileName());
         ModelSerializer.writeModel(computationGraph,
             absoluteBestModelPath,
             true);
@@ -176,7 +186,7 @@ public class AdversaryLearning {
     if (restoreTrainedNeuralNet) {
 
       String absoluteBestModelPath =
-          adversaryLearningConfiguration.getAbsoluteModelPathFrom(adversaryLearningConfiguration.getBestModelFileName());
+          adversaryLearningConfiguration.getAbsolutePathFrom(adversaryLearningConfiguration.getBestModelFileName());
       this.computationGraph = ModelSerializer.restoreComputationGraph(absoluteBestModelPath, true);
       this.computationGraph.setLearningRate(this.adversaryLearningConfiguration.getLearningRate());
       if (null != this.adversaryLearningConfiguration.getLearningRateSchedule()) {
@@ -196,46 +206,90 @@ public class AdversaryLearning {
     }
   }
 
-  public Map<INDArray, AdversaryTrainingExample> loadEarlierTrainingExamples(String trainExamplesFile) throws IOException {
+  public void loadEarlierTrainingExamples() throws IOException {
 
     if (restoreTrainingExamples) {
-    
-      try (ObjectInputStream trainExamplesInput = new ObjectInputStream(new FileInputStream(trainExamplesFile))) {
-  
-        Object readObject = trainExamplesInput.readObject();
-        if (readObject instanceof List<?>) {
-          
-          List<AdversaryTrainingExample> storedExamples = (List<AdversaryTrainingExample>) readObject;
-          
-          for (AdversaryTrainingExample currentItem : storedExamples) {
-            
-            this.trainExamplesHistory.put(currentItem.getBoard(), currentItem);
-          }
-          
-        } else if (readObject instanceof Map<?,?>) {
-        
-          this.trainExamplesHistory = (Map<INDArray, AdversaryTrainingExample>) readObject;
-        }
-  
-        log.info("Restored train examples from {} with {} train examples",
-            trainExamplesFile,
-            this.trainExamplesHistory.size());
-        
-      } catch (ClassNotFoundException e) {
-        log.warn(
-            "Train examples from trainExamples.obj could not be restored. Continue with empty train examples history.",
-            e);
-      }
+
+      log.info("Restoring trainExamplesByBoard history map, this may take a while...");
+      
+      String trainExamplesFile = adversaryLearningConfiguration.getTrainExamplesFileName();
+      loadMapFromFile(trainExamplesFile, this.trainExamplesHistory);
+
+      log.info("Restoring exampleBoardsByIteration from trainExamplesByBoard map...");
+      
+      this.trainExampleBoardsByIteration = this.trainExamplesHistory.values().stream().collect(
+          Collectors.groupingBy(AdversaryTrainingExample::getIteration,
+          Collectors.mapping(AdversaryTrainingExample::getBoard, Collectors.toSet())));
+
+      log.info("Train examples maps restored from {}", trainExamplesFile);
+      log.info("trainExamplesByBoard map has {} restored AdversaryTrainingExamples entries", this.trainExamplesHistory.size());
+      log.info("exampleBoardsByIteration map has {} restored Set of boards entries", this.trainExampleBoardsByIteration.size());
     }
-    
-    return this.trainExamplesHistory;
+  }
+
+  void loadMapFromFile(String trainExamplesFile, Map<?, ?> targetMap) throws IOException {
+
+    try (ObjectInputStream trainExamplesInput =
+        new ObjectInputStream(
+            new FileInputStream(trainExamplesFile))) {
+ 
+      Object readObject = trainExamplesInput.readObject();
+      if (readObject instanceof Map<?, ?>) {
+      
+        targetMap.putAll((Map) readObject);
+      
+      }
+      
+      int size = targetMap.size();
+      log.info("Restored train examples from {} with {} train examples",
+          trainExamplesFile,
+          size);
+      
+    } catch (ClassNotFoundException e) {
+      log.warn(
+          String.format("Train examples from {} could not be restored. Continue with empty train examples history." ,
+              this.adversaryLearningConfiguration.getAbsolutePathFrom(trainExamplesFile)),
+          e);
+    }
   }
 
   void replaceOldTrainingExamplesWithNewActionProbabilities(List<AdversaryTrainingExample> newExamples) {
 
+    int replacedNumber = 0;
+    Set<INDArray> newIterationBoards = new HashSet<>();
+    int currentIteration = newExamples.get(0).getIteration();
+
     for (AdversaryTrainingExample currentExample : newExamples) {
       
-      this.trainExamplesHistory.put(currentExample.getBoard(), currentExample);
+      INDArray currentBoard = currentExample.getBoard();
+      newIterationBoards.add(currentBoard);
+      AdversaryTrainingExample oldExample = this.trainExamplesHistory.put(currentBoard, currentExample);
+      
+      if (null != oldExample && oldExample.getIteration() != currentIteration) {
+        Set<INDArray> boardEntriesByOldIteration = this.trainExampleBoardsByIteration.get(oldExample.getIteration());
+        boardEntriesByOldIteration.remove(currentBoard);
+        
+        if (log.isDebugEnabled()) {
+          replacedNumber++;
+        }
+      }
+    }
+
+    Set<INDArray> previousBordsByIteration = this.trainExampleBoardsByIteration.get(currentIteration);
+    previousBordsByIteration.addAll(newIterationBoards);
+    
+    if (log.isDebugEnabled()) {
+      
+      int listTotalSize = 0;
+      for (Set<INDArray> current : this.trainExampleBoardsByIteration.values()) {
+        listTotalSize += current.size();
+      }
+      log.debug("Updated {} examples with same board from earlier iterations, remaining {} examples may still duplicate known examples from running iteration",
+          replacedNumber,
+          newExamples.size() - replacedNumber);
+      log.debug("New trainExamplesByBoard history map and exampleBoardsByIteration history map size {} and {}",
+          this.trainExamplesHistory.size(),
+          listTotalSize);
     }
   }
 
@@ -247,7 +301,7 @@ public class AdversaryLearning {
     boolean updateAfterBetterPlayout = false;
     if (!adversaryLearningConfiguration.isAlwaysUpdateNeuralNetwork()) {
 
-      String absoluteTempModelPath = adversaryLearningConfiguration.getAbsoluteModelPathFrom(TEMPMODEL_NAME);
+      String absoluteTempModelPath = adversaryLearningConfiguration.getAbsolutePathFrom(TEMPMODEL_NAME);
       ModelSerializer.writeModel(computationGraph, absoluteTempModelPath, true);
       
       log.info("Write temp model {}", absoluteTempModelPath);
@@ -297,8 +351,17 @@ public class AdversaryLearning {
     
     if (0 == iteration % adversaryLearningConfiguration.getCheckPointIterationsFrequency()) {
 
-      String bestModelPath = adversaryLearningConfiguration.getAbsoluteModelPathFrom(adversaryLearningConfiguration.getBestModelFileName());
-      ModelSerializer.writeModel(computationGraph, bestModelPath.substring(0, bestModelPath.length() - ".bin".length()) + prependedZeros + iteration + ".bin", true);
+      String bestModelPath = adversaryLearningConfiguration.getAbsolutePathFrom(adversaryLearningConfiguration.getBestModelFileName());
+
+      String suffix = "";
+      String bestModelBasePath = bestModelPath;
+      if (adversaryLearningConfiguration.getBestModelFileName().contains(".")) {
+        suffix = bestModelPath.substring(bestModelPath.lastIndexOf('.'), bestModelPath.length());
+        int suffixLength = suffix.length();
+        bestModelBasePath = bestModelPath.substring(0, bestModelPath.length() - suffixLength);
+      }
+      ModelSerializer.writeModel(computationGraph, bestModelBasePath + prependedZeros + iteration + suffix, true);
+
       saveTrainExamplesHistory(iteration);
     }
   }
@@ -407,15 +470,9 @@ public class AdversaryLearning {
 
     this.resizeTrainExamplesHistory();
 
-    String trainExamplesPath = adversaryLearningConfiguration.getAbsoluteModelPathFrom(
+    String trainExamplesByBoardPath = adversaryLearningConfiguration.getAbsolutePathFrom(
         adversaryLearningConfiguration.getTrainExamplesFileName());
-    
-    try (ObjectOutputStream trainExamplesOutput = new ObjectOutputStream(
-        new FileOutputStream(trainExamplesPath))) {
-
-      trainExamplesOutput.writeObject(trainExamplesHistory);
-
-    }
+    writeMapToFile(trainExamplesByBoardPath, this.trainExamplesHistory);
   }
 
   void saveTrainExamplesHistory(int iteration) throws IOException {
@@ -423,13 +480,28 @@ public class AdversaryLearning {
     this.resizeTrainExamplesHistory();
 
     StringBuilder prependedZeros = prependZeros(iteration);
-    String trainExamplesPath = adversaryLearningConfiguration.getAbsoluteModelPathFrom(
+    String trainExamplesPath = adversaryLearningConfiguration.getAbsolutePathFrom(
         adversaryLearningConfiguration.getTrainExamplesFileName());
+ 
+    String suffix = "";
+    String trainExamplesBasePath = trainExamplesPath;
+    if (adversaryLearningConfiguration.getTrainExamplesFileName().contains(".")) {
+      suffix = trainExamplesPath.substring(trainExamplesPath.lastIndexOf('.'), trainExamplesPath.length());
+      int suffixLength = suffix.length();
+      trainExamplesBasePath = trainExamplesPath.substring(0, trainExamplesPath.length() - suffixLength);
+    }
     
-    try (ObjectOutputStream trainExamplesOutput = new ObjectOutputStream(
-        new FileOutputStream(trainExamplesPath.substring(0, trainExamplesPath.length() - ".obj".length())  + prependedZeros + iteration + ".obj"))) {
+    String trainExamplesCheckpointByBoardFile = trainExamplesBasePath + 
+        prependedZeros + iteration + suffix;
+    this.writeMapToFile(trainExamplesCheckpointByBoardFile, this.trainExamplesHistory);
+  }
 
-      trainExamplesOutput.writeObject(trainExamplesHistory);
+  void writeMapToFile(String trainExamplesPath, Map<?, ?> sourceMap) throws IOException {
+
+    try (ObjectOutputStream trainExamplesOutput = new ObjectOutputStream(
+        new FileOutputStream(trainExamplesPath))) {
+
+      trainExamplesOutput.writeObject(sourceMap);
 
     }
   }
@@ -439,18 +511,34 @@ public class AdversaryLearning {
     if (this.adversaryLearningConfiguration.getMaxTrainExamplesHistory() >=
         this.trainExamplesHistory.size()) {
       
+      log.info("New train examples history map size {}",
+          this.trainExamplesHistory.size());
+      
       return;
     }
 
-    Comparator<AdversaryTrainingExample> byIterationDescending = 
-      (AdversaryTrainingExample firstExample, AdversaryTrainingExample secondExample) -> 
-      secondExample.getIteration() - firstExample.getIteration();
-    this.trainExamplesHistory =
-        this.trainExamplesHistory.entrySet().stream().
-        sorted(Entry.comparingByValue(byIterationDescending)).
-        limit(this.adversaryLearningConfiguration.getMaxTrainExamplesHistory()).
-        collect(Collectors.toMap(
-           Entry::getKey, Entry::getValue, (e1, e2) -> e1, HashMap::new));
+    int previousTrainExamplesSize = this.trainExamplesHistory.size();
+
+    SortedSet<Integer> sortedIterationKeys = new TreeSet<>(this.trainExampleBoardsByIteration.keySet());
+    Iterator<Integer> latestIterationIterator = sortedIterationKeys.iterator();
+    
+    String removedIterations = "";
+    while (this.trainExamplesHistory.size() > this.adversaryLearningConfiguration.getMaxTrainExamplesHistory()) {
+      
+      Integer remainingOldestIteration = latestIterationIterator.next();
+      removedIterations += remainingOldestIteration + ", ";
+      Set<INDArray> boardExamplesToBeRemoves = this.trainExampleBoardsByIteration.get(remainingOldestIteration);
+      
+      boardExamplesToBeRemoves.stream().forEach(board -> this.trainExamplesHistory.remove(board));
+      this.trainExampleBoardsByIteration.remove(remainingOldestIteration);
+      
+      log.info("Board examples from iteration[s] {} removed", removedIterations.substring(0, removedIterations.length() - 2));
+    }
+    
+    log.info(
+        "Oldest from {} examples history removed to keep {} examples",
+        previousTrainExamplesSize,
+        this.trainExamplesHistory.size());
   }
   
   StringBuilder prependZeros(int iteration) {
@@ -495,6 +583,8 @@ public class AdversaryLearning {
       }
     }
 
+    log.info("Iterations (number of updates) from computation graph model is {}",
+        computationGraph.getIterationCount());
     log.info("Learning rate from computation graph model layer 'OutputLayer': {}",
         NetworkUtils.getLearningRate(computationGraph, "OutputLayer"));
     
@@ -575,5 +665,25 @@ public class AdversaryLearning {
     }
 
     return batchedMultiDataSet;
+  }
+
+  public Map<INDArray, AdversaryTrainingExample> getTrainExamplesHistory() {
+
+    return trainExamplesHistory;
+  }
+
+  public void setTrainExamplesHistory(Map<INDArray, AdversaryTrainingExample> trainExamplesHistory) {
+
+    this.trainExamplesHistory = trainExamplesHistory;
+  }
+
+  public Map<Integer, Set<INDArray>> getTrainExampleBoardsByIteration() {
+
+    return trainExampleBoardsByIteration;
+  }
+
+  public void setTrainExampleBoardsByIteration(Map<Integer, Set<INDArray>> trainExampleBoardsByIteration) {
+ 
+    this.trainExampleBoardsByIteration = trainExampleBoardsByIteration;
   }
 }

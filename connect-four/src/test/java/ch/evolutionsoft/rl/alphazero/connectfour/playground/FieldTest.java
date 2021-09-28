@@ -35,30 +35,18 @@ public class FieldTest {
         assertTrue(Field.isValidFieldString("g1"));
         assertTrue(Field.isValidFieldString("g6"));
     
-    }	
-
-    @Test
-    public void testEqualsOtherField() {
-		assertFalse(this.fieldC2.equals(this.fieldD2));
-        assertFalse(this.fieldE5.equals(this.fieldE6));
-		
-        assertEquals(fieldC2, fieldC2);
-		assertEquals(new Field(21), fieldC2);
-        assertEquals(new Field(22), fieldD2);
-        assertEquals(new Field(50), fieldE5);
-        assertEquals(new Field(59), fieldE6);
-	}
+    }
 
     @Test
 	public void testEqualsString() {
-		assertTrue(fieldC2.equals("c2"));
-		assertTrue(fieldC2.equals("C2"));
-		assertTrue(fieldD2.equals("d2"));
-		assertTrue(fieldD2.equals("D2"));
-		assertTrue(fieldE5.equals("e5"));
-		assertTrue(fieldE5.equals("E5"));
-		assertTrue(fieldE6.equals("e6"));
-		assertTrue(fieldE6.equals("E6"));
+		assertTrue(fieldC2.equalsString("c2"));
+		assertTrue(fieldC2.equalsString("C2"));
+		assertTrue(fieldD2.equalsString("d2"));
+		assertTrue(fieldD2.equalsString("D2"));
+		assertTrue(fieldE5.equalsString("e5"));
+		assertTrue(fieldE5.equalsString("E5"));
+		assertTrue(fieldE6.equalsString("e6"));
+		assertTrue(fieldE6.equalsString("E6"));
 	}
 
     @Test

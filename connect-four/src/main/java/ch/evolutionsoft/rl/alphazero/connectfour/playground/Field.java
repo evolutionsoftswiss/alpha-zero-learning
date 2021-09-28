@@ -1,9 +1,7 @@
 package ch.evolutionsoft.rl.alphazero.connectfour.playground;
 
 /**
- * 
  * @author evolutionsoft
- *
  */
 public class Field{
     
@@ -24,11 +22,11 @@ public class Field{
         
         if (Character.isLowerCase(columnChar)) {
          
-        	this.position = (rowChar - '0') * ArrayPlaygroundConstants.COLUMN_COUNT  + (columnChar - 'a') + 1;
+        	this.position = (rowChar - '0') * ArrayPlaygroundConstants.ARRAY_COLUMN_COUNT  + (columnChar - 'a') + 1;
         }
         else{
          
-        	this.position = (rowChar - '0') * ArrayPlaygroundConstants.COLUMN_COUNT  + (columnChar - 'A') + 1;
+        	this.position = (rowChar - '0') * ArrayPlaygroundConstants.ARRAY_COLUMN_COUNT  + (columnChar - 'A') + 1;
         }
     }
     
@@ -40,30 +38,21 @@ public class Field{
     
     public int getColumn(){
     	
-    	return this.position % ArrayPlaygroundConstants.COLUMN_COUNT - 1;
+    	return this.position % ArrayPlaygroundConstants.ARRAY_COLUMN_COUNT - 1;
     }
     
     
     public int getRow(){
     	
-    	return this.position / ArrayPlaygroundConstants.COLUMN_COUNT - 1;
+    	return this.position / ArrayPlaygroundConstants.ARRAY_COLUMN_COUNT - 1;
     }
     
-    
-    public boolean equals(Object object) {
-        if (object instanceof Field) 
-            return this.equals((Field)object);
-        if (object instanceof String)
-            return this.equals((String)object);
-        return false;
-    }
-    
-    public boolean equals(Field otherField) {
+    public boolean equalsField(Field otherField) {
     	
         return this.position == otherField.position;
     }
     
-    public boolean equals(String fieldString) {
+    public boolean equalsString(String fieldString) {
     	
         if (fieldString.length() == 2) {
         	
@@ -72,14 +61,14 @@ public class Field{
             
             if (Character.isLowerCase(columnChar)){
             	
-            	return this.position / ArrayPlaygroundConstants.COLUMN_COUNT == (rowChar - '0') &&
-            	       this.position % ArrayPlaygroundConstants.COLUMN_COUNT == (columnChar -'a') + 1;
+            	return this.position / ArrayPlaygroundConstants.ARRAY_COLUMN_COUNT == (rowChar - '0') &&
+            	       this.position % ArrayPlaygroundConstants.ARRAY_COLUMN_COUNT == (columnChar -'a') + 1;
             }
             
             if (Character.isUpperCase(columnChar)){
             	
-            	return this.position / ArrayPlaygroundConstants.COLUMN_COUNT == (rowChar - '0') &&
-            	       this.position % ArrayPlaygroundConstants.COLUMN_COUNT == (columnChar -'A') + 1;
+            	return this.position / ArrayPlaygroundConstants.ARRAY_COLUMN_COUNT == (rowChar - '0') &&
+            	       this.position % ArrayPlaygroundConstants.ARRAY_COLUMN_COUNT == (columnChar -'A') + 1;
             }
         }
         return false;

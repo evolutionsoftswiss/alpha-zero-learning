@@ -1,9 +1,7 @@
 package ch.evolutionsoft.rl.alphazero.connectfour.playground;
 
 /**
- * 
  * @author evolutionsoft
- *
  */
 public class ArrayPlaygroundConstants {
 
@@ -18,9 +16,12 @@ public class ArrayPlaygroundConstants {
   public static final int LOWER_LEFT = 63;
   public static final int UPPER_RIGHT = 8;
   public static final int LOWER_RIGHT = 71;
+  
+  public static final int COLUMN_COUNT = 7;
+  public static final int ROW_COUNT = 6;
 	
-  public static final int COLUMN_COUNT = 9;
-  public static final int ROW_COUNT = 8;
+  public static final int ARRAY_COLUMN_COUNT = 9;
+  public static final int ARRAY_ROW_COUNT = 8;
   
   private ArrayPlaygroundConstants() {
     // Hide constructor

@@ -139,12 +139,7 @@ public class TicTacToe extends Game {
   @Override
   public INDArray doFirstMove(int moveIndex) {
     
-    INDArray newBoard = makeMove(moveIndex, TicTacToeConstants.MAX_PLAYER_CHANNEL);
-
-    this.currentBoard = newBoard.dup();
-    this.currentPlayer = Game.MIN_PLAYER;
-    
-    return newBoard;
+    return makeMove(moveIndex, TicTacToeConstants.MAX_PLAYER_CHANNEL);
   }
 
   /**

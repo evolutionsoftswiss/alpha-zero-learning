@@ -14,7 +14,9 @@ import org.nd4j.linalg.schedule.ISchedule;
  * @author evolutionsoft
  */
 public class AdversaryLearningConfiguration {
-
+  
+  public static final String OBJECT_ENDING = ".obj";
+  
   /**
    * Fixed {@link ComputationGraph} learning rate
    */
@@ -327,8 +329,8 @@ public class AdversaryLearningConfiguration {
         "\n maxTrainExamplesHistory: " + this.maxTrainExamplesHistory +
         "\n cpUct: " + this.uctConstantFactor +
         "\n numberOfMonteCarloSimulations: " + this.numberOfMonteCarloSimulations +
-        "\n bestModelFileName: " + getAbsoluteModelPathFrom(this.bestModelFileName) +
-        "\n trainExamplesFileName: " + getAbsoluteModelPathFrom(this.trainExamplesFileName);
+        "\n bestModelFileName: " + getAbsolutePathFrom(this.bestModelFileName) +
+        "\n trainExamplesFileName: " + getAbsolutePathFrom(this.trainExamplesFileName);
   }
 
   public double getLearningRate() {
@@ -478,11 +480,11 @@ public class AdversaryLearningConfiguration {
     this.numberOfMonteCarloSimulations = nummberOfMonteCarloSimulations;
   }
   
-  public String getAbsoluteModelPathFrom(String modelName) {
+  public String getAbsolutePathFrom(String fileName) {
   
     String currentPath = String.valueOf(Paths.get(StringUtils.EMPTY).toAbsolutePath());
     
-    return currentPath + File.separator + modelName;
+    return currentPath + File.separator + fileName;
   }
 
   public String getBestModelFileName() {

@@ -97,14 +97,14 @@ public class AdversaryLearningTest {
     
     assertEquals(1, computationGraph.getIterationCount());
 
-    Files.delete(Paths.get(configuration.getAbsoluteModelPathFrom("tempmodel.bin")));
+    Files.delete(Paths.get(configuration.getAbsolutePathFrom("tempmodel.bin")));
   }
 
   @AfterEach
   void deleteTempModel() throws IOException {
 
-    Files.delete(Paths.get(configuration.getAbsoluteModelPathFrom(TEST_MODEL_BIN)));
-    Files.delete(Paths.get(configuration.getAbsoluteModelPathFrom(TEST_TRAIN_EXAMPLES)));
+    Files.delete(Paths.get(configuration.getAbsolutePathFrom(TEST_MODEL_BIN)));
+    Files.delete(Paths.get(configuration.getAbsolutePathFrom(TEST_TRAIN_EXAMPLES)));
   }
   
 }

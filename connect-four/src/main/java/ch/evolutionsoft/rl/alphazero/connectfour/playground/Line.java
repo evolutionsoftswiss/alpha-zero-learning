@@ -1,9 +1,7 @@
 package ch.evolutionsoft.rl.alphazero.connectfour.playground;
 
 /**
- * 
  * @author evolutionsoft
- *
  */
 public class Line{
     
@@ -33,18 +31,10 @@ public class Line{
         return this.color;   
     }
     
-    public boolean equals(Object object) {
+    public boolean equalsLine(Line otherThreat) {
     	
-        if (object.getClass() == this.getClass())
-            return this.equals((Line)object);
-        
-        return false;
-    }
-    
-    public boolean equals(Line otherThreat) {
-    	
-        return this.beginning.equals(otherThreat.beginning)
-            && this.end.equals(otherThreat.end)
+        return this.beginning.equalsField(otherThreat.beginning)
+            && this.end.equalsField(otherThreat.end)
             && this.color == otherThreat.getColor();
     }
     

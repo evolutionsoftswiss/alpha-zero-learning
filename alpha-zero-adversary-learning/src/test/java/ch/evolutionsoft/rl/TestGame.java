@@ -13,10 +13,6 @@ public class TestGame extends Game {
     super(currentPlayer);
   }
 
-  public TestGame(int currentPlayer, INDArray currentBoard) {
-    super(currentPlayer, currentBoard);
-  }
-
   @Override
   public int getNumberOfAllAvailableMoves() {
     return 0;

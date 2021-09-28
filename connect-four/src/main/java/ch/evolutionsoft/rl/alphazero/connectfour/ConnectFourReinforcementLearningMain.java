@@ -25,11 +25,25 @@ public class ConnectFourReinforcementLearningMain {
     
     Map<Integer, Double> learningRatesByIterations = new HashMap<>();
     learningRatesByIterations.put(0, 2e-3);
-    learningRatesByIterations.put(200, 1e-3);
+    learningRatesByIterations.put(2000, 1e-3);
     MapSchedule learningRateMapSchedule = new MapSchedule(ScheduleType.ITERATION, learningRatesByIterations);
     AdversaryLearningConfiguration adversaryLearningConfiguration =
         new AdversaryLearningConfiguration.Builder().
         learningRateSchedule(learningRateMapSchedule).
+        alwaysUpdateNeuralNetwork(true).
+        batchSize(32768).
+        checkPointIterationsFrequency(50).
+        dirichletAlpha(1.1).
+        dirichletWeight(0.4).
+        fromNumberOfIterationsTemperatureZero(-1).
+        fromNumberOfMovesTemperatureZero(10).
+        iterationStart(631).
+        maxTrainExamplesHistory(80000).
+        numberOfIterations(50).
+        numberOfIterationsBeforePotentialUpdate(10).
+        numberOfMonteCarloSimulations(200).
+        uctConstantFactor(1.5).
+        
         build();
    
     ComputationGraph neuralNet = main.createConvolutionalConfiguration(adversaryLearningConfiguration);
@@ -44,7 +58,7 @@ public class ConnectFourReinforcementLearningMain {
             neuralNet,
             adversaryLearningConfiguration);
     
-    //adversaryLearning.performLearning();
+    adversaryLearning.performLearning();
   }
 
   ComputationGraph createConvolutionalConfiguration(AdversaryLearningConfiguration adversaryLearningConfiguration) {

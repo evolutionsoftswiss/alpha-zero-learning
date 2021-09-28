@@ -38,12 +38,6 @@ public abstract class Game {
     this.currentPlayer = currentPlayer;
     this.currentBoard = getInitialBoard();
   }
-  
-  public Game(int currentPlayer, INDArray currentBoard) {
-    
-    this.currentPlayer = currentPlayer;
-    this.currentBoard = currentBoard.dup();
-  }
 
   public INDArray getCurrentBoard() {
     
