@@ -2,8 +2,15 @@
 
     <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
         <encoder>
-            <pattern> %logger{15} - %message%n%xException{5}
-            </pattern>
+            <pattern>%d{HH:mm:ss} %-5level %logger{15} - %message%n%xException{5}</pattern>
+        </encoder>
+    </appender>
+
+    <appender name="FILE" class="ch.qos.logback.core.FileAppender">
+        <file>adversaryLearning.log</file>
+        <append>true</append>
+        <encoder>
+            <pattern>%d{HH:mm:ss} %-5level %logger{15} - %message%n%xException{5}</pattern>
         </encoder>
     </appender>
 
@@ -20,6 +27,7 @@
 
     <root level="ERROR">
         <appender-ref ref="STDOUT" />
+        <appender-ref ref="FILE" />
     </root>
 
 </configuration>

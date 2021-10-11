@@ -148,8 +148,15 @@ public class TicTacToe extends Game {
   @Override
   public boolean gameEnded() {
 
+    // Only the player moved before can have won
+    int otherPlayer = getOtherPlayer(this.currentPlayer);
+    
+    boolean lastPlayerMoveHasWon = horizontalWin(this.currentBoard, otherPlayer) ||
+        verticalWin(currentBoard, otherPlayer) ||
+        diagonalWin(currentBoard, otherPlayer);
+    
     return getValidMoveIndices().isEmpty() ||
-        getEndResult(-1) != 0.5;
+        lastPlayerMoveHasWon;
   }
 
   @Override
