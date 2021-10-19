@@ -14,7 +14,7 @@
         </encoder>
     </appender>
 
-    <logger name="ch.evolutionsoft.rl" level="INFO" />
+    <logger name="ch.evolutionsoft.rl" level="DEBUG" />
     <logger name="org.apache.catalina.core" level="DEBUG" />
     <logger name="org.springframework" level="DEBUG" />
     <logger name="org.deeplearning4j" level="INFO" />

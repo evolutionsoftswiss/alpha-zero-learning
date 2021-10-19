@@ -6,6 +6,7 @@ import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -16,6 +17,13 @@ import java.util.Map;
 import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeSet;
+import java.util.concurrent.Callable;
+import java.util.concurrent.CompletionService;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorCompletionService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.ThreadPoolExecutor;
 import java.util.stream.Collectors;
 
 import org.apache.commons.math3.distribution.EnumeratedIntegerDistribution;
@@ -92,22 +100,56 @@ public class AdversaryLearning {
         iteration++) {
       
       this.trainExampleBoardsByIteration.put(iteration, new HashSet<>());
-
+      final int currentIteration = iteration;
+      ThreadPoolExecutor executor = (ThreadPoolExecutor) Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors() / 2);
+      CompletionService<List<AdversaryTrainingExample>> completionService = new ExecutorCompletionService<>(executor);
+      
+      Set<AdversaryTrainingExample> examplesFromEpisodes = new HashSet<>();
+      
       for (int episode = 1; episode <= adversaryLearningConfiguration.getNumberOfIterationsBeforePotentialUpdate(); episode++) {
 
-        List<AdversaryTrainingExample> newExamples = this.executeEpisode(iteration);
-        
-        if (log.isDebugEnabled()) {
+        final MonteCarloTreeSearch mcts = new MonteCarloTreeSearch(
+            computationGraph.clone(),
+            null);
+        final Game newGameInstance = this.initialGame.createNewInstance();
+        completionService.submit(new Callable<List<AdversaryTrainingExample>>() {
+
+          @Override
+          public List<AdversaryTrainingExample> call() throws Exception {
+
+            return executeEpisode(currentIteration, newGameInstance, mcts);
+          }
           
-          log.debug("Got {} potentially new train examples", newExamples.size());
-        }
-  
-        replaceOldTrainingExamplesWithNewActionProbabilities(newExamples);
-  
-        saveTrainExamplesHistory();
-        
-        log.info("Episode {}-{} ended", iteration, episode);
+        });
       }
+  
+      int received = 0;
+    
+      executor.shutdown();
+
+      try {
+        while(received < adversaryLearningConfiguration.getNumberOfIterationsBeforePotentialUpdate()) {
+ 
+          Future<List<AdversaryTrainingExample>> adversaryTrainingExamplesFuture = completionService.take();
+          List<AdversaryTrainingExample> currentAdversaryTrainingExamples = adversaryTrainingExamplesFuture.get();
+          examplesFromEpisodes.addAll(currentAdversaryTrainingExamples);
+          received++;
+          
+          log.info("Episode {}-{} ended", iteration, received);
+
+          if (log.isDebugEnabled()) {
+            
+            log.debug("Got {} potentially new train examples", currentAdversaryTrainingExamples.size());
+          }
+        }
+      } catch (InterruptedException | ExecutionException exception) {
+       
+         throw new AdversaryLearningRuntimeException(exception);
+      }
+
+      replaceOldTrainingExamplesWithNewActionProbabilities(examplesFromEpisodes);
+  
+      saveTrainExamplesHistory();
 
       boolean updateAfterBetterPlayout = updateNeuralNet();
 
@@ -136,23 +178,30 @@ public class AdversaryLearning {
     }
   }
 
-  public List<AdversaryTrainingExample> executeEpisode(int iteration) {
+  public List<AdversaryTrainingExample> executeEpisode(
+      int iteration,
+      Game currentGame,
+      MonteCarloTreeSearch mcts) {
 
     List<AdversaryTrainingExample> trainExamples = new ArrayList<>();
 
-    Game currentGame = this.initialGame.createNewInstance();
     int currentPlayer = Game.MAX_PLAYER;
 
-    this.mcts = new MonteCarloTreeSearch(computationGraph, adversaryLearningConfiguration);
     int moveNumber = 1;
+    TreeNode treeNode = new TreeNode(-1, currentGame.getOtherPlayer(currentGame.currentPlayer), 0, 1.0, 0.5, null);
 
     while (!currentGame.gameEnded()) {
 
       INDArray validMoves = currentGame.getValidMoves();
       Set<Integer> validMoveIndices = currentGame.getValidMoveIndices();
 
-      INDArray actionProbabilities = this.mcts.getActionValues(currentGame,
-            adversaryLearningConfiguration.getCurrentTemperature(iteration, moveNumber));
+      double currentTemperature = 1.0;
+      if (moveNumber >= 10) {
+        
+        currentTemperature = 0.0;
+      }
+      
+      INDArray actionProbabilities = mcts.getActionValues(currentGame, treeNode, currentTemperature);
       INDArray validActionProbabilities = actionProbabilities.mul(validMoves);
       INDArray normalizedActionProbabilities = validActionProbabilities.div(Nd4j.sum(actionProbabilities));
 
@@ -168,7 +217,7 @@ public class AdversaryLearning {
       currentGame.makeMove(moveAction, currentPlayer);
       moveNumber++;
 
-      updateMonteCarloSearchRoot(currentGame, moveAction);
+      treeNode = updateMonteCarloSearchRoot(currentGame, treeNode, moveAction);
 
       if (currentGame.gameEnded()) {
         handleGameEnded(trainExamples, currentGame, currentPlayer);
@@ -223,7 +272,7 @@ public class AdversaryLearning {
 
       log.info("Train examples maps restored from {}", trainExamplesFile);
       log.info("trainExamplesByBoard map has {} restored AdversaryTrainingExamples entries", this.trainExamplesHistory.size());
-      log.info("exampleBoardsByIteration map has {} restored Set of boards entries", this.trainExampleBoardsByIteration.size());
+      log.info("exampleBoardsByIteration map has {} restored Set of boards entries with totall {} examples", this.trainExampleBoardsByIteration.size(), this.countAllExampleBoardsByIteration());
     }
   }
 
@@ -253,11 +302,11 @@ public class AdversaryLearning {
     }
   }
 
-  void replaceOldTrainingExamplesWithNewActionProbabilities(List<AdversaryTrainingExample> newExamples) {
+  void replaceOldTrainingExamplesWithNewActionProbabilities(Collection<AdversaryTrainingExample> newExamples) {
 
     int replacedNumber = 0;
     Set<INDArray> newIterationBoards = new HashSet<>();
-    int currentIteration = newExamples.get(0).getIteration();
+    int currentIteration = newExamples.iterator().next().getIteration();
 
     for (AdversaryTrainingExample currentExample : newExamples) {
       
@@ -280,10 +329,7 @@ public class AdversaryLearning {
     
     if (log.isDebugEnabled()) {
       
-      int listTotalSize = 0;
-      for (Set<INDArray> current : this.trainExampleBoardsByIteration.values()) {
-        listTotalSize += current.size();
-      }
+      int listTotalSize = countAllExampleBoardsByIteration();
       log.debug("Updated {} examples with same board from earlier iterations, remaining {} examples may still duplicate known examples from running iteration",
           replacedNumber,
           newExamples.size() - replacedNumber);
@@ -291,6 +337,15 @@ public class AdversaryLearning {
           this.trainExamplesHistory.size(),
           listTotalSize);
     }
+  }
+
+  int countAllExampleBoardsByIteration() {
+
+    int listTotalSize = 0;
+    for (Set<INDArray> current : this.trainExampleBoardsByIteration.values()) {
+      listTotalSize += current.size();
+    }
+    return listTotalSize;
   }
 
   boolean updateNeuralNet() throws IOException {
@@ -454,16 +509,20 @@ public class AdversaryLearning {
     }
   }
 
-  void updateMonteCarloSearchRoot(Game game, int moveAction) {
+  TreeNode updateMonteCarloSearchRoot(Game game, TreeNode lastRoot, int moveAction) {
 
-    try {
-      this.mcts.updateWithMove(moveAction);
+      if (lastRoot.containsChildMoveIndex(moveAction)) {
+            
+        return lastRoot.getChildWithMoveIndex(moveAction);
+      }
+      else {
 
-    } catch (IllegalArgumentException iae) {
-
-      log.info("{}", game);
-      throw new IllegalArgumentException(iae);
-    }
+        log.warn("{}", game);
+        log.error("no child with move " + moveAction +
+                "found for current root node with last move" + lastRoot.lastMove);
+        
+        return null;
+      }
   }
 
   void saveTrainExamplesHistory() throws IOException {
@@ -589,7 +648,7 @@ public class AdversaryLearning {
         NetworkUtils.getLearningRate(computationGraph, "OutputLayer"));
     
     // The outputs from the fitted network will have new action probabilities
-    this.mcts.resetStoredOutputs();
+    // TODO clean up this.mcts.resetStoredOutputs();
 
     return computationGraph;
   }

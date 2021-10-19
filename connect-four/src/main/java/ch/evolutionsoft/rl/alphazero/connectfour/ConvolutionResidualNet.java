@@ -2,6 +2,7 @@ package ch.evolutionsoft.rl.alphazero.connectfour;
 
 import static ch.evolutionsoft.rl.ConvolutionalResidualNetConstants.*;
 
+import org.deeplearning4j.nn.conf.CNN2DFormat;
 import org.deeplearning4j.nn.conf.ComputationGraphConfiguration;
 import org.deeplearning4j.nn.conf.ConvolutionMode;
 import org.deeplearning4j.nn.conf.NeuralNetConfiguration;
@@ -61,7 +62,7 @@ public class ConvolutionResidualNet {
   public ComputationGraphConfiguration createConvolutionalGraphConfiguration() {
 
     ComputationGraphConfiguration.GraphBuilder graphBuilder = new ComputationGraphConfiguration.GraphBuilder(
-        createGeneralConfiguration()).addInputs(INPUT).setInputTypes(InputType.convolutional(3, 6, 7))
+        createGeneralConfiguration()).addInputs(INPUT).setInputTypes(InputType.convolutional(6, 7, 3, CNN2DFormat.NCHW))
             // block1
             .addLayer(BLOCK1_CONVOLUTION1,
                 new ConvolutionLayer.Builder(2, 2).stride(1, 1).nIn(3).nOut(8).hasBias(false).build(), INPUT)

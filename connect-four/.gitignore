@@ -2,3 +2,5 @@
 /.project
 /trainExamples*0*.obj
 /bestmodel*0*.bin
+/.settings/
+/adversaryLearning.log

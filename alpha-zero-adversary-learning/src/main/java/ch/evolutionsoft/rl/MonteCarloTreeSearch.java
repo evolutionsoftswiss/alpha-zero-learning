@@ -21,8 +21,6 @@ public class MonteCarloTreeSearch {
 
   ComputationGraph computationGraph;
   
-  TreeNode rootNode;
-  
   Map<INDArray, INDArray[]> neuralNetOutputsByBoardInputs = new HashMap<>();
   
   public MonteCarloTreeSearch(ComputationGraph computationGraph, AdversaryLearningConfiguration configuration) {
@@ -75,13 +73,18 @@ public class MonteCarloTreeSearch {
   }
 
   public INDArray getActionValues(Game currentGame, double temperature) {
+
+    TreeNode treeNode = new TreeNode(-1, Game.MIN_PLAYER, 0, 1.0, 0.5, null);
+    
+    return this.getActionValues(currentGame, treeNode, temperature);
+  }
+
+  public INDArray getActionValues(Game currentGame, TreeNode treeNode, double temperature) {
     
     int playouts = 0;
-    this.rootNode = new TreeNode(-1, currentGame.getOtherPlayer(currentGame.currentPlayer), 0, 1.0, 0.5, null);
 
     while (playouts < numberOfSimulations) {
 
-      TreeNode treeNode = rootNode;
       Game newGameInstance = currentGame.createNewInstance();
       this.playout(treeNode, newGameInstance);
       playouts++;
@@ -92,9 +95,9 @@ public class MonteCarloTreeSearch {
 
     for (int index = 0; index < currentGame.getNumberOfCurrentMoves(); index++) {
       
-      if (this.rootNode.containsChildMoveIndex(index)) {
+      if (treeNode.containsChildMoveIndex(index)) {
         
-        visitedCounts[index] = this.rootNode.getChildWithMoveIndex(index).timesVisited;
+        visitedCounts[index] = treeNode.getChildWithMoveIndex(index).timesVisited;
         if (visitedCounts[index] > maxVisitedCounts) {
           
           maxVisitedCounts = visitedCounts[index];
@@ -153,19 +156,5 @@ public class MonteCarloTreeSearch {
   public void resetStoredOutputs() {
     
     this.neuralNetOutputsByBoardInputs.clear();
-  }
-
-  TreeNode updateWithMove(int lastMove) {
-    
-    if (this.rootNode.containsChildMoveIndex(lastMove)) {
-      
-      this.rootNode = this.rootNode.getChildWithMoveIndex(lastMove);
-      return this.rootNode;
-    }
-    else {
-      
-      throw new IllegalArgumentException("no child with move " + lastMove +
-          "found for current root node with last move" + this.rootNode.lastMove);
-    }
   }
 }

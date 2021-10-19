@@ -26,10 +26,9 @@ public class MonteCarloTreeSearchTest {
   void checkMonteCarloMoveValidityAndTreeVisitCounts() {
     
     Game game = TestHelper.createMiddlePositionBoardWithThreat();
-    
-    INDArray actionProbabilities = this.mcts.getActionValues(game, AdversaryLearningConstants.ONE);
-    
-    TreeNode currentNode = this.mcts.rootNode;
+
+    TreeNode treeNode = new TreeNode(-1, Game.MAX_PLAYER, 0, 1.0, 0.5, null);
+    INDArray actionProbabilities = this.mcts.getActionValues(game, treeNode, AdversaryLearningConstants.ONE);
     
     INDArray zeroProbabilityIndices = actionProbabilities.lte(0);
 
@@ -37,7 +36,7 @@ public class MonteCarloTreeSearchTest {
         new boolean[] {true, false, true, true, true, false, true, false, false}), zeroProbabilityIndices);
     
     int visitedCountsChildren = 0;
-    for (TreeNode rootChildEntry : currentNode.children.values()) {
+    for (TreeNode rootChildEntry : treeNode.children.values()) {
       
       visitedCountsChildren += rootChildEntry.timesVisited;
     }
