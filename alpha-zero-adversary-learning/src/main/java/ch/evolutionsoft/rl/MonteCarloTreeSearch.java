@@ -1,8 +1,6 @@
 package ch.evolutionsoft.rl;
 
 import java.util.Arrays;
-import java.util.HashMap;
-import java.util.Map;
 import java.util.Set;
 
 import org.deeplearning4j.nn.graph.ComputationGraph;
@@ -21,8 +19,6 @@ public class MonteCarloTreeSearch {
 
   ComputationGraph computationGraph;
   
-  Map<INDArray, INDArray[]> neuralNetOutputsByBoardInputs = new HashMap<>();
-  
   public MonteCarloTreeSearch(ComputationGraph computationGraph, AdversaryLearningConfiguration configuration) {
     
     this.computationGraph = computationGraph;
@@ -39,13 +35,13 @@ public class MonteCarloTreeSearch {
     }
     
     INDArray currentBoard = game.getCurrentBoard();
-      
+
     long[] newShape = new long[currentBoard.shape().length + 1];
     System.arraycopy(currentBoard.shape(), 0, newShape, 1, currentBoard.shape().length);
     newShape[0] = 1;
     INDArray oneBatchBoard = currentBoard.reshape(newShape);
     INDArray[] neuralNetOutput = this.computationGraph.output(oneBatchBoard);
-    
+
     INDArray actionProbabilities = neuralNetOutput[0];
     double leafValue = neuralNetOutput[1].getDouble(0);
 
@@ -151,10 +147,5 @@ public class MonteCarloTreeSearch {
     moveProbabilities = moveProbabilities.div(moveProbabilities.sumNumber());
     
     return moveProbabilities;
-  }
-
-  public void resetStoredOutputs() {
-    
-    this.neuralNetOutputsByBoardInputs.clear();
   }
 }

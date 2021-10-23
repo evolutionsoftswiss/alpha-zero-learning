@@ -38,7 +38,7 @@ class AdversaryLearningConfigurationTest {
         maxTrainExamplesHistory(100000).
         numberOfGamesToDecideUpdate(50).
         numberOfIterations(1000).
-        numberOfIterationsBeforePotentialUpdate(20).
+        numberOfEpisodesBeforePotentialUpdate(20).
         numberOfMonteCarloSimulations(100).
         trainExamplesFileName("trainingExamplesHistory.obj").
         uctConstantFactor(1.4).
@@ -70,7 +70,7 @@ class AdversaryLearningConfigurationTest {
     adversaryLearningConfiguration.setMaxTrainExamplesHistory(100000);
     adversaryLearningConfiguration.setNumberOfGamesToDecideUpdate(50);
     adversaryLearningConfiguration.setNumberOfIterations(1000);
-    adversaryLearningConfiguration.setNumberOfIterationsBeforePotentialUpdate(20);
+    adversaryLearningConfiguration.setNumberOfEpisodesBeforePotentialUpdate(20);
     adversaryLearningConfiguration.setNumberOfMonteCarloSimulations(100);
     adversaryLearningConfiguration.setTrainExamplesFileName("trainingExamplesHistory.obj");
     adversaryLearningConfiguration.setUctConstantFactor(1.4);
@@ -104,7 +104,7 @@ class AdversaryLearningConfigurationTest {
         () -> assertEquals(100000, adversaryLearningConfiguration.getMaxTrainExamplesHistory()),
         () -> assertEquals(50, adversaryLearningConfiguration.getNumberOfGamesToDecideUpdate()),
         () -> assertEquals(1000, adversaryLearningConfiguration.getNumberOfIterations()),
-        () -> assertEquals(20, adversaryLearningConfiguration.getNumberOfIterationsBeforePotentialUpdate()),
+        () -> assertEquals(20, adversaryLearningConfiguration.getNumberOfEpisodesBeforePotentialUpdate()),
         () -> assertEquals(100, adversaryLearningConfiguration.getNumberOfMonteCarloSimulations()),
         () -> assertEquals("trainingExamplesHistory.obj", adversaryLearningConfiguration.getTrainExamplesFileName()),
         () -> assertEquals(1.4, adversaryLearningConfiguration.getuctConstantFactor())

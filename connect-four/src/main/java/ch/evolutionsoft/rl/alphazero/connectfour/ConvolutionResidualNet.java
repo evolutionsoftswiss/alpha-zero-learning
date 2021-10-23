@@ -12,9 +12,7 @@ import org.deeplearning4j.nn.conf.layers.ActivationLayer;
 import org.deeplearning4j.nn.conf.layers.BatchNormalization;
 import org.deeplearning4j.nn.conf.layers.ConvolutionLayer;
 import org.deeplearning4j.nn.conf.layers.DenseLayer;
-import org.deeplearning4j.nn.conf.layers.GlobalPoolingLayer;
 import org.deeplearning4j.nn.conf.layers.OutputLayer;
-import org.deeplearning4j.nn.conf.layers.PoolingType;
 import org.deeplearning4j.nn.conf.layers.SeparableConvolution2D;
 import org.deeplearning4j.nn.conf.layers.SubsamplingLayer;
 import org.deeplearning4j.nn.weights.WeightInit;
@@ -27,7 +25,6 @@ import ch.evolutionsoft.rl.AdversaryLearningConstants;
 
 public class ConvolutionResidualNet {
 
-  public static final String AVG_POOL = "avg_pool";
   private double learningRate = 1e-3;
   private ISchedule learningRateSchedule;
 
@@ -156,18 +153,16 @@ public class ConvolutionResidualNet {
                     .convolutionMode(ConvolutionMode.Same).build(),
                 "block4_sepconv2_bn")
             .addVertex("add3", new ElementWiseVertex(ElementWiseVertex.Op.Add), "block4_pool", "residual3")
-
-            .addLayer(AVG_POOL, new GlobalPoolingLayer.Builder(PoolingType.AVG).build(), "add3")
             
             .addLayer("dense1", new DenseLayer.Builder().
                 nOut(64).
                 activation(Activation.LEAKYRELU).
-                build(), AVG_POOL)
+                build(), "add3")
             
             .addLayer("dense2", new DenseLayer.Builder().
                 nOut(32).
                 activation(Activation.LEAKYRELU).
-                build(), AVG_POOL)
+                build(), "add3")
             
             .addLayer(AdversaryLearningConstants.DEFAULT_OUTPUT_LAYER_NAME, new OutputLayer.Builder()
                 .nOut(7)

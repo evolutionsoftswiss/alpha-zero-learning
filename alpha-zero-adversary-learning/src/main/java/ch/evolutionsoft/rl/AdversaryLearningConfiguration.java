@@ -26,9 +26,11 @@ public class AdversaryLearningConfiguration {
    * A learningRateSchedule defining different learning rates in function of the
    * number of performed net iterations meaning calls to {@link ComputationGraph} fit method here.
    * 
-   * The iterations deciding the learning rate for ISchedule is only directly related to alpha zero 
-   * numberOfIterations with alwaysUpdateNeuralNetwork = true.
-   * Otherwise with alwaysUpdateNeuralNetwork = false it is also dependent of 
+   * The iterations defining the learning rate for ISchedule is only directly related to alpha zero 
+   * numberOfIterations with alwaysUpdateNeuralNetwork = true and a batch size that covers all exisitng
+   * examples.
+   * 
+   * Otherwise with alwaysUpdateNeuralNetwork = false and mini batches > 1 it is dependent of 
    * performed {@link ComputationGraph} updates using the fit method.
    */
   private ISchedule learningRateSchedule;
@@ -37,7 +39,7 @@ public class AdversaryLearningConfiguration {
    * Size of mini batches used to perform {@link ComputationGraph} updates with fit.
    *
    * TicTacToe currently uses a value greater than all possible {@link AdversaryTrainingExample}
-   * leading to use one single batch always.
+   * numbers leading to use one single batch always.
    */
   private int batchSize;
 
@@ -83,13 +85,22 @@ public class AdversaryLearningConfiguration {
   private double gamesWinRatioThresholdNewNetworkUpdate;
 
   /**
-   * numberOfIterationsBeforePotentialUpdate stands for numberOfEpisodes.
+   * numberOfEpisodesBeforePotentialUpdate stands for numberOfEpisodes.
    * An Alpha Zero episode is one game from start to end. Each episode generates potentially new
-   * training examples used to train the neural net. numberOfIterationsBeforePotentialUpdate defines how much times a game 
+   * training examples used to train the neural net. numberOfEpisodesBeforePotentialUpdate defines how much times a game 
    * will be run from start to end to gather training examples before a potential neural net update.
    */
-  private int numberOfIterationsBeforePotentialUpdate;
+  private int numberOfEpisodesBeforePotentialUpdate;
 
+  /**
+   * To execute episodes with the same neural net model in parallel, it should be most effective
+   * to use a multiple numberOfEpisodesBeforePotentialUpdate of numberOfEpisodeThreads.
+   * Default is half the available processors. If you've got as many or more cpu cores than the
+   * numberOfEpisodesBeforePotentialUpdate, you should use the same as numberOfEpisodesBeforePotentialUpdate.
+   * That would be most effective for gathering {@link AdversaryTrainingExample} in different epsiodes.
+   */
+  private int numberOfEpisodeThreads;
+  
   /**
    * Mainly used to continue training after program termination.
    * Only iterationStart > 1 causes a restore of saved tempmodel.bin, bestmodel.bin and trainexamples.obj.
@@ -112,7 +123,7 @@ public class AdversaryLearningConfiguration {
 
   /**
    * When the temperature used in {@link MonteCarloTreeSearch} getActionValues() should become 0.
-   * Currently only 1 or 0 are used. Too small values > 0 can cause overflows.
+   * Currently only 1 or 0 are used. With too small values > 0 can overflows were observed.
    * A temperature == 0 will lead to move action probabilities all zero, expect
    * one being one. Temperatures > 0 keep probabilities > 0 for all move actions
    * in function of the number of visits during {@link MonteCarloTreeSearch}.
@@ -128,20 +139,21 @@ public class AdversaryLearningConfiguration {
 
   /**
    * The maximum number of train examples to keep in history and reuse for neural net fit.
-   * TicTacToe never exceeds the used value of 5000.
+   * TicTacToe never exceeds the used value of 5000. ConnectFour uses 80'000 and removes
+   * early {@link AdversaryTrainingExample} from around 300 iterations on.
    * Typical values for Go 19x19 are 1 or 2 million.
    */
   private int maxTrainExamplesHistory;
 
   /**
    * {@link MonteCarloTreeSearch} parameter influencing exploration / exploitation of
-   * different move actions. TicTacToe uses 0.8.
+   * different move actions. TicTacToe uses 0.8. ConnectFour uses 1.2.
    */
   private double uctConstantFactor;
 
   /**
    * How much single playout steps should {@link MonteCarloTreeSearch} perform.
-   * TicTacToe example implementation uses 30.
+   * TicTacToe example implementation uses 30. ConnectFour uses 200.
    * Typical values for Go 9x9 and Go 19x19 would be 400 and 1600.
    */
   private int numberOfMonteCarloSimulations;
@@ -173,7 +185,8 @@ public class AdversaryLearningConfiguration {
     private boolean alwaysUpdateNeuralNetwork = true;
     private int numberOfGamesToDecideUpdate = 36;
     private double gamesWinRatioThresholdNewNetworkUpdate = 0.55;
-    private int numberOfIterationsBeforePotentialUpdate = 10;
+    private int numberOfEpisodesBeforePotentialUpdate = 10;
+    private int numberOfEpisodeThreads = Runtime.getRuntime().availableProcessors() / 2;
     private int iterationStart = 1;
     private int numberOfIterations = 250;
     private int checkPointIterationsFrequency = 50;
@@ -199,7 +212,8 @@ public class AdversaryLearningConfiguration {
       configuration.alwaysUpdateNeuralNetwork = alwaysUpdateNeuralNetwork;
       configuration.numberOfGamesToDecideUpdate = numberOfGamesToDecideUpdate;
       configuration.gamesWinRatioThresholdNewNetworkUpdate = gamesWinRatioThresholdNewNetworkUpdate;
-      configuration.numberOfIterationsBeforePotentialUpdate = numberOfIterationsBeforePotentialUpdate;
+      configuration.numberOfEpisodesBeforePotentialUpdate = numberOfEpisodesBeforePotentialUpdate;
+      configuration.numberOfEpisodeThreads = numberOfEpisodeThreads;
       configuration.iterationStart = iterationStart;
       configuration.numberOfIterations = numberOfIterations;
       configuration.checkPointIterationsFrequency = checkPointIterationsFrequency;
@@ -264,8 +278,13 @@ public class AdversaryLearningConfiguration {
       return this;
     }
 
-    public Builder numberOfIterationsBeforePotentialUpdate(int numberOfEpisodesBeforePotentialUpdate) {
-      this.numberOfIterationsBeforePotentialUpdate = numberOfEpisodesBeforePotentialUpdate;
+    public Builder numberOfEpisodesBeforePotentialUpdate(int numberOfEpisodesBeforePotentialUpdate) {
+      this.numberOfEpisodesBeforePotentialUpdate = numberOfEpisodesBeforePotentialUpdate;
+      return this;
+    }
+    
+    public Builder numberOfEpisodeThreads(int numberOfEpisodeThreads) {
+      this.numberOfEpisodeThreads = numberOfEpisodeThreads;
       return this;
     }
     
@@ -320,7 +339,8 @@ public class AdversaryLearningConfiguration {
         "\n alwaysUpdateNeuralNetwork: " + this.alwaysUpdateNeuralNetwork +
         "\n gamesToGetNewNetworkWinRatio: " + (this.alwaysUpdateNeuralNetwork ? "-" : this.numberOfGamesToDecideUpdate) +
         "\n gamesWinRatioThresholdNewNetworkUpdate: " + (this.alwaysUpdateNeuralNetwork ? "-" : this.gamesWinRatioThresholdNewNetworkUpdate) +
-        "\n numberOfEpisodesBeforePotentialUpdate: " + this.numberOfIterationsBeforePotentialUpdate + 
+        "\n numberOfEpisodesBeforePotentialUpdate: " + this.numberOfEpisodesBeforePotentialUpdate + 
+        "\n numberOfEpisodeThreads: " + this.numberOfEpisodeThreads +
         "\n iterationStart: " + this.iterationStart + 
         "\n numberOfIterations: " + this.numberOfIterations +
         "\n checkPointIterationsFrequency: " + this.checkPointIterationsFrequency +
@@ -330,7 +350,7 @@ public class AdversaryLearningConfiguration {
         "\n cpUct: " + this.uctConstantFactor +
         "\n numberOfMonteCarloSimulations: " + this.numberOfMonteCarloSimulations +
         "\n bestModelFileName: " + getAbsolutePathFrom(this.bestModelFileName) +
-        "\n trainExamplesFileName: " + getAbsolutePathFrom(this.trainExamplesFileName);
+        "\n trainExamplesFileNames: " + getAbsolutePathFrom(this.trainExamplesFileName);
   }
 
   public double getLearningRate() {
@@ -397,13 +417,22 @@ public class AdversaryLearningConfiguration {
     this.gamesWinRatioThresholdNewNetworkUpdate = gamesWinRatioThresholdNewNetworkUpdate;
   }
 
-  public int getNumberOfIterationsBeforePotentialUpdate() {
-    return numberOfIterationsBeforePotentialUpdate;
+  public int getNumberOfEpisodesBeforePotentialUpdate() {
+    return numberOfEpisodesBeforePotentialUpdate;
   }
 
-  public void setNumberOfIterationsBeforePotentialUpdate(int numberOfEpisodesBeforePotentialUpdate) {
-    this.numberOfIterationsBeforePotentialUpdate = numberOfEpisodesBeforePotentialUpdate;
+  public void setNumberOfEpisodesBeforePotentialUpdate(int numberOfEpisodesBeforePotentialUpdate) {
+    this.numberOfEpisodesBeforePotentialUpdate = numberOfEpisodesBeforePotentialUpdate;
   }
+
+  public int getNumberOfEpisodeThreads() {
+    return numberOfEpisodeThreads;
+  }
+
+  public void setNumberOfEpisodeThreads(int numberOfEpisodeThreads) {
+    this.numberOfEpisodeThreads = numberOfEpisodeThreads;
+  }
+
   
   public int getIterationStart() {
     return this.iterationStart;

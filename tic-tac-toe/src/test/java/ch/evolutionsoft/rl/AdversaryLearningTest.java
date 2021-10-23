@@ -17,6 +17,7 @@ public class AdversaryLearningTest {
   
   public static final String TEST_MODEL_BIN = "testModel.bin";
   public static final String TEST_TRAIN_EXAMPLES = "testTrainExamples.obj";
+  public static final String TEST_TRAIN_EXAMPLES_VALUES = "testTrainExamplesValues.obj";
   
   AdversaryLearningConfiguration configuration;
 
@@ -27,7 +28,7 @@ public class AdversaryLearningTest {
         new AdversaryLearningConfiguration.Builder().
         alwaysUpdateNeuralNetwork(true).
         numberOfIterations(1).
-        numberOfIterationsBeforePotentialUpdate(1).
+        numberOfEpisodesBeforePotentialUpdate(1).
         bestModelFileName(TEST_MODEL_BIN).
         trainExamplesFileName(TEST_TRAIN_EXAMPLES).
         build();
@@ -52,7 +53,7 @@ public class AdversaryLearningTest {
         new AdversaryLearningConfiguration.Builder().
         alwaysUpdateNeuralNetwork(true).
         numberOfIterations(1).
-        numberOfIterationsBeforePotentialUpdate(1).
+        numberOfEpisodesBeforePotentialUpdate(1).
         batchSize(16).
         bestModelFileName(TEST_MODEL_BIN).
         trainExamplesFileName(TEST_TRAIN_EXAMPLES).
@@ -80,7 +81,7 @@ public class AdversaryLearningTest {
         numberOfGamesToDecideUpdate(1).
         gamesWinRatioThresholdNewNetworkUpdate(-0.1).
         numberOfIterations(1).
-        numberOfIterationsBeforePotentialUpdate(1).
+        numberOfEpisodesBeforePotentialUpdate(1).
         bestModelFileName(TEST_MODEL_BIN).
         trainExamplesFileName(TEST_TRAIN_EXAMPLES).
         build();
@@ -105,6 +106,7 @@ public class AdversaryLearningTest {
 
     Files.delete(Paths.get(configuration.getAbsolutePathFrom(TEST_MODEL_BIN)));
     Files.delete(Paths.get(configuration.getAbsolutePathFrom(TEST_TRAIN_EXAMPLES)));
+    Files.delete(Paths.get(configuration.getAbsolutePathFrom(TEST_TRAIN_EXAMPLES_VALUES)));
   }
   
 }

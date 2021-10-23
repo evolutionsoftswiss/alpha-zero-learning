@@ -1,10 +1,10 @@
 package ch.evolutionsoft.rl;
 
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -101,16 +101,17 @@ public class AdversaryLearning {
       
       this.trainExampleBoardsByIteration.put(iteration, new HashSet<>());
       final int currentIteration = iteration;
-      ThreadPoolExecutor executor = (ThreadPoolExecutor) Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors() / 2);
+      ThreadPoolExecutor executor = (ThreadPoolExecutor) Executors.newFixedThreadPool(
+          adversaryLearningConfiguration.getNumberOfEpisodeThreads());
       CompletionService<List<AdversaryTrainingExample>> completionService = new ExecutorCompletionService<>(executor);
       
       Set<AdversaryTrainingExample> examplesFromEpisodes = new HashSet<>();
       
-      for (int episode = 1; episode <= adversaryLearningConfiguration.getNumberOfIterationsBeforePotentialUpdate(); episode++) {
+      for (int episode = 1; episode <= adversaryLearningConfiguration.getNumberOfEpisodesBeforePotentialUpdate(); episode++) {
 
         final MonteCarloTreeSearch mcts = new MonteCarloTreeSearch(
             computationGraph.clone(),
-            null);
+            this.adversaryLearningConfiguration);
         final Game newGameInstance = this.initialGame.createNewInstance();
         completionService.submit(new Callable<List<AdversaryTrainingExample>>() {
 
@@ -128,7 +129,7 @@ public class AdversaryLearning {
       executor.shutdown();
 
       try {
-        while(received < adversaryLearningConfiguration.getNumberOfIterationsBeforePotentialUpdate()) {
+        while(received < adversaryLearningConfiguration.getNumberOfEpisodesBeforePotentialUpdate()) {
  
           Future<List<AdversaryTrainingExample>> adversaryTrainingExamplesFuture = completionService.take();
           List<AdversaryTrainingExample> currentAdversaryTrainingExamples = adversaryTrainingExamplesFuture.get();
@@ -195,13 +196,9 @@ public class AdversaryLearning {
       INDArray validMoves = currentGame.getValidMoves();
       Set<Integer> validMoveIndices = currentGame.getValidMoveIndices();
 
-      double currentTemperature = 1.0;
-      if (moveNumber >= 10) {
-        
-        currentTemperature = 0.0;
-      }
-      
+      double currentTemperature = adversaryLearningConfiguration.getCurrentTemperature(iteration, moveNumber);
       INDArray actionProbabilities = mcts.getActionValues(currentGame, treeNode, currentTemperature);
+
       INDArray validActionProbabilities = actionProbabilities.mul(validMoves);
       INDArray normalizedActionProbabilities = validActionProbabilities.div(Nd4j.sum(actionProbabilities));
 
@@ -272,34 +269,54 @@ public class AdversaryLearning {
 
       log.info("Train examples maps restored from {}", trainExamplesFile);
       log.info("trainExamplesByBoard map has {} restored AdversaryTrainingExamples entries", this.trainExamplesHistory.size());
-      log.info("exampleBoardsByIteration map has {} restored Set of boards entries with totall {} examples", this.trainExampleBoardsByIteration.size(), this.countAllExampleBoardsByIteration());
+      log.info("exampleBoardsByIteration map has {} restored Set of boards entries with total {} examples", this.trainExampleBoardsByIteration.size(), this.countAllExampleBoardsByIteration());
     }
   }
 
-  void loadMapFromFile(String trainExamplesFile, Map<?, ?> targetMap) throws IOException {
-
-    try (ObjectInputStream trainExamplesInput =
-        new ObjectInputStream(
-            new FileInputStream(trainExamplesFile))) {
- 
-      Object readObject = trainExamplesInput.readObject();
-      if (readObject instanceof Map<?, ?>) {
-      
-        targetMap.putAll((Map) readObject);
-      
-      }
-      
-      int size = targetMap.size();
-      log.info("Restored train examples from {} with {} train examples",
-          trainExamplesFile,
-          size);
-      
-    } catch (ClassNotFoundException e) {
-      log.warn(
-          String.format("Train examples from {} could not be restored. Continue with empty train examples history." ,
-              this.adversaryLearningConfiguration.getAbsolutePathFrom(trainExamplesFile)),
-          e);
+  void loadMapFromFile(String trainExamplesFile, Map<INDArray, AdversaryTrainingExample> targetMap) throws IOException {
+    
+    String suffix = "";
+    String trainExamplesBasePath = trainExamplesFile;
+    if (adversaryLearningConfiguration.getTrainExamplesFileName().contains(".")) {
+      suffix = trainExamplesFile.substring(trainExamplesFile.lastIndexOf('.'), trainExamplesFile.length());
+      int suffixLength = suffix.length();
+      trainExamplesBasePath = trainExamplesFile.substring(0, trainExamplesFile.length() - suffixLength);
     }
+    INDArray storedBoardKeys;
+    try (DataInputStream dataInputStream =
+        new DataInputStream(new FileInputStream(trainExamplesFile))) {
+      storedBoardKeys = Nd4j.read(dataInputStream);
+    }
+    INDArray storedValues;
+    try (DataInputStream dataInputStream =
+        new DataInputStream(new FileInputStream(trainExamplesBasePath + "Values" + suffix))) {
+      storedValues =  Nd4j.read(dataInputStream);
+    }
+    
+    for (int index = 0; index < storedBoardKeys.shape() [0]; index++) {
+      
+      INDArray currentBoardKey = storedBoardKeys.slice(index);
+      INDArray currentStoredValue = storedValues.getRow(index);
+      INDArray actionIndexProbs = Nd4j.zeros(7);
+      
+      for (int actionIndex = 0; actionIndex <= 6; actionIndex++) {
+        
+        actionIndexProbs.putScalar(actionIndex, currentStoredValue.getFloat(actionIndex));
+      }
+      int player = currentStoredValue.getInt(7);
+      float playerValue = currentStoredValue.getFloat(8);
+      int iteration = currentStoredValue.getInt(9);
+      AdversaryTrainingExample currentAdversaryExample =
+          new AdversaryTrainingExample(currentBoardKey, player, actionIndexProbs, iteration);
+      currentAdversaryExample.setCurrentPlayerValue(playerValue);
+      
+      targetMap.put(currentBoardKey, currentAdversaryExample);
+    }
+      
+    int size = targetMap.size();
+    log.info("Restored train examples from {} with {} train examples",
+         trainExamplesFile,
+         size);
   }
 
   void replaceOldTrainingExamplesWithNewActionProbabilities(Collection<AdversaryTrainingExample> newExamples) {
@@ -531,7 +548,14 @@ public class AdversaryLearning {
 
     String trainExamplesByBoardPath = adversaryLearningConfiguration.getAbsolutePathFrom(
         adversaryLearningConfiguration.getTrainExamplesFileName());
-    writeMapToFile(trainExamplesByBoardPath, this.trainExamplesHistory);
+    String suffix = "";
+    String trainExamplesBasePath = trainExamplesByBoardPath;
+    if (adversaryLearningConfiguration.getTrainExamplesFileName().contains(".")) {
+      suffix = trainExamplesByBoardPath.substring(trainExamplesByBoardPath.lastIndexOf('.'), trainExamplesByBoardPath.length());
+      int suffixLength = suffix.length();
+      trainExamplesBasePath = trainExamplesByBoardPath.substring(0, trainExamplesByBoardPath.length() - suffixLength);
+    }
+    writeMapToFile(trainExamplesByBoardPath, trainExamplesBasePath + "Values" + suffix, this.trainExamplesHistory);
   }
 
   void saveTrainExamplesHistory(int iteration) throws IOException {
@@ -550,18 +574,54 @@ public class AdversaryLearning {
       trainExamplesBasePath = trainExamplesPath.substring(0, trainExamplesPath.length() - suffixLength);
     }
     
-    String trainExamplesCheckpointByBoardFile = trainExamplesBasePath + 
+    String trainExamplesCheckpointBoardsFile = trainExamplesBasePath + 
         prependedZeros + iteration + suffix;
-    this.writeMapToFile(trainExamplesCheckpointByBoardFile, this.trainExamplesHistory);
+    String trainExamplesCheckpointValuesFile = trainExamplesBasePath + "Values" +
+        prependedZeros + iteration + suffix;
+
+    this.writeMapToFile(trainExamplesCheckpointBoardsFile, trainExamplesCheckpointValuesFile, this.trainExamplesHistory);
   }
 
-  void writeMapToFile(String trainExamplesPath, Map<?, ?> sourceMap) throws IOException {
+  void writeMapToFile(String trainExamplesKeyPath, String trainExamplesValuesPath, Map<INDArray, AdversaryTrainingExample> sourceMap) throws IOException {
 
-    try (ObjectOutputStream trainExamplesOutput = new ObjectOutputStream(
-        new FileOutputStream(trainExamplesPath))) {
+    AdversaryTrainingExample example = sourceMap.values().iterator().next();
+    
+    long[] boardShape = example.getBoard().shape();
+    long[] actionShape = example.getActionIndexProbabilities().shape();
+    
+    INDArray allBoardsKey = Nd4j.zeros(new long[] {sourceMap.size(), boardShape[0], boardShape[1], boardShape[2]});
+    INDArray allValues = Nd4j.zeros(sourceMap.size(), actionShape[0] + 3);
+    
+    int exampleNumber = 0;
+    for (Map.Entry<INDArray, AdversaryTrainingExample> currentExampleEntry : sourceMap.entrySet()) {
+ 
+      allBoardsKey.putSlice(exampleNumber, currentExampleEntry.getKey());
+      INDArray valueNDArray = Nd4j.zeros(actionShape[0] + 3);
 
-      trainExamplesOutput.writeObject(sourceMap);
+      AdversaryTrainingExample value = currentExampleEntry.getValue();
+      INDArray actionIndexProbabilities = value.getActionIndexProbabilities();
+      for (int actionIndex = 0; actionIndex <= actionShape[0] - 1; actionIndex++) {
+      
+        valueNDArray.putScalar(actionIndex, actionIndexProbabilities.getFloat(actionIndex));
+      }
+      valueNDArray.putScalar(actionShape[0], value.getCurrentPlayer());
+      valueNDArray.putScalar(actionShape[0] + 1, value.getCurrentPlayerValue());
+      valueNDArray.putScalar(actionShape[0] + 2, value.getIteration());
+      allValues.putRow(exampleNumber, valueNDArray);
+      
+      exampleNumber++;
+    }
 
+    try (DataOutputStream dataOutputStream =
+        new DataOutputStream(new FileOutputStream(trainExamplesKeyPath))) {
+
+      Nd4j.write(allBoardsKey, dataOutputStream);
+    }
+
+    try (DataOutputStream dataOutputStream =
+        new DataOutputStream(new FileOutputStream(trainExamplesValuesPath))) {
+
+      Nd4j.write(allValues, dataOutputStream);
     }
   }
 
@@ -646,9 +706,6 @@ public class AdversaryLearning {
         computationGraph.getIterationCount());
     log.info("Learning rate from computation graph model layer 'OutputLayer': {}",
         NetworkUtils.getLearningRate(computationGraph, "OutputLayer"));
-    
-    // The outputs from the fitted network will have new action probabilities
-    // TODO clean up this.mcts.resetStoredOutputs();
 
     return computationGraph;
   }
