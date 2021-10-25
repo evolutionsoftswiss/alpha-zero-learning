@@ -3,8 +3,8 @@
 /.project
 /logs/
 /output/
-/*-bestmodel*.bin
-/trainExamples0*.obj
 /bestmodel0*.bin
+/trainExamples0*.obj
+/trainExamplesValues0*.obj
 /tictactoe.log
 /adversaryLearning.log

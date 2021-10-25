@@ -91,7 +91,7 @@ public class AdversaryLearning {
 
   public void performLearning() throws IOException {
 
-    loadComputationGraphs();
+    loadComputationGraph();
     loadEarlierTrainingExamples();
 
     for (int iteration = adversaryLearningConfiguration.getIterationStart();
@@ -227,7 +227,7 @@ public class AdversaryLearning {
     return trainExamples;
   }
 
-  public void loadComputationGraphs() throws IOException {
+  public void loadComputationGraph() throws IOException {
 
     if (restoreTrainedNeuralNet) {
 
@@ -292,20 +292,22 @@ public class AdversaryLearning {
         new DataInputStream(new FileInputStream(trainExamplesBasePath + "Values" + suffix))) {
       storedValues =  Nd4j.read(dataInputStream);
     }
-    
+
+    long[] actionShape = storedValues.shape();
+    int actionIndicesCount = (int) (actionShape[1] - 3);
     for (int index = 0; index < storedBoardKeys.shape() [0]; index++) {
       
       INDArray currentBoardKey = storedBoardKeys.slice(index);
       INDArray currentStoredValue = storedValues.getRow(index);
-      INDArray actionIndexProbs = Nd4j.zeros(7);
+      INDArray actionIndexProbs = Nd4j.zeros(actionIndicesCount);
       
-      for (int actionIndex = 0; actionIndex <= 6; actionIndex++) {
+      for (int actionIndex = 0; actionIndex < actionIndicesCount; actionIndex++) {
         
         actionIndexProbs.putScalar(actionIndex, currentStoredValue.getFloat(actionIndex));
       }
-      int player = currentStoredValue.getInt(7);
-      float playerValue = currentStoredValue.getFloat(8);
-      int iteration = currentStoredValue.getInt(9);
+      int player = currentStoredValue.getInt(actionIndicesCount);
+      float playerValue = currentStoredValue.getFloat(actionIndicesCount + 1);
+      int iteration = currentStoredValue.getInt(actionIndicesCount + 2);
       AdversaryTrainingExample currentAdversaryExample =
           new AdversaryTrainingExample(currentBoardKey, player, actionIndexProbs, iteration);
       currentAdversaryExample.setCurrentPlayerValue(playerValue);

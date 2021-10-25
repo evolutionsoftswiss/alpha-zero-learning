@@ -153,16 +153,24 @@ public class ConvolutionResidualNet {
                     .convolutionMode(ConvolutionMode.Same).build(),
                 "block4_sepconv2_bn")
             .addVertex("add3", new ElementWiseVertex(ElementWiseVertex.Op.Add), "block4_pool", "residual3")
+
+            .addLayer("policy_conv",
+                new SeparableConvolution2D.Builder(1, 1).nOut(32).hasBias(false).convolutionMode(ConvolutionMode.Same)
+                .build(), "add3")
+
+            .addLayer("value_conv",
+                new SeparableConvolution2D.Builder(1, 1).nOut(8).hasBias(false).convolutionMode(ConvolutionMode.Same)
+                .build(), "add3")
             
             .addLayer("dense1", new DenseLayer.Builder().
                 nOut(64).
                 activation(Activation.LEAKYRELU).
-                build(), "add3")
+                build(), "policy_conv")
             
             .addLayer("dense2", new DenseLayer.Builder().
                 nOut(32).
                 activation(Activation.LEAKYRELU).
-                build(), "add3")
+                build(), "value_conv")
             
             .addLayer(AdversaryLearningConstants.DEFAULT_OUTPUT_LAYER_NAME, new OutputLayer.Builder()
                 .nOut(7)
