@@ -8,7 +8,7 @@
   </parent>
 
   <artifactId>ch.evolutionsoft.rl.alphazero.adversary-learning</artifactId>
-  <packaging>jar</packaging>
+  <packaging>pom</packaging>
 
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -78,6 +78,11 @@
 		</profile>
 	
 	</profiles>
+
+	<modules>
+		<module>alpha-zero-learning-shared</module>
+		<module>alpha-zero-learning-main</module>
+	</modules>
 
 	<dependencies>
 		<!-- Core DL4J functionality -->

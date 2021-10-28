@@ -38,13 +38,13 @@ public class ConnectFourReinforcementLearningMain {
         dirichletWeight(0.4).
         fromNumberOfIterationsTemperatureZero(-1).
         fromNumberOfMovesTemperatureZero(10).
-        iterationStart(1).
+        iterationStart(601).
         maxTrainExamplesHistory(80000).
-        numberOfIterations(1500).
+        numberOfIterations(100).
         numberOfEpisodesBeforePotentialUpdate(10).
         numberOfEpisodeThreads(10).
         numberOfMonteCarloSimulations(200).
-        uctConstantFactor(1.2).
+        uctConstantFactor(1.5).
         
         build();
    

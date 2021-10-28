@@ -106,7 +106,13 @@
 		
 		<dependency>
 			<groupId>ch.evolutionsoft</groupId>
-			<artifactId>ch.evolutionsoft.rl.alphazero.adversary-learning</artifactId>
+			<artifactId>ch.evolutionsoft.rl.alphazero.adversary-learning.shared</artifactId>
+			<version>${project.version}</version>
+		</dependency>
+		
+		<dependency>
+			<groupId>ch.evolutionsoft</groupId>
+			<artifactId>ch.evolutionsoft.rl.alphazero.adversary-learning.main</artifactId>
 			<version>${project.version}</version>
 		</dependency>
 
