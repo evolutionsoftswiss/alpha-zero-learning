@@ -38,7 +38,7 @@ public class ConnectFourReinforcementLearningMain {
         dirichletWeight(0.4).
         fromNumberOfIterationsTemperatureZero(-1).
         fromNumberOfMovesTemperatureZero(10).
-        iterationStart(601).
+        iterationStart(901).
         maxTrainExamplesHistory(80000).
         numberOfIterations(100).
         numberOfEpisodesBeforePotentialUpdate(10).
