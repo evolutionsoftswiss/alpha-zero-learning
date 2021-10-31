@@ -13,7 +13,9 @@ import org.slf4j.LoggerFactory;
 
 import ch.evolutionsoft.rl.AdversaryLearning;
 import ch.evolutionsoft.rl.AdversaryLearningConfiguration;
+import ch.evolutionsoft.rl.AdversaryLearningController;
 import ch.evolutionsoft.rl.Game;
+import ch.evolutionsoft.rl.NeuralNetUpdater;
 
 public class ConnectFourReinforcementLearningMain {
 
@@ -38,7 +40,7 @@ public class ConnectFourReinforcementLearningMain {
         dirichletWeight(0.4).
         fromNumberOfIterationsTemperatureZero(-1).
         fromNumberOfMovesTemperatureZero(10).
-        iterationStart(901).
+        iterationStart(1001).
         maxTrainExamplesHistory(80000).
         numberOfIterations(100).
         numberOfEpisodesBeforePotentialUpdate(10).
@@ -61,6 +63,11 @@ public class ConnectFourReinforcementLearningMain {
             adversaryLearningConfiguration);
     
     adversaryLearning.performLearning();
+    
+    NeuralNetUpdater neuralNetUpdater = new NeuralNetUpdater(
+        new AdversaryLearningController(adversaryLearning));
+    
+    neuralNetUpdater.listenForNewTrainingExamples();
   }
 
   ComputationGraph createConvolutionalConfiguration(AdversaryLearningConfiguration adversaryLearningConfiguration) {

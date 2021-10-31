@@ -4,10 +4,10 @@ import static org.junit.jupiter.api.Assertions.assertSame;
 
 import org.junit.jupiter.api.Test;
 
-public class LineTest {
+class LineTest {
 
 	@Test
-	public void testVerticalBeginningFieldBottom(){
+	void testVerticalBeginningFieldBottom(){
 		
 		Field beginningField = new Field(10);
 		Field endField = new Field(37);
@@ -21,7 +21,7 @@ public class LineTest {
 	
 
     @Test
-	public void testVerticalBeginningFieldUp(){
+	void testVerticalBeginningFieldUp(){
 		
 		Field beginningField = new Field(37);
 		Field endField = new Field(10);
@@ -35,7 +35,7 @@ public class LineTest {
 	
 
     @Test
-	public void testHorizontalBeginningFieldLeft(){
+	void testHorizontalBeginningFieldLeft(){
 		
 		Field beginningField = new Field(31);
 		Field endField = new Field(34);
@@ -49,7 +49,7 @@ public class LineTest {
 	
 
     @Test
-	public void testHorizontalBeginningFieldRight(){
+	void testHorizontalBeginningFieldRight(){
 		
 		Field beginningField = new Field(34);
 		Field endField = new Field(31);
@@ -63,7 +63,7 @@ public class LineTest {
 	
 
     @Test
-	public void testDiagonallyDownBeginningFieldLeft(){
+	void testDiagonallyDownBeginningFieldLeft(){
 
 		Field beginningField = new Field(55);
 		Field endField = new Field(31);
@@ -77,7 +77,7 @@ public class LineTest {
 	
 
     @Test
-	public void testDiagonallyDownBeginningFieldRight(){
+	void testDiagonallyDownBeginningFieldRight(){
 
 		Field beginningField = new Field(31);
 		Field endField = new Field(55);
@@ -91,7 +91,7 @@ public class LineTest {
 	
 
     @Test
-	public void testDiagonallyUpBeginningFieldLeft(){
+	void testDiagonallyUpBeginningFieldLeft(){
 
 		Field beginningField = new Field(31);
 		Field endField = new Field(61);
@@ -105,7 +105,7 @@ public class LineTest {
 	
 
     @Test
-	public void testDiagonallyUpBeginningFieldRight(){
+	void testDiagonallyUpBeginningFieldRight(){
 
 		Field beginningField = new Field(61);
 		Field endField = new Field(31);

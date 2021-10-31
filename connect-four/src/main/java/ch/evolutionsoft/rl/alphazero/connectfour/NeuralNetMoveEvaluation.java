@@ -25,8 +25,9 @@ public class NeuralNetMoveEvaluation {
   
   public static void main(String[] args) throws IOException {
 
-    log.info(new NeuralNetMoveEvaluation().evaluateMoves());
-    
+    if (log.isInfoEnabled()) {
+      log.info(new NeuralNetMoveEvaluation().evaluateMoves());
+    }
   }
 
   ComputationGraph loadConnectFourComputationGraph() throws IOException {
@@ -42,15 +43,15 @@ public class NeuralNetMoveEvaluation {
 
     List<INDArray[]> outputs = getEarlyOpeningOutput();
 
-    String outputsString = "";
+    StringBuilder outputsString = new StringBuilder();
     
     for (INDArray[] currentOutputs : outputs) {
       
-      outputsString += currentOutputs[0] + System.lineSeparator() + 
-          currentOutputs[1] + System.lineSeparator() + System.lineSeparator();
+      outputsString.append(currentOutputs[0]).append(System.lineSeparator()). 
+          append(currentOutputs[1]).append(System.lineSeparator()).append(System.lineSeparator());
     }
     
-    return outputsString;
+    return String.valueOf(outputsString);
   }
   
   List<INDArray[]> getEarlyOpeningOutput() {
@@ -61,8 +62,10 @@ public class NeuralNetMoveEvaluation {
     INDArray neuralNetEmptyBoardInput = createNeuralNetInputSingleBatch(EMPTY_CONVOLUTIONAL_PLAYGROUND.dup());
     INDArray neuralNetEarlyThreatInput = createNeuralNetInputSingleBatch(earlyDoubleThreatPossibilityBoard());
 
-    log.info("Inputs are: {}{}{}{}", System.lineSeparator(), neuralNetEmptyBoardInput, System.lineSeparator(), neuralNetEarlyThreatInput);
-    
+    if (log.isInfoEnabled()) {
+      log.info("Inputs are: {}{}{}{}", System.lineSeparator(), neuralNetEmptyBoardInput, System.lineSeparator(), neuralNetEarlyThreatInput);
+    }
+      
     INDArray[] valueAndActionOutput1 = this.connectFourComputationGraph.output(neuralNetEmptyBoardInput);
     INDArray[] valueAndActionOutput2 = this.connectFourComputationGraph.output(neuralNetEarlyThreatInput);
     

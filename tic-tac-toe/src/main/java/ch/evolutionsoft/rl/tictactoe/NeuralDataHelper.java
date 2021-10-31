@@ -28,7 +28,7 @@ public class NeuralDataHelper {
 
     for (int row = 0; row < inputs.shape()[0]; row++) {
 
-      allPlaygroundsResult.add(new Pair<INDArray, INDArray>(inputs.getRow(row), labels.getRow(row)));
+      allPlaygroundsResult.add(new Pair<>(inputs.getRow(row), labels.getRow(row)));
     }
 
     return allPlaygroundsResult;

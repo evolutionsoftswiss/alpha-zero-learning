@@ -5,18 +5,18 @@ import static org.junit.jupiter.api.Assertions.*;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-public class ArrayPlaygroundTest {
+class ArrayPlaygroundTest {
 
 	protected ArrayPlayground arrayPlayground;
 
 	@BeforeEach
-	public void setUp(){
+	void setUp(){
 		
 		arrayPlayground = new ArrayPlayground();
 	}
 	
 	@Test
-	public void testConstructor(){
+	void testConstructor(){
 		
 		int[] playground = this.arrayPlayground.getPosition();
 		
@@ -36,7 +36,7 @@ public class ArrayPlaygroundTest {
 	
 
     @Test
-	public void testTrySetFieldColorAndPositionEmptyColumn(){
+	void testTrySetFieldColorAndPositionEmptyColumn(){
 		
 		this.arrayPlayground.trySetField(0, ArrayPlaygroundConstants.YELLOW);
 		
@@ -47,7 +47,7 @@ public class ArrayPlaygroundTest {
 	
 
     @Test
-	public void testTrySetFieldColumnHeight(){
+	void testTrySetFieldColumnHeight(){
 		
 		this.arrayPlayground.trySetField(0, ArrayPlaygroundConstants.YELLOW);
 		
@@ -58,7 +58,7 @@ public class ArrayPlaygroundTest {
 	
 
     @Test
-	public void testTrySetFieldColorAndPositionNonEmptyColumn(){
+	void testTrySetFieldColorAndPositionNonEmptyColumn(){
 		
 		this.arrayPlayground.trySetField(0, ArrayPlaygroundConstants.YELLOW);
 		this.arrayPlayground.trySetField(0, ArrayPlaygroundConstants.YELLOW);
@@ -70,7 +70,7 @@ public class ArrayPlaygroundTest {
 	
 
     @Test
-	public void testTrySetFieldEmpty(){
+	void testTrySetFieldEmpty(){
 		
 		this.arrayPlayground.trySetField(0, ArrayPlaygroundConstants.YELLOW);
 		this.arrayPlayground.trySetField(1, ArrayPlaygroundConstants.RED);
@@ -86,7 +86,7 @@ public class ArrayPlaygroundTest {
 	
 
     @Test
-	public void testFourInARowHorizontallyNot4Stones(){
+	void testFourInARowHorizontallyNot4Stones(){
 		
 		this.arrayPlayground.trySetField(2, ArrayPlaygroundConstants.RED);
 		this.arrayPlayground.trySetField(3, ArrayPlaygroundConstants.RED);
@@ -102,7 +102,7 @@ public class ArrayPlaygroundTest {
 	
 
     @Test
-	public void testFourInARowHorizontally4Stones(){
+	void testFourInARowHorizontally4Stones(){
 		
 		this.arrayPlayground.trySetField(2, ArrayPlaygroundConstants.RED);
 		this.arrayPlayground.trySetField(3, ArrayPlaygroundConstants.RED);
@@ -118,7 +118,7 @@ public class ArrayPlaygroundTest {
 	
 
     @Test
-	public void testFourInARowVerticallyNot4Stones(){
+	void testFourInARowVerticallyNot4Stones(){
 		
 		this.arrayPlayground.trySetField(2, ArrayPlaygroundConstants.RED);
 		this.arrayPlayground.trySetField(2, ArrayPlaygroundConstants.RED);
@@ -130,7 +130,7 @@ public class ArrayPlaygroundTest {
 	
 
     @Test
-	public void testFourInARowVertically4Stones(){
+	void testFourInARowVertically4Stones(){
 		
 		this.arrayPlayground.trySetField(2, ArrayPlaygroundConstants.RED);
 		this.arrayPlayground.trySetField(2, ArrayPlaygroundConstants.RED);
@@ -142,7 +142,7 @@ public class ArrayPlaygroundTest {
 	
 
     @Test
-	public void testFourInARowDiagonallyDownNot4Stones(){
+	void testFourInARowDiagonallyDownNot4Stones(){
 
 		
 		this.arrayPlayground.trySetField(2, ArrayPlaygroundConstants.RED);
@@ -162,7 +162,7 @@ public class ArrayPlaygroundTest {
 	
 
     @Test
-	public void testFourInARowDiagonallyDown4Stones(){
+	void testFourInARowDiagonallyDown4Stones(){
 		
 		this.arrayPlayground.trySetField(2, ArrayPlaygroundConstants.RED);
 		this.arrayPlayground.trySetField(3, ArrayPlaygroundConstants.RED);
@@ -183,7 +183,7 @@ public class ArrayPlaygroundTest {
 	
 
     @Test
-	public void testFourInARowDiagonallyUpNot4Stones(){
+	void testFourInARowDiagonallyUpNot4Stones(){
 
 		
 		this.arrayPlayground.trySetField(2, ArrayPlaygroundConstants.YELLOW);
@@ -203,7 +203,7 @@ public class ArrayPlaygroundTest {
 	
 
     @Test
-	public void testFourInARowDiagonallyUp4Stones(){
+	void testFourInARowDiagonallyUp4Stones(){
 		
 		this.arrayPlayground.trySetField(2, ArrayPlaygroundConstants.YELLOW);
 		this.arrayPlayground.trySetField(3, ArrayPlaygroundConstants.RED);

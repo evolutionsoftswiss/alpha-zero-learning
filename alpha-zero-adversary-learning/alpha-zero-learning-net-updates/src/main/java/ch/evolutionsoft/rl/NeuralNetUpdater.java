@@ -1,9 +1,13 @@
 package ch.evolutionsoft.rl;
 
+import java.io.IOException;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 import org.deeplearning4j.nn.graph.ComputationGraph;
+import org.deeplearning4j.util.ModelSerializer;
 import org.deeplearning4j.util.NetworkUtils;
 import org.nd4j.linalg.api.ndarray.INDArray;
 import org.nd4j.linalg.dataset.api.MultiDataSet;
@@ -15,19 +19,53 @@ public class NeuralNetUpdater {
 
   public static final Logger log = LoggerFactory.getLogger(NeuralNetUpdater.class);
   
+  AdversaryLearningController adversaryLearningController;
+
   AdversaryLearningConfiguration adversaryLearningConfiguration;
+  
+  List<AdversaryTrainingExample> adversaryTrainingExamples;
+  
+  Game initialGame;
 
-  public NeuralNetUpdater(AdversaryLearningConfiguration adversaryLearningConfiguration) {
+  public NeuralNetUpdater(AdversaryLearningController adversaryLearningController) {
 
-    this.adversaryLearningConfiguration = adversaryLearningConfiguration;
+    this.adversaryLearningController = adversaryLearningController;
+    this.adversaryLearningConfiguration = adversaryLearningController.getAdversaryLearningConfiguration();
+    this.initialGame = adversaryLearningController.getInitialGame();
   }
 
+  public ExecutorService listenForNewTrainingExamples() {
+    
+    ExecutorService executorService = Executors.newSingleThreadExecutor();
+ 
+    for (int iteration = adversaryLearningConfiguration.getIterationStart();
+        iteration < adversaryLearningConfiguration.getIterationStart() + 
+        adversaryLearningConfiguration.getNumberOfIterations();
+        iteration++) {
+    
+      executorService.execute(() -> {
+        
+        adversaryTrainingExamples = adversaryLearningController.getAdversaryTrainingExamples();
+        ComputationGraph computationGraph = fitNeuralNet();
+        try {
+          
+          ModelSerializer.writeModel(computationGraph, adversaryLearningConfiguration.getBestModelFileName(), true);
+          adversaryLearningController.modelUpdated();
+        } catch (IOException ioe) {
+          log.error("Error writing updated model", ioe);
+        }
+      });
+    }
+    
+    return executorService;
+  }
 
-  ComputationGraph fitNeuralNet(
-      ComputationGraph computationGraph,
-      List<AdversaryTrainingExample> trainingExamples,
-      Game initialGame) {
+  ComputationGraph fitNeuralNet() {
 
+    List<AdversaryTrainingExample> trainingExamples = this.adversaryTrainingExamples;
+    
+    ComputationGraph computationGraph = GraphLoader.loadComputationGraph(adversaryLearningConfiguration);
+    
     int batchSize = this.adversaryLearningConfiguration.getBatchSize();
     int trainingExamplesSize = trainingExamples.size();
     int batchNumber = 1 + trainingExamplesSize / batchSize;
@@ -35,21 +73,14 @@ public class NeuralNetUpdater {
     List<MultiDataSet> batchedMultiDataSet = createMiniBatchList(trainingExamples, initialGame);
 
     for (int batchIteration = 0; batchIteration < batchNumber; batchIteration++) {
+      
+      log.info("Batch size for batch number {} is {}", 
+          batchIteration,
+          batchedMultiDataSet.get(batchIteration).asList().size());
 
       computationGraph.fit(batchedMultiDataSet.get(batchIteration));
       
-      if (0 == batchIteration && batchNumber > batchIteration + 1) {
-
-        log.info("Batch size for {} batches from computation graph model {}", 
-            batchNumber - 1,
-            computationGraph.batchSize());
-        
-      } else if (batchNumber == batchIteration + 1) {
-
-        log.info("{}. batch size from computation graph model {}",
-            batchIteration + 1,
-            computationGraph.batchSize());
-      }
+      log.info("Fitted model with batch number {}", batchIteration);
     }
 
     log.info("Iterations (number of updates) from computation graph model is {}",

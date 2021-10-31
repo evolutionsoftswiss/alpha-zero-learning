@@ -15,7 +15,7 @@ import org.junit.jupiter.api.Test;
 import org.nd4j.linalg.api.ndarray.INDArray;
 import org.nd4j.linalg.factory.Nd4j;
 
-public class AdversaryLearningTest {
+class AdversaryLearningTest {
 
   public static final String TEST_TRAIN_EXAMPLES = "testTrainExamples.obj";
   public static final String TEST_TRAIN_EXAMPLES_VALUES = "testTrainExamplesValues.obj";

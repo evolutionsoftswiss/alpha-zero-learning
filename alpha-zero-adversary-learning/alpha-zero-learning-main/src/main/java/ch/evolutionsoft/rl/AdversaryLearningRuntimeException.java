@@ -3,7 +3,7 @@ package ch.evolutionsoft.rl;
 public class AdversaryLearningRuntimeException extends RuntimeException {
 
   public AdversaryLearningRuntimeException() {
-    // TODO Auto-generated constructor stub
+    super();
   }
 
   public AdversaryLearningRuntimeException(String message) {

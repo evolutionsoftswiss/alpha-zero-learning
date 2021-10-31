@@ -28,12 +28,12 @@ public abstract class Game {
   
   protected INDArray currentBoard;
 
-  public Game() {
+  protected Game() {
     
     this(Game.MAX_PLAYER);
   }
   
-  public Game(int currentPlayer) {
+  protected Game(int currentPlayer) {
     
     this.currentPlayer = currentPlayer;
     this.currentBoard = getInitialBoard();

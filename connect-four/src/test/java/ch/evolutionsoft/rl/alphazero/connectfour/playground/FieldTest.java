@@ -5,12 +5,12 @@ import static org.junit.jupiter.api.Assertions.*;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-public class FieldTest {
+class FieldTest {
 
 	Field fieldC2, fieldD2, fieldE5, fieldE6;
 
 	@BeforeEach
-	public void setUp() {
+	void setUp() {
 		fieldC2 = new Field(21);
 		fieldD2 = new Field(22);
 		fieldE5 = new Field(50);
@@ -20,7 +20,7 @@ public class FieldTest {
 	
 
     @Test	
-    public void testIsValidFieldString() {
+    void testIsValidFieldString() {
         assertFalse(Field.isValidFieldString("a"));
         assertFalse(Field.isValidFieldString("a11"));   
         assertFalse(Field.isValidFieldString("11"));
@@ -38,7 +38,7 @@ public class FieldTest {
     }
 
     @Test
-	public void testEqualsString() {
+	void testEqualsString() {
 		assertTrue(fieldC2.equalsString("c2"));
 		assertTrue(fieldC2.equalsString("C2"));
 		assertTrue(fieldD2.equalsString("d2"));
@@ -50,14 +50,14 @@ public class FieldTest {
 	}
 
     @Test
-	public void testConstructorWithString() {
+	void testConstructorWithString() {
 		
         Field fieldE3 = new Field("e3");
         assertEquals(32, fieldE3.getPosition());
 	}
 
     @Test
-	public void testConstructorWithInvalidStringArgument() {
+	void testConstructorWithInvalidStringArgument() {
 		try {
 			new Field("a21");
 			fail("Should never reach this statement");

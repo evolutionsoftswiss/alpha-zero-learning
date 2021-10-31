@@ -35,7 +35,7 @@ public class TicTacToeNeuralDataConverter {
       INDArray playgroundImage4dRow = Nd4j.create(1, IMAGE_CHANNELS, IMAGE_SIZE, IMAGE_SIZE);
       playgroundImage4dRow.putRow(0, playgroundImage);
 
-      resultList.add(new Pair<INDArray, INDArray>(playgroundImage4dRow, convertedLabels.get(index).getSecond()));
+      resultList.add(new Pair<>(playgroundImage4dRow, convertedLabels.get(index).getSecond()));
     }
 
     return resultList;
@@ -55,7 +55,7 @@ public class TicTacToeNeuralDataConverter {
       INDArray playgroundImage4dRow = Nd4j.create(1, IMAGE_CHANNELS, IMAGE_SIZE, IMAGE_SIZE);
       playgroundImage4dRow.putRow(0, playgroundImage);
 
-      resultList.add(new Pair<INDArray, INDArray>(playgroundImage4dRow, convertedLabels.get(index).getSecond()));
+      resultList.add(new Pair<>(playgroundImage4dRow, convertedLabels.get(index).getSecond()));
     }
 
     return resultList;

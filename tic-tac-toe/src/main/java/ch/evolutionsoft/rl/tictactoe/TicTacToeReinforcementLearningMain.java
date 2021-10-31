@@ -13,7 +13,9 @@ import org.slf4j.LoggerFactory;
 
 import ch.evolutionsoft.rl.AdversaryLearning;
 import ch.evolutionsoft.rl.AdversaryLearningConfiguration;
+import ch.evolutionsoft.rl.AdversaryLearningController;
 import ch.evolutionsoft.rl.Game;
+import ch.evolutionsoft.rl.NeuralNetUpdater;
 
 public class TicTacToeReinforcementLearningMain {
 
@@ -43,8 +45,12 @@ public class TicTacToeReinforcementLearningMain {
             new TicTacToe(Game.MAX_PLAYER),
             neuralNet,
             adversaryLearningConfiguration);
-    
     adversaryLearning.performLearning();
+    
+    NeuralNetUpdater neuralNetUpdater = new NeuralNetUpdater(
+        new AdversaryLearningController(adversaryLearning));
+    
+    neuralNetUpdater.listenForNewTrainingExamples();
   }
 
   ComputationGraph createConvolutionalConfiguration(AdversaryLearningConfiguration adversaryLearningConfiguration) {

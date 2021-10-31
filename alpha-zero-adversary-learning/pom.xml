@@ -126,10 +126,6 @@
 				<artifactId>maven-surefire-plugin</artifactId>
 			</plugin>
 
-			<plugin>
-				<artifactId>maven-assembly-plugin</artifactId>
-			</plugin>
-
 		</plugins>
 	</build>
 

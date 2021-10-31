@@ -16,12 +16,12 @@ import ch.evolutionsoft.rl.Game;
 import ch.evolutionsoft.rl.tictactoe.TicTacToe;
 import ch.evolutionsoft.rl.tictactoe.TicTacToeConstants;
 
-public class TicTacToeTest {
+class TicTacToeTest {
 
   TicTacToe ticTacToe = new TicTacToe(Game.MAX_PLAYER);
   
   @Test
-  public void testSymmetriesWithNoDifferentSymmetry() {
+  void testSymmetriesWithNoDifferentSymmetry() {
 
     INDArray middleBoard = TicTacToeConstants.EMPTY_CONVOLUTIONAL_PLAYGROUND.dup();
     middleBoard.putScalar(TicTacToeConstants.MAX_PLAYER_CHANNEL, 1, 1, AdversaryLearningConstants.ONE);
@@ -47,7 +47,7 @@ public class TicTacToeTest {
   }
   
   @Test
-  public void testSymmetriesWith4Symmetries() {
+  void testSymmetriesWith4Symmetries() {
     
     INDArray topLeftMiddleBoard = TicTacToeConstants.EMPTY_CONVOLUTIONAL_PLAYGROUND.dup();
     topLeftMiddleBoard.putScalar(TicTacToeConstants.MAX_PLAYER_CHANNEL, 1, 1, AdversaryLearningConstants.ONE);
@@ -92,7 +92,7 @@ public class TicTacToeTest {
   }
   
   @Test
-  public void testSymmetriesWith8Symmetries() {
+  void testSymmetriesWith8Symmetries() {
     
     INDArray lBoard = TicTacToeConstants.EMPTY_CONVOLUTIONAL_PLAYGROUND.dup();
     lBoard.putScalar(TicTacToeConstants.MAX_PLAYER_CHANNEL, 1, 1, AdversaryLearningConstants.ONE);

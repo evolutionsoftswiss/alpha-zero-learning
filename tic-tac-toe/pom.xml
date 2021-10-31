@@ -115,6 +115,12 @@
 			<artifactId>ch.evolutionsoft.rl.alphazero.adversary-learning.main</artifactId>
 			<version>${project.version}</version>
 		</dependency>
+		
+		<dependency>
+			<groupId>ch.evolutionsoft</groupId>
+			<artifactId>ch.evolutionsoft.rl.alphazero.adversary-learning.net-updates</artifactId>
+			<version>${project.version}</version>
+		</dependency>
 
 		<dependency>
 			<groupId>org.datavec</groupId>
