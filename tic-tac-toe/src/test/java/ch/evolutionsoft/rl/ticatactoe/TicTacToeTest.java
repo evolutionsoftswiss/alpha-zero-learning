@@ -13,8 +13,8 @@ import org.nd4j.linalg.factory.Nd4j;
 import ch.evolutionsoft.rl.AdversaryLearningConstants;
 import ch.evolutionsoft.rl.AdversaryTrainingExample;
 import ch.evolutionsoft.rl.Game;
-import ch.evolutionsoft.rl.tictactoe.TicTacToe;
-import ch.evolutionsoft.rl.tictactoe.TicTacToeConstants;
+import ch.evolutionsoft.rl.alphazero.tictactoe.TicTacToe;
+import ch.evolutionsoft.rl.alphazero.tictactoe.TicTacToeConstants;
 
 class TicTacToeTest {
 

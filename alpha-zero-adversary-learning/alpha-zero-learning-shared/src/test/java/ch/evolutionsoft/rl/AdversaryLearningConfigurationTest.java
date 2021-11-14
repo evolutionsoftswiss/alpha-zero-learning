@@ -24,6 +24,7 @@ class AdversaryLearningConfigurationTest {
     AdversaryLearningConfiguration adversaryLearningConfiguration =
         new AdversaryLearningConfiguration.Builder().
         alwaysUpdateNeuralNetwork(false).
+        numberOfAllAvailableMoves(7).
         batchSize(1024).
         bestModelFileName("alphaModel.bin").
         checkPointIterationsFrequency(5).
@@ -56,6 +57,7 @@ class AdversaryLearningConfigurationTest {
     
     AdversaryLearningConfiguration adversaryLearningConfiguration = new AdversaryLearningConfiguration();
     adversaryLearningConfiguration.setAlwaysUpdateNeuralNetwork(false);
+    adversaryLearningConfiguration.setNumberOfAllAvailableMoves(7);
     adversaryLearningConfiguration.setBatchSize(1024);
     adversaryLearningConfiguration.setBestModelFileName("alphaModel.bin");
     adversaryLearningConfiguration.setCheckPointIterationsFrequency(5);
@@ -83,10 +85,12 @@ class AdversaryLearningConfigurationTest {
 
     assertAll(
         () -> assertEquals(String.valueOf(Paths.get("").toAbsolutePath()) + File.separator + "alphaModel.bin", 
-            adversaryLearningConfiguration.getAbsolutePathFrom(adversaryLearningConfiguration.getBestModelFileName())),
+            AdversaryLearningConfiguration.getAbsolutePathFrom(adversaryLearningConfiguration.getBestModelFileName())),
         () -> assertEquals(false, adversaryLearningConfiguration.isAlwaysUpdateNeuralNetwork()),
+        () -> assertEquals(7, adversaryLearningConfiguration.getNumberOfAllAvailableMoves()),
         () -> assertEquals(1024, adversaryLearningConfiguration.getBatchSize()),
-        () -> assertEquals("alphaModel.bin", adversaryLearningConfiguration.getBestModelFileName()),
+        () -> assertTrue(adversaryLearningConfiguration.getBestModelFileName().endsWith("alphaModel.bin")),
+        () -> assertTrue(adversaryLearningConfiguration.getTrainExamplesFileName().endsWith("trainingExamplesHistory.obj")),
         () -> assertEquals(5, adversaryLearningConfiguration.getCheckPointIterationsFrequency()),
         () -> assertEquals(1.0, adversaryLearningConfiguration.getCurrentTemperature(0, 9)),
         () -> assertEquals(0.0, adversaryLearningConfiguration.getCurrentTemperature(0, 10)),
@@ -106,7 +110,6 @@ class AdversaryLearningConfigurationTest {
         () -> assertEquals(1000, adversaryLearningConfiguration.getNumberOfIterations()),
         () -> assertEquals(20, adversaryLearningConfiguration.getNumberOfEpisodesBeforePotentialUpdate()),
         () -> assertEquals(100, adversaryLearningConfiguration.getNumberOfMonteCarloSimulations()),
-        () -> assertEquals("trainingExamplesHistory.obj", adversaryLearningConfiguration.getTrainExamplesFileName()),
         () -> assertEquals(1.4, adversaryLearningConfiguration.getuctConstantFactor())
     );
   }

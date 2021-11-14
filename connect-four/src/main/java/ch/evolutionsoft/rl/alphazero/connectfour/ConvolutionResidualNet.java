@@ -1,6 +1,6 @@
 package ch.evolutionsoft.rl.alphazero.connectfour;
 
-import static ch.evolutionsoft.rl.ConvolutionalResidualNetConstants.*;
+import static ch.evolutionsoft.rl.alphazero.ConvolutionalResidualNetConstants.*;
 
 import org.deeplearning4j.nn.conf.CNN2DFormat;
 import org.deeplearning4j.nn.conf.ComputationGraphConfiguration;

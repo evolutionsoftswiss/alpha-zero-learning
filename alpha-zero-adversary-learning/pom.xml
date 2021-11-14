@@ -14,71 +14,6 @@
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
   </properties>
 
-	<profiles>
-
-		<profile>
-			<id>generic</id>
-			<activation>
-				<activeByDefault>true</activeByDefault>
-			</activation>
-			<dependencies>
-				<!-- ND4J backend. You need one in every DL4J project. Normally define 
-					artifactId as either "nd4j-native-platform" or "nd4j-cuda-7.5-platform" -->
-				<dependency>
-					<groupId>org.nd4j</groupId>
-					<artifactId>nd4j-native-platform</artifactId>
-					</dependency>
-			</dependencies>
-		</profile>
-
-		<profile>
-			<id>linux-avx</id>
-			<activation>
-				<property>
-					<name>avx</name>
-					<value>linux</value>
-				</property>
-			</activation>
-			<dependencies>
-				<dependency>
-					<groupId>org.nd4j</groupId>
-					<artifactId>nd4j-native-platform</artifactId>
-					<version>${nd4j.version}</version>
-				</dependency>
-				<dependency>
-					<groupId>org.nd4j</groupId>
-					<artifactId>nd4j-native</artifactId>
-					<version>${nd4j.version}</version>
-					<classifier>${nd4j.backend.linux}</classifier>
-				</dependency>
-			</dependencies>
-		</profile>
-
-		<profile>
-			<id>windows-avx</id>
-			<activation>
-				<property>
-					<name>avx</name>
-					<value>windows</value>
-				</property>
-			</activation>
-			<dependencies>
-				<dependency>
-					<groupId>org.nd4j</groupId>
-					<artifactId>nd4j-native-platform</artifactId>
-					<version>${nd4j.version}</version>
-				</dependency>
-				<dependency>
-					<groupId>org.nd4j</groupId>
-					<artifactId>nd4j-native</artifactId>
-					<version>${nd4j.version}</version>
-					<classifier>${nd4j.backend.windows}</classifier>
-				</dependency>
-			</dependencies>
-		</profile>
-	
-	</profiles>
-
 	<modules>
 		<module>alpha-zero-learning-shared</module>
 		<module>alpha-zero-learning-main</module>
@@ -125,7 +60,6 @@
 			<plugin>
 				<artifactId>maven-surefire-plugin</artifactId>
 			</plugin>
-
 		</plugins>
 	</build>
 

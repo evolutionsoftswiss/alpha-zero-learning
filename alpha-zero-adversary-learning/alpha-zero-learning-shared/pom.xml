@@ -14,72 +14,13 @@
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
   </properties>
 
-	<profiles>
-
-		<profile>
-			<id>generic</id>
-			<activation>
-				<activeByDefault>true</activeByDefault>
-			</activation>
-			<dependencies>
-				<!-- ND4J backend. You need one in every DL4J project. Normally define 
-					artifactId as either "nd4j-native-platform" or "nd4j-cuda-7.5-platform" -->
-				<dependency>
-					<groupId>org.nd4j</groupId>
-					<artifactId>nd4j-native-platform</artifactId>
-					</dependency>
-			</dependencies>
-		</profile>
-
-		<profile>
-			<id>linux-avx</id>
-			<activation>
-				<property>
-					<name>avx</name>
-					<value>linux</value>
-				</property>
-			</activation>
-			<dependencies>
-				<dependency>
-					<groupId>org.nd4j</groupId>
-					<artifactId>nd4j-native-platform</artifactId>
-					<version>${nd4j.version}</version>
-				</dependency>
-				<dependency>
-					<groupId>org.nd4j</groupId>
-					<artifactId>nd4j-native</artifactId>
-					<version>${nd4j.version}</version>
-					<classifier>${nd4j.backend.linux}</classifier>
-				</dependency>
-			</dependencies>
-		</profile>
-
-		<profile>
-			<id>windows-avx</id>
-			<activation>
-				<property>
-					<name>avx</name>
-					<value>windows</value>
-				</property>
-			</activation>
-			<dependencies>
-				<dependency>
-					<groupId>org.nd4j</groupId>
-					<artifactId>nd4j-native-platform</artifactId>
-					<version>${nd4j.version}</version>
-				</dependency>
-				<dependency>
-					<groupId>org.nd4j</groupId>
-					<artifactId>nd4j-native</artifactId>
-					<version>${nd4j.version}</version>
-					<classifier>${nd4j.backend.windows}</classifier>
-				</dependency>
-			</dependencies>
-		</profile>
-	
-	</profiles>
-
 	<dependencies>
+		<!-- ND4J backend. You need one in every DL4J project. Normally define 
+			artifactId as either "nd4j-native-platform" or "nd4j-cuda-7.5-platform" -->
+		<dependency>
+			<groupId>org.nd4j</groupId>
+			<artifactId>nd4j-native-platform</artifactId>
+		</dependency>
 		<!-- Core DL4J functionality -->
 		<dependency>
 			<groupId>org.deeplearning4j</groupId>
@@ -90,6 +31,13 @@
 			<groupId>org.deeplearning4j</groupId>
 			<artifactId>deeplearning4j-nn</artifactId>
 		</dependency>
+
+        <!-- Required for converting JSON data to Java object and vice versa -->
+        <dependency>
+            <groupId>com.fasterxml.jackson.core</groupId>
+            <artifactId>jackson-databind</artifactId>
+            <version>2.12.5</version>
+        </dependency>
 		
 		<dependency>
 		    <groupId>ch.qos.logback</groupId>

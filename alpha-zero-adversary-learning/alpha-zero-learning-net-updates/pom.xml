@@ -13,83 +13,29 @@
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
   </properties>
-
-	<profiles>
-
-		<profile>
-			<id>generic</id>
-			<activation>
-				<activeByDefault>true</activeByDefault>
-			</activation>
-			<dependencies>
-				<!-- ND4J backend. You need one in every DL4J project. Normally define 
-					artifactId as either "nd4j-native-platform" or "nd4j-cuda-7.5-platform" -->
-				<dependency>
-					<groupId>org.nd4j</groupId>
-					<artifactId>nd4j-native-platform</artifactId>
-					</dependency>
-			</dependencies>
-		</profile>
-
-		<profile>
-			<id>linux-avx</id>
-			<activation>
-				<property>
-					<name>avx</name>
-					<value>linux</value>
-				</property>
-			</activation>
-			<dependencies>
-				<dependency>
-					<groupId>org.nd4j</groupId>
-					<artifactId>nd4j-native-platform</artifactId>
-					<version>${nd4j.version}</version>
-				</dependency>
-				<dependency>
-					<groupId>org.nd4j</groupId>
-					<artifactId>nd4j-native</artifactId>
-					<version>${nd4j.version}</version>
-					<classifier>${nd4j.backend.linux}</classifier>
-				</dependency>
-			</dependencies>
-		</profile>
-
-		<profile>
-			<id>windows-avx</id>
-			<activation>
-				<property>
-					<name>avx</name>
-					<value>windows</value>
-				</property>
-			</activation>
-			<dependencies>
-				<dependency>
-					<groupId>org.nd4j</groupId>
-					<artifactId>nd4j-native-platform</artifactId>
-					<version>${nd4j.version}</version>
-				</dependency>
-				<dependency>
-					<groupId>org.nd4j</groupId>
-					<artifactId>nd4j-native</artifactId>
-					<version>${nd4j.version}</version>
-					<classifier>${nd4j.backend.windows}</classifier>
-				</dependency>
-			</dependencies>
-		</profile>
-	
-	</profiles>
-
 	<dependencies>
+		
+		<dependency>
+			<groupId>org.nd4j</groupId>
+			<artifactId>nd4j-cuda-11.2</artifactId>
+			<version>1.0.0-M1.1</version>
+		</dependency>
+		<dependency>
+			<groupId>org.nd4j</groupId>
+			<artifactId>nd4j-cuda-11.2</artifactId>
+			<version>1.0.0-M1.1</version>
+			<classifier>linux-x86_64-cudnn</classifier>
+		</dependency>
+	    <dependency>
+	        <groupId>org.deeplearning4j</groupId>
+	        <artifactId>deeplearning4j-cuda-11.2</artifactId>
+	        <version>1.0.0-M1.1</version>
+	    </dependency>
+    
 		
 		<dependency>
 			<groupId>ch.evolutionsoft</groupId>
 			<artifactId>ch.evolutionsoft.rl.alphazero.adversary-learning.shared</artifactId>
-			<version>${project.version}</version>
-		</dependency>
-		
-		<dependency>
-			<groupId>ch.evolutionsoft</groupId>
-			<artifactId>ch.evolutionsoft.rl.alphazero.adversary-learning.main</artifactId>
 			<version>${project.version}</version>
 		</dependency>
 
@@ -104,11 +50,40 @@
 			<artifactId>deeplearning4j-nn</artifactId>
 		</dependency>
 
-		<dependency>
-		    <groupId>org.springframework.boot</groupId>
-		    <artifactId>spring-boot-starter-web</artifactId>
-		    <version>2.5.6</version>
+        <dependency>
+            <groupId>org.springframework</groupId>
+            <artifactId>spring-core</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework</groupId>
+            <artifactId>spring-context</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework</groupId>
+            <artifactId>spring-web</artifactId>
+        </dependency>
+        <dependency>
+		    <groupId>org.springframework</groupId>
+		    <artifactId>spring-webflux</artifactId>
 		</dependency>
+		<dependency>
+		    <groupId>io.projectreactor.netty</groupId>
+		    <artifactId>reactor-netty-http</artifactId>
+		    <version>1.0.12</version>
+		</dependency>
+		
+        <!-- Required for converting JSON data to Java object and vice versa -->
+        <dependency>
+            <groupId>com.fasterxml.jackson.core</groupId>
+            <artifactId>jackson-databind</artifactId>
+        </dependency>
+        
+        <!-- Servlet API -->
+        <dependency>
+            <groupId>javax.servlet</groupId>
+            <artifactId>javax.servlet-api</artifactId>
+            <scope>provided</scope>
+        </dependency>
 		
 		<dependency>
 		    <groupId>ch.qos.logback</groupId>
@@ -132,6 +107,41 @@
 			<plugin>
 				<artifactId>maven-surefire-plugin</artifactId>
 			</plugin>
+
+			<plugin>
+				<artifactId>maven-assembly-plugin</artifactId>
+				<configuration>
+					<descriptorRefs>
+						<descriptorRef>jar-with-dependencies</descriptorRef>
+					</descriptorRefs>
+				</configuration>
+				<executions>
+					<execution>
+						<id>make-assembly</id> <!-- this is used for inheritance merges -->
+						<phase>package</phase> <!-- bind to the packaging phase -->
+						<goals>
+							<goal>single</goal>
+						</goals>
+					</execution>
+				</executions>
+			</plugin>
+
+            <plugin>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-maven-plugin</artifactId>
+                <version>2.5.6</version>
+                <configuration>
+                    <fork>true</fork>
+                    <mainClass>ch.evolutionsoft.rl.netupdate.NeuralNetUpdater</mainClass>
+                </configuration>
+                  <executions>
+                    <execution>
+                      <goals>
+                        <goal>repackage</goal>
+                      </goals>
+                    </execution>
+                </executions>
+            </plugin>
 
 		</plugins>
 	</build>

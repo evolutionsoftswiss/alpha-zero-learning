@@ -1,11 +1,17 @@
 package ch.evolutionsoft.rl;
 
-import java.io.File;
+import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Collections;
+import java.util.Map;
 
 import org.apache.commons.lang3.StringUtils;
 import org.deeplearning4j.nn.graph.ComputationGraph;
-import org.nd4j.linalg.schedule.ISchedule;
+import org.nd4j.linalg.schedule.MapSchedule;
+import org.nd4j.linalg.schedule.ScheduleType;
+
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonSetter;
 
 /**
  * {@link AdversaryLearningConfiguration} defines several configuration parameters
@@ -18,6 +24,7 @@ public class AdversaryLearningConfiguration {
   public static final String OBJECT_ENDING = ".obj";
   
   /**
+   * FIXME no more working via Rest
    * Fixed {@link ComputationGraph} learning rate
    */
   private double learningRate;
@@ -33,7 +40,7 @@ public class AdversaryLearningConfiguration {
    * Otherwise with alwaysUpdateNeuralNetwork = false and mini batches > 1 it is dependent of 
    * performed {@link ComputationGraph} updates using the fit method.
    */
-  private ISchedule learningRateSchedule;
+  private MapSchedule learningRateSchedule;
 
   /**
    * Size of mini batches used to perform {@link ComputationGraph} updates with fit.
@@ -68,6 +75,11 @@ public class AdversaryLearningConfiguration {
    * decide if the neural net gets updated or not.
    */
   private boolean alwaysUpdateNeuralNetwork;
+  
+  /**
+   * 
+   */
+  private int numberOfAllAvailableMoves;
 
   /**
    * Number of total games to perform before deciding to update neural net or not.
@@ -177,12 +189,13 @@ public class AdversaryLearningConfiguration {
   public static class Builder {
 
     private double learningRate = 1e-4;
-    private ISchedule learningRateSchedule;
+    private MapSchedule learningRateSchedule;
     private int batchSize = 8192;
 
     private double dirichletAlpha = 1.1;
     private double dirichletWeight = 0.45;
     private boolean alwaysUpdateNeuralNetwork = true;
+    private int numberOfAllAvailableMoves;
     private int numberOfGamesToDecideUpdate = 36;
     private double gamesWinRatioThresholdNewNetworkUpdate = 0.55;
     private int numberOfEpisodesBeforePotentialUpdate = 10;
@@ -210,6 +223,7 @@ public class AdversaryLearningConfiguration {
       configuration.dirichletAlpha = dirichletAlpha;
       configuration.dirichletWeight = dirichletWeight;
       configuration.alwaysUpdateNeuralNetwork = alwaysUpdateNeuralNetwork;
+      configuration.numberOfAllAvailableMoves = numberOfAllAvailableMoves;
       configuration.numberOfGamesToDecideUpdate = numberOfGamesToDecideUpdate;
       configuration.gamesWinRatioThresholdNewNetworkUpdate = gamesWinRatioThresholdNewNetworkUpdate;
       configuration.numberOfEpisodesBeforePotentialUpdate = numberOfEpisodesBeforePotentialUpdate;
@@ -222,8 +236,8 @@ public class AdversaryLearningConfiguration {
       configuration.maxTrainExamplesHistory = maxTrainExamplesHistory;
       configuration.uctConstantFactor = uctConstantFactor;
       configuration.numberOfMonteCarloSimulations = numberOfMonteCarloSimulations;
-      configuration.bestModelFileName = bestModelFileName;
-      configuration.trainExamplesFileName = trainExamplesFileName;
+      configuration.bestModelFileName = getAbsolutePathFrom(bestModelFileName);
+      configuration.trainExamplesFileName = getAbsolutePathFrom(trainExamplesFileName);
       
       return configuration;
     }
@@ -233,7 +247,7 @@ public class AdversaryLearningConfiguration {
       return this;
     }
 
-    public Builder learningRateSchedule(ISchedule learningRateSchedule) {
+    public Builder learningRateSchedule(MapSchedule learningRateSchedule) {
       this.learningRateSchedule = learningRateSchedule;
       return this;
     }
@@ -265,6 +279,11 @@ public class AdversaryLearningConfiguration {
     
     public Builder alwaysUpdateNeuralNetwork(boolean alwaysUpdateNeuralNetwork) {
       this.alwaysUpdateNeuralNetwork = alwaysUpdateNeuralNetwork;
+      return this;
+    }
+    
+    public Builder numberOfAllAvailableMoves(int numberOfAllAvailableMoves) {
+      this.numberOfAllAvailableMoves = numberOfAllAvailableMoves;
       return this;
     }
     
@@ -337,6 +356,7 @@ public class AdversaryLearningConfiguration {
         "\n dirichletAlpha: " + this.dirichletAlpha + 
         "\n dirichletWeight: " + this.dirichletWeight +
         "\n alwaysUpdateNeuralNetwork: " + this.alwaysUpdateNeuralNetwork +
+        "\n numberOfAllAvailableMoves: " + this.numberOfAllAvailableMoves +
         "\n gamesToGetNewNetworkWinRatio: " + (this.alwaysUpdateNeuralNetwork ? "-" : this.numberOfGamesToDecideUpdate) +
         "\n gamesWinRatioThresholdNewNetworkUpdate: " + (this.alwaysUpdateNeuralNetwork ? "-" : this.gamesWinRatioThresholdNewNetworkUpdate) +
         "\n numberOfEpisodesBeforePotentialUpdate: " + this.numberOfEpisodesBeforePotentialUpdate + 
@@ -361,12 +381,27 @@ public class AdversaryLearningConfiguration {
     this.learningRate = neuralNetworkLearningRate;
   }
   
-  public ISchedule getLearningRateSchedule() {
+  public MapSchedule getLearningRateSchedule() {
     return learningRateSchedule;
   }
 
-  public void setLearningRateSchedule(ISchedule learningRateSchedule) {
+  @JsonProperty("learningRateSchedule")
+  public Map<Integer, Double> getLearningRateScheduleMap() {
+    
+    if (null != this.learningRateSchedule) {
+      return this.learningRateSchedule.getValues();
+    }
+    
+    return Collections.emptyMap();
+  }
+
+  public void setLearningRateSchedule(MapSchedule learningRateSchedule) {
     this.learningRateSchedule = learningRateSchedule;
+  }
+
+  @JsonSetter
+  public void setLearningRateSchedule(Map<Integer, Double> learningRatesByIterations) {
+    this.learningRateSchedule = new MapSchedule(ScheduleType.ITERATION, learningRatesByIterations);
   }
   
   public int getBatchSize() {
@@ -399,6 +434,14 @@ public class AdversaryLearningConfiguration {
 
   public void setAlwaysUpdateNeuralNetwork(boolean alwaysUpdateNeuralNetwork) {
     this.alwaysUpdateNeuralNetwork = alwaysUpdateNeuralNetwork;
+  }
+
+  public int getNumberOfAllAvailableMoves() {
+    return numberOfAllAvailableMoves;
+  }
+
+  public void setNumberOfAllAvailableMoves(int numberOfAllAvailableMoves) {
+    this.numberOfAllAvailableMoves = numberOfAllAvailableMoves;
   }
 
   public int getNumberOfGamesToDecideUpdate() {
@@ -509,11 +552,17 @@ public class AdversaryLearningConfiguration {
     this.numberOfMonteCarloSimulations = nummberOfMonteCarloSimulations;
   }
   
-  public String getAbsolutePathFrom(String fileName) {
-  
-    String currentPath = String.valueOf(Paths.get(StringUtils.EMPTY).toAbsolutePath());
+  public static String getAbsolutePathFrom(String fileName) {
     
-    return currentPath + File.separator + fileName;
+    Path filePath = Paths.get(fileName);
+    
+    if (!filePath.isAbsolute()) {
+
+      Path currentPath = Paths.get(StringUtils.EMPTY).toAbsolutePath();
+      return String.valueOf(Paths.get(String.valueOf(currentPath), fileName));
+    }
+    
+    return String.valueOf(filePath);
   }
 
   public String getBestModelFileName() {

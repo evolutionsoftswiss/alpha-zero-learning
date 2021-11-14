@@ -14,7 +14,7 @@ public class GraphLoader {
   public static ComputationGraph loadComputationGraph(AdversaryLearningConfiguration adversaryLearningConfiguration) {
 
     String absoluteBestModelPath =
-        adversaryLearningConfiguration.getAbsolutePathFrom(adversaryLearningConfiguration.getBestModelFileName());
+        AdversaryLearningConfiguration.getAbsolutePathFrom(adversaryLearningConfiguration.getBestModelFileName());
 
     try {
       ComputationGraph computationGraph = ModelSerializer.restoreComputationGraph(absoluteBestModelPath, true);

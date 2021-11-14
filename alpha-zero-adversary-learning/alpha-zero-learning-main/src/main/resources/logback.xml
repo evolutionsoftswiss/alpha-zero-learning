@@ -16,7 +16,7 @@
 
     <logger name="ch.evolutionsoft.rl" level="DEBUG" />
     <logger name="org.apache.catalina.core" level="DEBUG" />
-    <logger name="org.springframework" level="DEBUG" />
+    <logger name="org.springframework" level="INFO" />
     <logger name="org.deeplearning4j" level="INFO" />
     <logger name="org.canova" level="INFO" />
     <logger name="org.datavec" level="INFO" />
