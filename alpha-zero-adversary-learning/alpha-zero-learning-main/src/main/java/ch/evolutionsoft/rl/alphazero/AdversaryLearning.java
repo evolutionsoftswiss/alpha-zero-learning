@@ -509,44 +509,46 @@ public class AdversaryLearning {
 
   void writeMapToFile(String trainExamplesKeyPath, String trainExamplesValuesPath, Map<INDArray, AdversaryTrainingExample> sourceMap) throws IOException {
 
-    AdversaryTrainingExample example = sourceMap.values().iterator().next();
-    
-    long[] boardShape = sourceMap.keySet().iterator().next().shape();
-    long[] actionShape = example.getActionIndexProbabilities().shape();
-    
-    INDArray allBoardsKey = Nd4j.zeros(sourceMap.size(), boardShape[0], boardShape[1], boardShape[2]);
-    INDArray allValues = Nd4j.zeros(sourceMap.size(), actionShape[0] + 3);
-    
-    int exampleNumber = 0;
-    for (Map.Entry<INDArray, AdversaryTrainingExample> currentExampleEntry : sourceMap.entrySet()) {
- 
-      allBoardsKey.putSlice(exampleNumber, currentExampleEntry.getKey());
-      INDArray valueNDArray = Nd4j.zeros(actionShape[0] + 3);
-
-      AdversaryTrainingExample value = currentExampleEntry.getValue();
-      INDArray actionIndexProbabilities = value.getActionIndexProbabilities();
-      for (int actionIndex = 0; actionIndex <= actionShape[0] - 1; actionIndex++) {
+    if (!sourceMap.isEmpty()) {
+      AdversaryTrainingExample example = sourceMap.values().iterator().next();
       
-        valueNDArray.putScalar(actionIndex, actionIndexProbabilities.getFloat(actionIndex));
+      long[] boardShape = sourceMap.keySet().iterator().next().shape();
+      long[] actionShape = example.getActionIndexProbabilities().shape();
+      
+      INDArray allBoardsKey = Nd4j.zeros(sourceMap.size(), boardShape[0], boardShape[1], boardShape[2]);
+      INDArray allValues = Nd4j.zeros(sourceMap.size(), actionShape[0] + 3);
+      
+      int exampleNumber = 0;
+      for (Map.Entry<INDArray, AdversaryTrainingExample> currentExampleEntry : sourceMap.entrySet()) {
+   
+        allBoardsKey.putSlice(exampleNumber, currentExampleEntry.getKey());
+        INDArray valueNDArray = Nd4j.zeros(actionShape[0] + 3);
+  
+        AdversaryTrainingExample value = currentExampleEntry.getValue();
+        INDArray actionIndexProbabilities = value.getActionIndexProbabilities();
+        for (int actionIndex = 0; actionIndex <= actionShape[0] - 1; actionIndex++) {
+        
+          valueNDArray.putScalar(actionIndex, actionIndexProbabilities.getFloat(actionIndex));
+        }
+        valueNDArray.putScalar(actionShape[0], value.getCurrentPlayer());
+        valueNDArray.putScalar(actionShape[0] + 1, value.getCurrentPlayerValue());
+        valueNDArray.putScalar(actionShape[0] + 2, value.getIteration());
+        allValues.putRow(exampleNumber, valueNDArray);
+        
+        exampleNumber++;
       }
-      valueNDArray.putScalar(actionShape[0], value.getCurrentPlayer());
-      valueNDArray.putScalar(actionShape[0] + 1, value.getCurrentPlayerValue());
-      valueNDArray.putScalar(actionShape[0] + 2, value.getIteration());
-      allValues.putRow(exampleNumber, valueNDArray);
-      
-      exampleNumber++;
-    }
 
-    try (DataOutputStream dataOutputStream =
-        new DataOutputStream(new FileOutputStream(trainExamplesKeyPath))) {
+      try (DataOutputStream dataOutputStream =
+          new DataOutputStream(new FileOutputStream(trainExamplesKeyPath))) {
 
-      Nd4j.write(allBoardsKey, dataOutputStream);
-    }
+        Nd4j.write(allBoardsKey, dataOutputStream);
+      }
 
-    try (DataOutputStream dataOutputStream =
-        new DataOutputStream(new FileOutputStream(trainExamplesValuesPath))) {
+      try (DataOutputStream dataOutputStream =
+          new DataOutputStream(new FileOutputStream(trainExamplesValuesPath))) {
 
-      Nd4j.write(allValues, dataOutputStream);
+        Nd4j.write(allValues, dataOutputStream);
+      }
     }
   }
   
