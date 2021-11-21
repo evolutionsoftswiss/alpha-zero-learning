@@ -6,6 +6,11 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Set;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 
 import org.deeplearning4j.nn.graph.ComputationGraph;
 import org.deeplearning4j.util.ModelSerializer;
@@ -42,15 +47,17 @@ public class NeuralNetUpdater {
   
   AdversaryLearningSharedHelper adversaryLearningSharedHelper;
 
+  ExecutorService initializationExecutor = Executors.newSingleThreadExecutor();
+
   WebClient webClient;
 
-  final ParameterizedTypeReference<List<AdversaryTrainingExample>> paramterizedTypeReference =
-      new ParameterizedTypeReference<List<AdversaryTrainingExample>>() {
+  final ParameterizedTypeReference<Set<AdversaryTrainingExample>> parameterizedTypeReference =
+      new ParameterizedTypeReference<Set<AdversaryTrainingExample>>() {
     
   };
 
   public NeuralNetUpdater() {
-    
+
     this.webClient = WebClient.builder().
         clientConnector(new ReactorClientHttpConnector()).
         codecs(configurer -> configurer.defaultCodecs().maxInMemorySize(ONE_GIGA_BYTE)).
@@ -63,8 +70,20 @@ public class NeuralNetUpdater {
        new AnnotationConfigApplicationContext(NeuralNetUpdater.class);
     
     NeuralNetUpdater neuralNetUpdater = applicationContext.getBean(NeuralNetUpdater.class);
+
+    neuralNetUpdater.initializationExecutor.submit(new Callable<Void>() {
+
+      @Override
+      public Void call() throws Exception {
+
+        neuralNetUpdater.initialize();
+        
+        return null;
+      }
+      
+    });
+    neuralNetUpdater.initializationExecutor.shutdown();
     
-    neuralNetUpdater.initialize();
     neuralNetUpdater.listenForNewTrainingExamples();
     
     applicationContext.close();
@@ -72,6 +91,8 @@ public class NeuralNetUpdater {
 
   public void initialize() throws IOException {
 
+    log.info("Wait for AdversaryLearning readiness");
+    
     while (!this.adversaryLearningIsReady()) {
       // Wait for startup
     }
@@ -83,14 +104,13 @@ public class NeuralNetUpdater {
         retrieve().
         bodyToMono(AdversaryLearningConfiguration.class).
         block();
-       
-    
+
     this.adversaryLearningSharedHelper = new AdversaryLearningSharedHelper(
         adversaryLearningConfiguration);
 
     if (null != adversaryLearningConfiguration &&
         adversaryLearningConfiguration.getIterationStart() > 1) {
-      this.adversaryLearningSharedHelper.loadEarlierTrainingExamples(true);
+      this.adversaryLearningSharedHelper.loadEarlierTrainingExamples();
     }
     
     while (!getAdversaryLearningIsInitialized()) {
@@ -102,40 +122,79 @@ public class NeuralNetUpdater {
   
   public void listenForNewTrainingExamples() {
 
-    final String targetUrl = CONTROLLER_BASE_URL + "/newTrainingExamples";
+    String targetUrl = CONTROLLER_BASE_URL + "/newTrainingExamples";
+    Set<AdversaryTrainingExample> newExamples = null;
+    Set<AdversaryTrainingExample> previousExamples = null;
     
-    for (int iteration = adversaryLearningConfiguration.getIterationStart();
-        iteration < adversaryLearningConfiguration.getIterationStart() + 
-        adversaryLearningConfiguration.getNumberOfIterations();
-        iteration++) {
-        
-      List<AdversaryTrainingExample> newExamples = 
-            webClient.get().
-            uri(URI.create(targetUrl)).
-            retrieve().
-            bodyToMono(paramterizedTypeReference).
-            block();
-        ComputationGraph computationGraph = fitNeuralNet(newExamples);
-        try {
+    ExecutorService netUpdaterExecutor = null;
+    
+    boolean firstUpdate = true;
+
+    try {
+      
+      while (!this.initializationExecutor.awaitTermination(Long.MAX_VALUE, TimeUnit.MINUTES)) {
+        // Wait for initilzation
+      }
+      
+      for (int iteration = adversaryLearningConfiguration.getIterationStart();
+          iteration < adversaryLearningConfiguration.getIterationStart() + 
+          adversaryLearningConfiguration.getNumberOfIterations();
+          iteration++) {
           
-          ModelSerializer.writeModel(computationGraph, adversaryLearningConfiguration.getBestModelFileName(), true);
-
-          webClient.
-          put().
-          uri(URI.create(CONTROLLER_BASE_URL + "/modelUpdated")).
-          retrieve().
-          bodyToMono(Void.class).
-          block();
+        previousExamples = newExamples;
+        newExamples = 
+              webClient.get().
+              uri(URI.create(targetUrl)).
+              retrieve().
+              bodyToMono(parameterizedTypeReference).
+              block();
         
-        } catch (WebClientRequestException wcre) {
+        if (!firstUpdate) {
+          while (null != netUpdaterExecutor && !netUpdaterExecutor.awaitTermination(Long.MAX_VALUE, TimeUnit.MINUTES)) {
+            // Wait for previous net update
+          }
+          
+          final int updateIteration = iteration;
+          netUpdaterExecutor = Executors.newSingleThreadExecutor();
+          final List<AdversaryTrainingExample> finalInputList = new LinkedList<>(previousExamples);
+          netUpdaterExecutor.execute(new Runnable() {
+            
+            @Override
+            public void run() {
+    
+              ComputationGraph computationGraph = fitNeuralNet(finalInputList);
+    
+              try {
+                  
+                  ModelSerializer.writeModel(computationGraph, adversaryLearningConfiguration.getBestModelFileName(), true);
+    
+                  webClient.
+                  put().
+                  uri(URI.create(CONTROLLER_BASE_URL + "/modelUpdated")).
+                  retrieve().
+                  bodyToMono(Void.class).
+                  block();
+                
+                } catch (WebClientRequestException wcre) {
+    
+                  log.warn("Continue next iteration, current iteration {} failed, "
+                      + "encountered ResourceAccessException", updateIteration);
+    
+                } catch (IOException ioe) {
+    
+                  log.error("Error writing updated model", ioe);
+                }
+            }
+          });
 
-          log.warn("Continue next iteration, current iteration {} failed, "
-              + "encountered ResourceAccessException", iteration);
-
-        } catch (IOException ioe) {
-
-          log.error("Error writing updated model", ioe);
+          netUpdaterExecutor.shutdown();
         }
+        firstUpdate = false;
+      }
+    } catch (InterruptedException ie) {
+      
+      Thread.currentThread().interrupt();
+      throw new NeuralNetUpdaterRuntimeException(ie);
     }
   }
 
@@ -163,7 +222,11 @@ public class NeuralNetUpdater {
   
   ComputationGraph fitNeuralNet(List<AdversaryTrainingExample> newExamples) {
     
-    this.adversaryLearningSharedHelper.replaceOldTrainingExamplesWithNewActionProbabilities(newExamples);
+    log.info("Replace old present examples with new ones");
+    this.adversaryLearningSharedHelper.replaceOldTrainingExamplesWithNewActionProbabilities(
+        newExamples);
+
+    log.info("Resize train examples history");
     this.adversaryLearningSharedHelper.resizeTrainExamplesHistory();
 
     List<AdversaryTrainingExample> trainingExamples =
@@ -175,7 +238,8 @@ public class NeuralNetUpdater {
     int batchSize = this.adversaryLearningConfiguration.getBatchSize();
     long trainingExamplesSize = trainingExamples.size();
     int batchNumber = (int) (1 + trainingExamplesSize / batchSize);
-    
+
+    log.info("Create minibatches");    
     List<MultiDataSet> batchedMultiDataSet = createMiniBatchList(trainingExamples);
 
     for (int batchIteration = 0; batchIteration < batchNumber; batchIteration++) {
@@ -234,32 +298,7 @@ public class NeuralNetUpdater {
         AdversaryTrainingExample currentTrainingExample = trainingExamples.get(exampleNumber);
         inputBoards.putRow(batchExample, currentTrainingExample.getBoard());
   
-        INDArray actionIndexProbabilities = Nd4j.zeros(adversaryLearningConfiguration.getNumberOfAllAvailableMoves());
-        INDArray trainingExampleActionProbabilities = currentTrainingExample.getActionIndexProbabilities();
-
-        // TODO review simplification by always having getNumberOfAllAvailableMoves
-        if (actionIndexProbabilities.shape()[0] > trainingExampleActionProbabilities.shape()[0]) {
-  
-          // Leave remaining moves at the end with 0, only pass at numberOfSquares in Go
-          for (int i = 0; i < trainingExampleActionProbabilities.shape()[0]; i++) {
-            actionIndexProbabilities.putScalar(i, trainingExampleActionProbabilities.getDouble(i));
-          }
-  
-        } else if (actionIndexProbabilities.shape()[0] < currentTrainingExample.getActionIndexProbabilities()
-            .shape()[0]) {
-  
-          throw new IllegalArgumentException(
-              "Training example has more action than maximally specified by game.getNumberOfAllAvailableMoves()\n"
-                  + "Max specified shape is " + actionIndexProbabilities.shape()[0] + " versus training example "
-                  + currentTrainingExample.getActionIndexProbabilities());
-  
-        } else {
-  
-          // Shapes do match
-          actionIndexProbabilities = trainingExampleActionProbabilities;
-        }
-  
-        probabilitiesLabels.putRow(batchExample, actionIndexProbabilities);
+        probabilitiesLabels.putRow(batchExample, currentTrainingExample.getActionIndexProbabilities());
   
         valueLabels.putRow(batchExample, Nd4j.zeros(1).putScalar(0, currentTrainingExample.getCurrentPlayerValue()));
       }

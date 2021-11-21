@@ -3,6 +3,7 @@ package ch.evolutionsoft.rl.alphazero;
 import java.io.IOException;
 import java.util.Collections;
 import java.util.List;
+import java.util.Set;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -59,12 +60,13 @@ public class AdversaryLearningController {
   }
 
   @GetMapping("/newTrainingExamples")
-  public List<AdversaryTrainingExample> getAdversaryTrainingExamples() {
+  public Set<AdversaryTrainingExample> getAdversaryTrainingExamples() {
 
     log.info("Request all training examples from new adversary learning iteration.");    
     try {
 
-      List<AdversaryTrainingExample> allTrainingExamples = adversaryLearning.performIteration();
+      Set<AdversaryTrainingExample> allTrainingExamples =
+          adversaryLearning.performIteration();
  
       log.info("Adversary learning self plays returned new total {} training examples",
           allTrainingExamples.size());    
@@ -78,7 +80,7 @@ public class AdversaryLearningController {
 
     log.warn("Continuing with empty list trining examples"); 
     
-    return Collections.emptyList();
+    return Collections.emptySet();
   }
 
   @PutMapping("/modelUpdated")

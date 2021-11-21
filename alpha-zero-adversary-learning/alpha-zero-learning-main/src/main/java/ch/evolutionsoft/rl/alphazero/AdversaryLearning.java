@@ -118,15 +118,16 @@ public class AdversaryLearning {
 
 
     ExecutorService executor = Executors.newSingleThreadExecutor();
-    CompletionService<Void> completionService = new ExecutorCompletionService<>(executor);
-    
 
-    completionService.submit(new Callable<Void>() {
+    executor.submit(new Callable<Void>() {
 
       @Override
       public Void call() throws Exception {
 
-        AdversaryLearning.this.sharedHelper.loadEarlierTrainingExamples(AdversaryLearning.this.restoreTrainingExamples);
+        if (AdversaryLearning.this.restoreTrainingExamples) {
+        
+          AdversaryLearning.this.sharedHelper.loadEarlierTrainingExamples();
+        }
         
         return null;
       }
@@ -156,7 +157,7 @@ public class AdversaryLearning {
     return new ArrayList<>(this.sharedHelper.getTrainExamplesHistory().values());
   }
 
-  public List<AdversaryTrainingExample> performIteration() throws IOException {
+  public Set<AdversaryTrainingExample> performIteration() throws IOException {
 
     final int currentIteration = iteration;
     ThreadPoolExecutor executor = (ThreadPoolExecutor) Executors.newFixedThreadPool(
@@ -206,13 +207,10 @@ public class AdversaryLearning {
       Thread.currentThread().interrupt();
       throw new AdversaryLearningRuntimeException(exception);
     }
-
-    this.sharedHelper.replaceOldTrainingExamplesWithNewActionProbabilities(
-        examplesFromEpisodes);
  
     saveTrainExamplesHistory();
 
-    return new ArrayList<>(examplesFromEpisodes);
+    return examplesFromEpisodes;
   }
   
   public List<AdversaryTrainingExample> executeEpisode(
@@ -513,7 +511,7 @@ public class AdversaryLearning {
 
     AdversaryTrainingExample example = sourceMap.values().iterator().next();
     
-    long[] boardShape = example.getBoard().shape();
+    long[] boardShape = sourceMap.keySet().iterator().next().shape();
     long[] actionShape = example.getActionIndexProbabilities().shape();
     
     INDArray allBoardsKey = Nd4j.zeros(sourceMap.size(), boardShape[0], boardShape[1], boardShape[2]);

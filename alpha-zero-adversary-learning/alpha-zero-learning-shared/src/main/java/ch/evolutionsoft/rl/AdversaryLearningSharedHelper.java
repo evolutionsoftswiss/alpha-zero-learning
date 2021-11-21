@@ -49,26 +49,23 @@ public class AdversaryLearningSharedHelper {
      );
   }
 
-  public void loadEarlierTrainingExamples(boolean restoreTrainingExamples) throws IOException {
+  public void loadEarlierTrainingExamples() throws IOException {
 
-    if (restoreTrainingExamples) {
+    log.info("Restoring trainExamplesByBoard history map, this may take a while...");
+    
+    String trainExamplesFile = adversaryLearningConfiguration.getTrainExamplesFileName();
+    loadMapFromFile(trainExamplesFile);
 
-      log.info("Restoring trainExamplesByBoard history map, this may take a while...");
-      
-      String trainExamplesFile = adversaryLearningConfiguration.getTrainExamplesFileName();
-      loadMapFromFile(trainExamplesFile);
+    log.info("Restoring exampleBoardsByIteration from trainExamplesByBoard map...");
+    
+    this.initializeTrainExampleBoardsByIterationFromTrainExamplesHistory();
 
-      log.info("Restoring exampleBoardsByIteration from trainExamplesByBoard map...");
-      
-      this.initializeTrainExampleBoardsByIterationFromTrainExamplesHistory();
-
-      log.info("Train examples maps restored from {}", trainExamplesFile);
-      log.info("trainExamplesByBoard map has {} restored AdversaryTrainingExamples entries",
-          this.getTrainExamplesHistory().size());
-      log.info("exampleBoardsByIteration map has {} restored Set of boards entries with total {} examples",
-          this.getTrainExampleBoardsByIteration().size(),
-          this.countAllExampleBoardsByIteration());
-    }
+    log.info("Train examples maps restored from {}", trainExamplesFile);
+    log.info("trainExamplesByBoard map has {} restored AdversaryTrainingExamples entries",
+        this.getTrainExamplesHistory().size());
+    log.info("exampleBoardsByIteration map has {} restored Set of boards entries with total {} examples",
+        this.getTrainExampleBoardsByIteration().size(),
+        this.countAllExampleBoardsByIteration());
   }
 
   void loadMapFromFile(String trainExamplesFile) throws IOException {
@@ -169,21 +166,25 @@ public class AdversaryLearningSharedHelper {
         );
   }
   
-  public void replaceOldTrainingExamplesWithNewActionProbabilities(
+  public Map<INDArray, AdversaryTrainingExample> replaceOldTrainingExamplesWithNewActionProbabilities(
       Collection<AdversaryTrainingExample> newExamples) {
 
     int replacedNumber = 0;
     Set<INDArray> newIterationBoards = new HashSet<>();
     int currentIteration = newExamples.iterator().next().getIteration();
+    Map<INDArray, AdversaryTrainingExample> newExamplesByBoard = new HashMap<>();
 
     for (AdversaryTrainingExample currentExample : newExamples) {
       
       INDArray currentBoard = currentExample.getBoard();
       newIterationBoards.add(currentBoard);
       AdversaryTrainingExample oldExample = trainExamplesHistory.put(currentBoard, currentExample);
-      
+      newExamplesByBoard.put(currentBoard, currentExample);
+
       if (null != oldExample && oldExample.getIteration() != currentIteration) {
-        Set<INDArray> boardEntriesByOldIteration = trainExampleBoardsByIteration.get(oldExample.getIteration());
+
+        int iteration = oldExample.getIteration();
+        Set<INDArray> boardEntriesByOldIteration = trainExampleBoardsByIteration.get(iteration);
         boardEntriesByOldIteration.remove(currentBoard);
         
         if (log.isDebugEnabled()) {
@@ -204,6 +205,8 @@ public class AdversaryLearningSharedHelper {
           trainExamplesHistory.size(),
           listTotalSize);
     }
+    
+    return newExamplesByBoard;
   }
 
   public void resizeTrainExamplesHistory() {
