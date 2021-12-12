@@ -2,7 +2,6 @@ package ch.evolutionsoft.rl.alphazero;
 
 import java.io.IOException;
 import java.util.Collections;
-import java.util.List;
 import java.util.Set;
 
 import org.slf4j.Logger;
@@ -46,19 +45,6 @@ public class AdversaryLearningController {
     return adversaryLearning.initialized;
   }
 
-  @GetMapping("/trainExamplesList")
-  public List<AdversaryTrainingExample> getAdversaryTrainingExamplesList() {
-
-    log.info("Request all training examples from stored history.");    
-
-    List<AdversaryTrainingExample> trainingExamplesList = adversaryLearning.getAllTrainingExamples();
- 
-    log.info("Adversary learning self plays returned new total {} training examples map",
-        trainingExamplesList.size());    
-
-    return trainingExamplesList;
-  }
-
   @GetMapping("/newTrainingExamples")
   public Set<AdversaryTrainingExample> getAdversaryTrainingExamples() {
 
@@ -78,7 +64,7 @@ public class AdversaryLearningController {
       log.error("Error getting actual training examples", ioe);
     }
 
-    log.warn("Continuing with empty list trining examples"); 
+    log.warn("Continuing with empty list training examples"); 
     
     return Collections.emptySet();
   }

@@ -45,9 +45,10 @@ public class ConnectFourReinforcementLearningMain {
     ConnectFour connectFourGame = new ConnectFour(Game.MAX_PLAYER);
 
     Map<Integer, Double> learningRatesByIterations = new HashMap<>();
-    learningRatesByIterations.put(0, 2e-3);
-    learningRatesByIterations.put(1500, 1e-3);
+    learningRatesByIterations.put(0, 1e-3);
     learningRatesByIterations.put(3000, 5e-4);
+    learningRatesByIterations.put(6000, 1e-4);
+    learningRatesByIterations.put(9000, 5e-5);
     MapSchedule learningRateMapSchedule = new MapSchedule(ScheduleType.ITERATION, learningRatesByIterations);
     AdversaryLearningConfiguration adversaryLearningConfiguration =
         new AdversaryLearningConfiguration.Builder().
@@ -61,12 +62,12 @@ public class ConnectFourReinforcementLearningMain {
         fromNumberOfIterationsTemperatureZero(-1).
         fromNumberOfMovesTemperatureZero(9).
         iterationStart(1).
-        maxTrainExamplesHistory(147456).
+        maxTrainExamplesHistory(163840).
         numberOfIterations(1500).
         numberOfEpisodesBeforePotentialUpdate(20).
         numberOfEpisodeThreads(20).
         numberOfMonteCarloSimulations(200).
-        uctConstantFactor(1.2).
+        uctConstantFactor(1.5).
         
         build();
    

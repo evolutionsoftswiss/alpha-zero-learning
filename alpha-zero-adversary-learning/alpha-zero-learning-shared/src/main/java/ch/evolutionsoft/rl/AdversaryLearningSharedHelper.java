@@ -185,10 +185,14 @@ public class AdversaryLearningSharedHelper {
 
         int iteration = oldExample.getIteration();
         Set<INDArray> boardEntriesByOldIteration = trainExampleBoardsByIteration.get(iteration);
-        boardEntriesByOldIteration.remove(currentBoard);
-        
-        if (log.isDebugEnabled()) {
-          replacedNumber++;
+
+        if (null != boardEntriesByOldIteration) {
+
+        	boardEntriesByOldIteration.remove(currentBoard);
+	        
+	        if (log.isDebugEnabled()) {
+	          replacedNumber++;
+	        }
         }
       }
     }
