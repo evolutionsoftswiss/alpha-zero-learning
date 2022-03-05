@@ -11,12 +11,15 @@ import org.deeplearning4j.nn.conf.layers.ActivationLayer;
 import org.deeplearning4j.nn.conf.layers.BatchNormalization;
 import org.deeplearning4j.nn.conf.layers.ConvolutionLayer;
 import org.deeplearning4j.nn.conf.layers.DenseLayer;
+import org.deeplearning4j.nn.conf.layers.GlobalPoolingLayer;
 import org.deeplearning4j.nn.conf.layers.OutputLayer;
+import org.deeplearning4j.nn.conf.layers.PoolingType;
 import org.deeplearning4j.nn.conf.layers.SeparableConvolution2D;
 import org.deeplearning4j.nn.conf.layers.SubsamplingLayer;
 import org.deeplearning4j.nn.weights.WeightInit;
 import org.nd4j.linalg.activations.Activation;
 import org.nd4j.linalg.learning.config.Adam;
+import org.nd4j.linalg.lossfunctions.LossFunctions;
 import org.nd4j.linalg.lossfunctions.LossFunctions.LossFunction;
 import org.nd4j.linalg.schedule.ISchedule;
 
@@ -24,17 +27,10 @@ import ch.evolutionsoft.rl.AdversaryLearningConstants;
 
 public class ConvolutionResidualNet {
   
-  private double learningRate = 1e-3;
-  
   private ISchedule learningRateSchedule;
   
   public ConvolutionResidualNet() {
     
-  }
-
-  public ConvolutionResidualNet(double learningRate) {
-
-    this.learningRate = learningRate;
   }
 
   public ConvolutionResidualNet(ISchedule learningRateSchedule) {
@@ -43,19 +39,11 @@ public class ConvolutionResidualNet {
   }
   
   NeuralNetConfiguration.Builder createGeneralConfiguration() {
-    
-    if (null != this.learningRateSchedule) {
-
-      return new NeuralNetConfiguration.Builder()
-          .seed(AdversaryLearningConstants.DEFAULT_SEED)
-          .updater(new Adam(learningRateSchedule))
-          .convolutionMode(ConvolutionMode.Strict)
-          .weightInit(WeightInit.RELU); 
-    }
 
     return new NeuralNetConfiguration.Builder()
         .seed(AdversaryLearningConstants.DEFAULT_SEED)
-        .updater(new Adam(learningRate))
+        .updater(new Adam(learningRateSchedule))
+        .weightDecay(1e-5, true)
         .convolutionMode(ConvolutionMode.Strict)
         .weightInit(WeightInit.RELU);
   }
@@ -80,7 +68,7 @@ public class ConvolutionResidualNet {
 
         // residual1
         .addLayer(RESIDUAL1_CONVOLUTION,
-            new ConvolutionLayer.Builder(2, 2).stride(1, 1).nOut(14).hasBias(false)
+            new ConvolutionLayer.Builder(1, 1).stride(1, 1).nOut(14).hasBias(false)
                 .convolutionMode(ConvolutionMode.Same).build(),
             BLOCK1_CONV2_ACTIVATION)
         .addLayer(RESIDUAL1, new BatchNormalization(), RESIDUAL1_CONVOLUTION)
@@ -96,33 +84,61 @@ public class ConvolutionResidualNet {
             new SeparableConvolution2D.Builder(2, 2).nOut(14).hasBias(false).convolutionMode(ConvolutionMode.Same)
                 .build(),
             BLOCK2_SEPCONV1_ACTIVATION)
-        .addLayer(BLOCK2_SEPARABLE_CONVOLUTION2_BATCH_NORNMALIZATION, new BatchNormalization(), BLOCK2_SEPARABLE_CONVOLUTION2)
+        .addLayer(BLOCK2_SEPARABLE_CONVOLUTION2_BATCH_NORMALIZATION, new BatchNormalization(), BLOCK2_SEPARABLE_CONVOLUTION2)
         .addLayer(BLOCK2_POOL,
             new SubsamplingLayer.Builder(SubsamplingLayer.PoolingType.AVG).kernelSize(2, 2).stride(1, 1)
                 .convolutionMode(ConvolutionMode.Same).build(),
-            BLOCK2_SEPARABLE_CONVOLUTION2_BATCH_NORNMALIZATION)
+            BLOCK2_SEPARABLE_CONVOLUTION2_BATCH_NORMALIZATION)
         
         .addVertex(ADD1, new ElementWiseVertex(ElementWiseVertex.Op.Add), BLOCK2_POOL, RESIDUAL1)
 
-        .addLayer("policy_conv",
-            new SeparableConvolution2D.Builder(1, 1).nOut(8).hasBias(false).convolutionMode(ConvolutionMode.Same)
-            .build(), ADD1)
+        // residual2
+        .addLayer("residual2_conv", new ConvolutionLayer.Builder(1,1).nOut(21).hasBias(false)
+                .convolutionMode(ConvolutionMode.Same).build(), ADD1)
+        .addLayer("residual2", new BatchNormalization(), "residual2_conv")
+        
+        // block3
+        .addLayer("block3_sepconv1_act", new ActivationLayer(Activation.LEAKYRELU), ADD1)
+        .addLayer("block3_sepconv1",
+            new SeparableConvolution2D.Builder(2, 2).nOut(21).hasBias(false).convolutionMode(ConvolutionMode.Same)
+                .build(),
+            "block3_sepconv1_act")
+        .addLayer("block3_sepconv1_bn", new BatchNormalization(), "block3_sepconv1")
+        .addLayer("block3_sepconv2_act", new ActivationLayer(Activation.LEAKYRELU), "block3_sepconv1_bn")
+        .addLayer("block3_sepconv2",
+            new SeparableConvolution2D.Builder(2, 2).nOut(21).hasBias(false).convolutionMode(ConvolutionMode.Same)
+                .build(),
+            "block3_sepconv2_act")
+        .addLayer("block3_sepconv2_bn", new BatchNormalization(), "block3_sepconv2")
+        .addLayer("block3_pool",
+            new SubsamplingLayer.Builder(SubsamplingLayer.PoolingType.MAX).kernelSize(2, 2).stride(1, 1)
+                .convolutionMode(ConvolutionMode.Same).build(),
+            "block3_sepconv2_bn")
+        .addVertex("add2", new ElementWiseVertex(ElementWiseVertex.Op.Add), "block3_pool", "residual2")
+
+        // block4
+        .addLayer("block4_sepconv1_act", new ActivationLayer(Activation.LEAKYRELU), "add2")
+        .addLayer("block4_sepconv1",
+            new SeparableConvolution2D.Builder(2, 2).nOut(28).hasBias(false).convolutionMode(ConvolutionMode.Same)
+                .build(),
+            "block4_sepconv1_act")
+        .addLayer("block4_sepconv1_bn", new BatchNormalization(), "block4_sepconv1")
+        .addLayer("block4_sepconv2_act", new ActivationLayer(Activation.LEAKYRELU), "block4_sepconv1_bn")
+        
+        .addLayer(AVERAGE_POOL, new GlobalPoolingLayer.Builder(PoolingType.AVG).build(), "block4_sepconv2_act")
         
         .addLayer("dense1", new DenseLayer.Builder().
             nOut(32).
             activation(Activation.LEAKYRELU).
-            build(), "policy_conv")
-
-        .addLayer("value_conv",
-            new SeparableConvolution2D.Builder(1, 1).nOut(2).hasBias(false).convolutionMode(ConvolutionMode.Same)
-            .build(), ADD1)
+            build(), AVERAGE_POOL)
         
         .addLayer("dense2", new DenseLayer.Builder().
             nOut(16).
             activation(Activation.LEAKYRELU).
-            build(), "value_conv")
+            build(), AVERAGE_POOL)
         
-        .addLayer(AdversaryLearningConstants.DEFAULT_OUTPUT_LAYER_NAME, new OutputLayer.Builder()
+        .addLayer(AdversaryLearningConstants.DEFAULT_OUTPUT_LAYER_NAME, new OutputLayer
+            .Builder(LossFunctions.LossFunction.MCXENT)
             .nOut(9)
             .activation(Activation.SOFTMAX)
             .build(), "dense1")

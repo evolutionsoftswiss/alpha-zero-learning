@@ -70,6 +70,11 @@ public class AdversaryTrainingExample implements Serializable {
     return board;
   }
 
+  public String getBoardString() {
+    
+    return AdversaryLearningSharedHelper.writeStringForArray(this.board);
+  }
+  
   @JsonProperty(value = "board")
   public String getBoardAsText() {
     return AdversaryLearningSharedHelper.writeStringForArray(getBoard());

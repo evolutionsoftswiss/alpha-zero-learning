@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.*;
 
 import java.io.IOException;
 import java.nio.file.Files;
+import java.nio.file.NoSuchFileException;
 import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.Collections;
@@ -16,9 +17,9 @@ import org.nd4j.linalg.api.ndarray.INDArray;
 import org.nd4j.linalg.factory.Nd4j;
 
 import ch.evolutionsoft.rl.AdversaryLearningConfiguration;
+import ch.evolutionsoft.rl.AdversaryLearningSharedHelper;
 import ch.evolutionsoft.rl.AdversaryTrainingExample;
 import ch.evolutionsoft.rl.Game;
-import ch.evolutionsoft.rl.alphazero.AdversaryLearning;
 
 class AdversaryLearningTest {
 
@@ -58,33 +59,35 @@ class AdversaryLearningTest {
     
     AdversaryTrainingExample adversaryTrainingExample1 = new AdversaryTrainingExample(dummyBoard1, Game.MAX_PLAYER, dummyAction, 1);
     adversaryTrainingExample1.setCurrentPlayerValue(0.5f);
-    adversaryLearning.getTrainExamplesHistory().put(dummyBoard1,
+    adversaryLearning.getTrainExamplesHistory().put(AdversaryLearningSharedHelper.writeStringForArray(dummyBoard1),
         adversaryTrainingExample1);
     AdversaryTrainingExample adversaryTrainingExample2 = new AdversaryTrainingExample(dummyBoard2, Game.MAX_PLAYER, dummyAction, 2);
     adversaryTrainingExample2.setCurrentPlayerValue(0.5f);
-    adversaryLearning.getTrainExamplesHistory().put(dummyBoard2,
+    adversaryLearning.getTrainExamplesHistory().put(AdversaryLearningSharedHelper.writeStringForArray(dummyBoard2),
         adversaryTrainingExample2);
     AdversaryTrainingExample adversaryTrainingExample3 = new AdversaryTrainingExample(dummyBoard3, Game.MAX_PLAYER, dummyAction, 3);
     adversaryTrainingExample3.setCurrentPlayerValue(0.5f);
-    adversaryLearning.getTrainExamplesHistory().put(dummyBoard3,
+    adversaryLearning.getTrainExamplesHistory().put(AdversaryLearningSharedHelper.writeStringForArray(dummyBoard3),
         adversaryTrainingExample3);
     AdversaryTrainingExample adversaryTrainingExample4 = new AdversaryTrainingExample(dummyBoard4, Game.MAX_PLAYER, dummyAction, 4);
     adversaryTrainingExample4.setCurrentPlayerValue(0.5f);
-    adversaryLearning.getTrainExamplesHistory().put(dummyBoard4,
+    adversaryLearning.getTrainExamplesHistory().put(AdversaryLearningSharedHelper.writeStringForArray(dummyBoard4),
         adversaryTrainingExample4);
     
-    adversaryLearning.getTrainExampleBoardsByIteration().put(1, Collections.singleton(dummyBoard1));
-    adversaryLearning.getTrainExampleBoardsByIteration().put(2, Collections.singleton(dummyBoard2));
-    adversaryLearning.getTrainExampleBoardsByIteration().put(3, Collections.singleton(dummyBoard3));
-    adversaryLearning.getTrainExampleBoardsByIteration().put(4, Collections.singleton(dummyBoard4));
+    adversaryLearning.getTrainExampleBoardsByIteration().put(1, Collections.singleton(AdversaryLearningSharedHelper.writeStringForArray(dummyBoard1)));
+    adversaryLearning.getTrainExampleBoardsByIteration().put(2, Collections.singleton(AdversaryLearningSharedHelper.writeStringForArray(dummyBoard2)));
+    adversaryLearning.getTrainExampleBoardsByIteration().put(3, Collections.singleton(AdversaryLearningSharedHelper.writeStringForArray(dummyBoard3)));
+    adversaryLearning.getTrainExampleBoardsByIteration().put(4, Collections.singleton(AdversaryLearningSharedHelper.writeStringForArray(dummyBoard4)));
+
+    adversaryLearning.iteration = 400;
 
     adversaryLearning.saveTrainExamplesHistory();
     
     assertEquals(3, adversaryLearning.getTrainExamplesHistory().size());
-    assertFalse(adversaryLearning.getTrainExamplesHistory().containsKey(dummyBoard1));
-    assertTrue(adversaryLearning.getTrainExamplesHistory().containsKey(dummyBoard2));
-    assertTrue(adversaryLearning.getTrainExamplesHistory().containsKey(dummyBoard3));
-    assertTrue(adversaryLearning.getTrainExamplesHistory().containsKey(dummyBoard4));
+    assertFalse(adversaryLearning.getTrainExamplesHistory().containsKey(AdversaryLearningSharedHelper.writeStringForArray(dummyBoard1)));
+    assertTrue(adversaryLearning.getTrainExamplesHistory().containsKey(AdversaryLearningSharedHelper.writeStringForArray(dummyBoard2)));
+    assertTrue(adversaryLearning.getTrainExamplesHistory().containsKey(AdversaryLearningSharedHelper.writeStringForArray(dummyBoard3)));
+    assertTrue(adversaryLearning.getTrainExamplesHistory().containsKey(AdversaryLearningSharedHelper.writeStringForArray(dummyBoard4)));
   }
 
   @Test
@@ -100,37 +103,41 @@ class AdversaryLearningTest {
     
     AdversaryTrainingExample adversaryTrainingExample1 = new AdversaryTrainingExample(dummyBoard1, Game.MAX_PLAYER, dummyAction, 1);
     adversaryTrainingExample1.setCurrentPlayerValue(0.5f);
-    adversaryLearning.getTrainExamplesHistory().put(dummyBoard1,
+    adversaryLearning.getTrainExamplesHistory().put(AdversaryLearningSharedHelper.writeStringForArray(dummyBoard1),
         adversaryTrainingExample1);
     AdversaryTrainingExample adversaryTrainingExample2 = new AdversaryTrainingExample(dummyBoard2, Game.MAX_PLAYER, dummyAction, 2);
     adversaryTrainingExample2.setCurrentPlayerValue(0.5f);
-    adversaryLearning.getTrainExamplesHistory().put(dummyBoard2,
+    adversaryLearning.getTrainExamplesHistory().put(AdversaryLearningSharedHelper.writeStringForArray(dummyBoard2),
         adversaryTrainingExample2);
     AdversaryTrainingExample adversaryTrainingExample3 = new AdversaryTrainingExample(dummyBoard3, Game.MAX_PLAYER, dummyAction, 3);
     adversaryTrainingExample3.setCurrentPlayerValue(0.5f);
-    adversaryLearning.getTrainExamplesHistory().put(dummyBoard3,
+    adversaryLearning.getTrainExamplesHistory().put(AdversaryLearningSharedHelper.writeStringForArray(dummyBoard3),
         adversaryTrainingExample3);
     AdversaryTrainingExample adversaryTrainingExample4 = new AdversaryTrainingExample(dummyBoard4, Game.MAX_PLAYER, dummyAction, 4);
     adversaryTrainingExample4.setCurrentPlayerValue(0.5f);
-    adversaryLearning.getTrainExamplesHistory().put(dummyBoard4,
+    adversaryLearning.getTrainExamplesHistory().put(AdversaryLearningSharedHelper.writeStringForArray(dummyBoard4),
         adversaryTrainingExample4);
     AdversaryTrainingExample adversaryTrainingExample5 = new AdversaryTrainingExample(dummyBoard5, Game.MAX_PLAYER, dummyAction, 3);
     adversaryTrainingExample5.setCurrentPlayerValue(0.5f);
-    adversaryLearning.getTrainExamplesHistory().put(dummyBoard5,
+    adversaryLearning.getTrainExamplesHistory().put(AdversaryLearningSharedHelper.writeStringForArray(dummyBoard5),
         adversaryTrainingExample5);
     
-    adversaryLearning.getTrainExampleBoardsByIteration().put(1, Collections.singleton(dummyBoard1));
-    adversaryLearning.getTrainExampleBoardsByIteration().put(2, new HashSet<>(Arrays.asList(dummyBoard2, dummyBoard3)));
-    adversaryLearning.getTrainExampleBoardsByIteration().put(3, new HashSet<>(Arrays.asList(dummyBoard4, dummyBoard5)));
+    adversaryLearning.getTrainExampleBoardsByIteration().put(1, Collections.singleton(AdversaryLearningSharedHelper.writeStringForArray(dummyBoard1)));
+    adversaryLearning.getTrainExampleBoardsByIteration().put(2,
+        new HashSet<>(Arrays.asList(AdversaryLearningSharedHelper.writeStringForArray(dummyBoard2), AdversaryLearningSharedHelper.writeStringForArray(dummyBoard3))));
+    adversaryLearning.getTrainExampleBoardsByIteration().put(3,
+        new HashSet<>(Arrays.asList(AdversaryLearningSharedHelper.writeStringForArray(dummyBoard4), AdversaryLearningSharedHelper.writeStringForArray(dummyBoard5))));
+
+    adversaryLearning.iteration = 400;
 
     adversaryLearning.saveTrainExamplesHistory();
     
     assertEquals(2, adversaryLearning.getTrainExamplesHistory().size());
-    assertFalse(adversaryLearning.getTrainExamplesHistory().containsKey(dummyBoard1));
-    assertFalse(adversaryLearning.getTrainExamplesHistory().containsKey(dummyBoard2));
-    assertFalse(adversaryLearning.getTrainExamplesHistory().containsKey(dummyBoard3));
-    assertTrue(adversaryLearning.getTrainExamplesHistory().containsKey(dummyBoard4));
-    assertTrue(adversaryLearning.getTrainExamplesHistory().containsKey(dummyBoard5));
+    assertFalse(adversaryLearning.getTrainExamplesHistory().containsKey(AdversaryLearningSharedHelper.writeStringForArray(dummyBoard1)));
+    assertFalse(adversaryLearning.getTrainExamplesHistory().containsKey(AdversaryLearningSharedHelper.writeStringForArray(dummyBoard2)));
+    assertFalse(adversaryLearning.getTrainExamplesHistory().containsKey(AdversaryLearningSharedHelper.writeStringForArray(dummyBoard3)));
+    assertTrue(adversaryLearning.getTrainExamplesHistory().containsKey(AdversaryLearningSharedHelper.writeStringForArray(dummyBoard4)));
+    assertTrue(adversaryLearning.getTrainExamplesHistory().containsKey(AdversaryLearningSharedHelper.writeStringForArray(dummyBoard5)));
   }
 
   @Test
@@ -144,27 +151,29 @@ class AdversaryLearningTest {
     
     AdversaryTrainingExample adversaryTrainingExample1 = new AdversaryTrainingExample(dummyBoard1, Game.MAX_PLAYER, dummyAction, 1);
     adversaryTrainingExample1.setCurrentPlayerValue(0.5f);
-    adversaryLearning.getTrainExamplesHistory().put(dummyBoard1,
+    adversaryLearning.getTrainExamplesHistory().put(AdversaryLearningSharedHelper.writeStringForArray(dummyBoard1),
         adversaryTrainingExample1);
     AdversaryTrainingExample adversaryTrainingExample2 = new AdversaryTrainingExample(dummyBoard2, Game.MAX_PLAYER, dummyAction, 2);
     adversaryTrainingExample2.setCurrentPlayerValue(0.5f);
-    adversaryLearning.getTrainExamplesHistory().put(dummyBoard2,
+    adversaryLearning.getTrainExamplesHistory().put(AdversaryLearningSharedHelper.writeStringForArray(dummyBoard2),
         adversaryTrainingExample2);
     AdversaryTrainingExample adversaryTrainingExample3 = new AdversaryTrainingExample(dummyBoard3, Game.MAX_PLAYER, dummyAction, 3);
     adversaryTrainingExample3.setCurrentPlayerValue(0.5f);
-    adversaryLearning.getTrainExamplesHistory().put(dummyBoard3,
+    adversaryLearning.getTrainExamplesHistory().put(AdversaryLearningSharedHelper.writeStringForArray(dummyBoard3),
         adversaryTrainingExample3);
     
-    adversaryLearning.getTrainExampleBoardsByIteration().put(1, Collections.singleton(dummyBoard1));
-    adversaryLearning.getTrainExampleBoardsByIteration().put(2, Collections.singleton(dummyBoard2));
-    adversaryLearning.getTrainExampleBoardsByIteration().put(3, Collections.singleton(dummyBoard3));
+    adversaryLearning.getTrainExampleBoardsByIteration().put(1, Collections.singleton(AdversaryLearningSharedHelper.writeStringForArray(dummyBoard1)));
+    adversaryLearning.getTrainExampleBoardsByIteration().put(2, Collections.singleton(AdversaryLearningSharedHelper.writeStringForArray(dummyBoard2)));
+    adversaryLearning.getTrainExampleBoardsByIteration().put(3, Collections.singleton(AdversaryLearningSharedHelper.writeStringForArray(dummyBoard3)));
 
+    adversaryLearning.iteration = 400;
+    
     adversaryLearning.saveTrainExamplesHistory();
     
     assertEquals(3, adversaryLearning.getTrainExamplesHistory().size());
-    assertTrue(adversaryLearning.getTrainExamplesHistory().containsKey(dummyBoard1));
-    assertTrue(adversaryLearning.getTrainExamplesHistory().containsKey(dummyBoard2));
-    assertTrue(adversaryLearning.getTrainExamplesHistory().containsKey(dummyBoard3));
+    assertTrue(adversaryLearning.getTrainExamplesHistory().containsKey(AdversaryLearningSharedHelper.writeStringForArray(dummyBoard1)));
+    assertTrue(adversaryLearning.getTrainExamplesHistory().containsKey(AdversaryLearningSharedHelper.writeStringForArray(dummyBoard2)));
+    assertTrue(adversaryLearning.getTrainExamplesHistory().containsKey(AdversaryLearningSharedHelper.writeStringForArray(dummyBoard3)));
   }
 
   @Test
@@ -177,21 +186,23 @@ class AdversaryLearningTest {
     
     AdversaryTrainingExample adversaryTrainingExample1 = new AdversaryTrainingExample(dummyBoard1, Game.MAX_PLAYER, dummyAction, 1);
     adversaryTrainingExample1.setCurrentPlayerValue(0.5f);
-    adversaryLearning.getTrainExamplesHistory().put(dummyBoard1,
+    adversaryLearning.getTrainExamplesHistory().put(AdversaryLearningSharedHelper.writeStringForArray(dummyBoard1),
         adversaryTrainingExample1);
     AdversaryTrainingExample adversaryTrainingExample2 = new AdversaryTrainingExample(dummyBoard2, Game.MAX_PLAYER, dummyAction, 2);
     adversaryTrainingExample2.setCurrentPlayerValue(0.5f);
-    adversaryLearning.getTrainExamplesHistory().put(dummyBoard2,
+    adversaryLearning.getTrainExamplesHistory().put(AdversaryLearningSharedHelper.writeStringForArray(dummyBoard2),
         adversaryTrainingExample2);
     
-    adversaryLearning.getTrainExampleBoardsByIteration().put(1, Collections.singleton(dummyBoard1));
-    adversaryLearning.getTrainExampleBoardsByIteration().put(2, Collections.singleton(dummyBoard2));
+    adversaryLearning.getTrainExampleBoardsByIteration().put(1, Collections.singleton(AdversaryLearningSharedHelper.writeStringForArray(dummyBoard1)));
+    adversaryLearning.getTrainExampleBoardsByIteration().put(2, Collections.singleton(AdversaryLearningSharedHelper.writeStringForArray(dummyBoard2)));
+
+    adversaryLearning.iteration = 400;
 
     adversaryLearning.saveTrainExamplesHistory();
     
     assertEquals(2, adversaryLearning.getTrainExamplesHistory().size());
-    assertTrue(adversaryLearning.getTrainExamplesHistory().containsKey(dummyBoard1));
-    assertTrue(adversaryLearning.getTrainExamplesHistory().containsKey(dummyBoard2));
+    assertTrue(adversaryLearning.getTrainExamplesHistory().containsKey(AdversaryLearningSharedHelper.writeStringForArray(dummyBoard1)));
+    assertTrue(adversaryLearning.getTrainExamplesHistory().containsKey(AdversaryLearningSharedHelper.writeStringForArray(dummyBoard2)));
   }
 
 }

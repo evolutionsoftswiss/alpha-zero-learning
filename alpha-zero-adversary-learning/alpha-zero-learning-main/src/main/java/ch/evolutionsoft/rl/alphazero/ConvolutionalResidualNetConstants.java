@@ -8,7 +8,7 @@ public class ConvolutionalResidualNetConstants {
 
   public static final String BLOCK2_SEPARABLE_CONVOLUTION2 = "block2_sepconv2";
 
-  public static final String BLOCK2_SEPARABLE_CONVOLUTION2_BATCH_NORNMALIZATION = "block2_sepconv2_bn";
+  public static final String BLOCK2_SEPARABLE_CONVOLUTION2_BATCH_NORMALIZATION = "block2_sepconv2_bn";
 
   public static final String ADD1 = "add1";
 
@@ -33,6 +33,8 @@ public class ConvolutionalResidualNetConstants {
   public static final String BLOCK1_CONV2_ACTIVATION = "block1_conv2_act";
 
   public static final String BLOCK1_CONV1_BATCH_NORMALIZATION = "block1_conv1_bn";
+  
+  public static final String AVERAGE_POOL = "avg_pool";
   
   private ConvolutionalResidualNetConstants() {
     // Hide constructor

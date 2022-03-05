@@ -1,6 +1,5 @@
 package ch.evolutionsoft.rl;
 
-import java.io.ByteArrayInputStream;
 import java.io.DataInputStream;
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -22,16 +21,13 @@ import org.nd4j.linalg.string.NDArrayStrings;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.annotation.JsonSetter;
-
 public class AdversaryLearningSharedHelper {
 
   public static final String TRAIN_EXAMPLES_VALUES = "Values";
 
-  Map<INDArray, AdversaryTrainingExample> trainExamplesHistory;
+  Map<String, AdversaryTrainingExample> trainExamplesHistory;
 
-  Map<Integer, Set<INDArray>> trainExampleBoardsByIteration;
+  Map<Integer, Set<String>> trainExampleBoardHashesByIteration;
 
   private AdversaryLearningConfiguration adversaryLearningConfiguration;
 
@@ -42,7 +38,7 @@ public class AdversaryLearningSharedHelper {
     this.adversaryLearningConfiguration = adversaryLearningConfiguration;
     
     this.trainExamplesHistory = new HashMap<>(adversaryLearningConfiguration.getMaxTrainExamplesHistory());
-    this.trainExampleBoardsByIteration = new HashMap<>(
+    this.trainExampleBoardHashesByIteration = new HashMap<>(
         (adversaryLearningConfiguration.getNumberOfAllAvailableMoves() *
         adversaryLearningConfiguration.getNumberOfAllAvailableMoves() *
         adversaryLearningConfiguration.getNumberOfEpisodesBeforePotentialUpdate()) / 2
@@ -105,9 +101,10 @@ public class AdversaryLearningSharedHelper {
       int iterationValue = currentStoredValue.getInt(actionIndicesCount + 2);
       AdversaryTrainingExample currentAdversaryExample =
           new AdversaryTrainingExample(currentBoardKey, player, actionIndexProbs, iterationValue);
+
       currentAdversaryExample.setCurrentPlayerValue(playerValue);
       
-      this.trainExamplesHistory.put(currentBoardKey, currentAdversaryExample);
+      this.trainExamplesHistory.put(writeStringForArray(currentBoardKey), currentAdversaryExample);
     }
       
     int size = this.trainExamplesHistory.size();
@@ -117,78 +114,61 @@ public class AdversaryLearningSharedHelper {
   }
 
   
-  public Map<INDArray, AdversaryTrainingExample> getTrainExamplesHistory() {
+  public Map<String, AdversaryTrainingExample> getTrainExamplesHistory() {
     
     return this.trainExamplesHistory;
   }
+  
+  public Map<Integer, Set<String>> getTrainExampleBoardsByIteration() {
 
-  @JsonProperty("trainExamplesHistory")
-  public Map<String, AdversaryTrainingExample> getTrainExamplesHistoryStringKeys() {
-    
-    Map<String, AdversaryTrainingExample> jsonConvertedMap = new HashMap<>();
-    
-    for (Map.Entry<INDArray, AdversaryTrainingExample> originalEntry : this.trainExamplesHistory.entrySet()) {
-      
-      jsonConvertedMap.put(writeStringForArray(originalEntry.getKey()), originalEntry.getValue());
-    }
-    
-    return jsonConvertedMap;
-  }
-
-  @JsonSetter
-  public void setTrainExamplesHistory(Map<String, AdversaryTrainingExample> jsonTrainExamplesHistory) {
-    
-    this.trainExamplesHistory.clear();
-    
-    for (Map.Entry<String, AdversaryTrainingExample> jsonEntry : jsonTrainExamplesHistory.entrySet()) {
-      
-      this.trainExamplesHistory.put(
-          Nd4j.readTxtString(new ByteArrayInputStream(jsonEntry.getKey().getBytes())),
-          jsonEntry.getValue());
-    }
+    return this.trainExampleBoardHashesByIteration;
   }
   
-  public Map<Integer, Set<INDArray>> getTrainExampleBoardsByIteration() {
+  public void putTrainExampleBoardsByIteration(int iteration, Set<String> boardHashes) {
 
-    return this.trainExampleBoardsByIteration;
-  }
-  
-  public void putTrainExampleBoardsByIteration(int iteration, Set<INDArray> boards) {
+    // Handle duplicated iteration numbers
+    if (this.trainExampleBoardHashesByIteration.containsKey(iteration)) {
+
+      Set<String> earlierIterationBoards = this.trainExampleBoardHashesByIteration.get(iteration);
+      earlierIterationBoards.addAll(boardHashes);
+      
+    } else {
     
-    this.trainExampleBoardsByIteration.put(iteration, boards);
+      this.trainExampleBoardHashesByIteration.put(iteration, boardHashes);
+    }
   }
 
   public void initializeTrainExampleBoardsByIterationFromTrainExamplesHistory() {
 
-    this.trainExampleBoardsByIteration.putAll(this.trainExamplesHistory.values().stream().collect(
+    this.trainExampleBoardHashesByIteration.putAll(this.trainExamplesHistory.values().stream().collect(
         Collectors.groupingBy(AdversaryTrainingExample::getIteration,
-        Collectors.mapping(AdversaryTrainingExample::getBoard, Collectors.toSet())))
+        Collectors.mapping(AdversaryTrainingExample::getBoardString, Collectors.toSet())))
         );
   }
   
-  public Map<INDArray, AdversaryTrainingExample> replaceOldTrainingExamplesWithNewActionProbabilities(
+  public Map<String, AdversaryTrainingExample> replaceOldTrainingExamplesWithNewActionProbabilities(
       Collection<AdversaryTrainingExample> newExamples) {
 
     int replacedNumber = 0;
-    Set<INDArray> newIterationBoards = new HashSet<>();
+    Set<String> newIterationBoards = new HashSet<>();
     int currentIteration = newExamples.iterator().next().getIteration();
-    Map<INDArray, AdversaryTrainingExample> newExamplesByBoard = new HashMap<>();
+    Map<String, AdversaryTrainingExample> newExamplesByBoard = new HashMap<>();
 
     for (AdversaryTrainingExample currentExample : newExamples) {
       
-      INDArray currentBoard = currentExample.getBoard();
-      newIterationBoards.add(currentBoard);
-      AdversaryTrainingExample oldExample = trainExamplesHistory.put(currentBoard, currentExample);
-      newExamplesByBoard.put(currentBoard, currentExample);
+      String currentBoardHashCode = currentExample.getBoardString();
+      newIterationBoards.add(currentBoardHashCode);
+      AdversaryTrainingExample oldExample = trainExamplesHistory.put(currentBoardHashCode, currentExample);
+      newExamplesByBoard.put(currentBoardHashCode, currentExample);
 
       if (null != oldExample && oldExample.getIteration() != currentIteration) {
 
         int iteration = oldExample.getIteration();
-        Set<INDArray> boardEntriesByOldIteration = trainExampleBoardsByIteration.get(iteration);
+        Set<String> boardEntriesByOldIteration = trainExampleBoardHashesByIteration.get(iteration);
 
         if (null != boardEntriesByOldIteration) {
 
-        	boardEntriesByOldIteration.remove(currentBoard);
+        	boardEntriesByOldIteration.remove(currentBoardHashCode);
 	        
 	        if (log.isDebugEnabled()) {
 	          replacedNumber++;
@@ -197,7 +177,7 @@ public class AdversaryLearningSharedHelper {
       }
     }
 
-    trainExampleBoardsByIteration.put(currentIteration, newIterationBoards);
+    trainExampleBoardHashesByIteration.put(currentIteration, newIterationBoards);
     
     if (log.isDebugEnabled()) {
       
@@ -226,7 +206,7 @@ public class AdversaryLearningSharedHelper {
 
     int previousTrainExamplesSize = this.getTrainExamplesHistory().size();
 
-    SortedSet<Integer> sortedIterationKeys = new TreeSet<>(this.trainExampleBoardsByIteration.keySet());
+    SortedSet<Integer> sortedIterationKeys = new TreeSet<>(this.trainExampleBoardHashesByIteration.keySet());
     Iterator<Integer> latestIterationIterator = sortedIterationKeys.iterator();
     
     StringBuilder removedIterations = new StringBuilder();
@@ -234,10 +214,10 @@ public class AdversaryLearningSharedHelper {
       
       Integer remainingOldestIteration = latestIterationIterator.next();
       removedIterations.append(remainingOldestIteration).append(", ");
-      Set<INDArray> boardExamplesToBeRemoves = this.trainExampleBoardsByIteration.get(remainingOldestIteration);
+      Set<String> boardExamplesToBeRemoves = this.trainExampleBoardHashesByIteration.get(remainingOldestIteration);
       
       boardExamplesToBeRemoves.stream().forEach(board -> this.trainExamplesHistory.remove(board));
-      this.trainExampleBoardsByIteration.remove(remainingOldestIteration);
+      this.trainExampleBoardHashesByIteration.remove(remainingOldestIteration);
     }
     
     if (log.isInfoEnabled()) {
@@ -268,7 +248,7 @@ public class AdversaryLearningSharedHelper {
   public int countAllExampleBoardsByIteration() {
 
     int listTotalSize = 0;
-    for (Set<INDArray> current : trainExampleBoardsByIteration.values()) {
+    for (Set<String> current : trainExampleBoardHashesByIteration.values()) {
       listTotalSize += current.size();
     }
     return listTotalSize;

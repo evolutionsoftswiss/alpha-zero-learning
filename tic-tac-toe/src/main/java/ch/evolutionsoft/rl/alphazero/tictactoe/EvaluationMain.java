@@ -13,6 +13,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import ch.evolutionsoft.rl.AdversaryLearningConfiguration;
+import ch.evolutionsoft.rl.AdversaryLearningSharedHelper;
 import ch.evolutionsoft.rl.Game;
 import ch.evolutionsoft.rl.alphazero.AdversaryLearning;
 
@@ -29,7 +30,8 @@ public class EvaluationMain {
         computationGraph1,
         new AdversaryLearningConfiguration.Builder().iterationStart(2).build());
  
-    log.info("Empty board probabilities {}", adversdaryLearning.getTrainExamplesHistory().get(TicTacToeConstants.EMPTY_CONVOLUTIONAL_PLAYGROUND));
+    log.info("Empty board probabilities {}", adversdaryLearning.getTrainExamplesHistory().get(
+        AdversaryLearningSharedHelper.writeStringForArray(TicTacToeConstants.EMPTY_CONVOLUTIONAL_PLAYGROUND)));
     
     evaluateNetwork(computationGraph1);
   }

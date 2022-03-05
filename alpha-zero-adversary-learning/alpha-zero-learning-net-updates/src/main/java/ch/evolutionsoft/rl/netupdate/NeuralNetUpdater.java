@@ -64,7 +64,7 @@ public class NeuralNetUpdater {
         build();
   }
 
-  public static void main(String[] args) throws IOException {
+  public static void main(String[] args) {
 
     AnnotationConfigApplicationContext applicationContext =
        new AnnotationConfigApplicationContext(NeuralNetUpdater.class);
@@ -157,10 +157,7 @@ public class NeuralNetUpdater {
           final int updateIteration = iteration;
           netUpdaterExecutor = Executors.newSingleThreadExecutor();
           final List<AdversaryTrainingExample> finalInputList = new LinkedList<>(previousExamples);
-          netUpdaterExecutor.execute(new Runnable() {
-            
-            @Override
-            public void run() {
+          netUpdaterExecutor.execute(() -> {
     
               ComputationGraph computationGraph = fitNeuralNet(finalInputList);
     
@@ -185,7 +182,7 @@ public class NeuralNetUpdater {
                   log.error("Error writing updated model", ioe);
                 }
             }
-          });
+          );
 
           netUpdaterExecutor.shutdown();
         }

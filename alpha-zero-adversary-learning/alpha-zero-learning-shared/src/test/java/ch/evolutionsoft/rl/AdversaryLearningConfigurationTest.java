@@ -34,7 +34,6 @@ class AdversaryLearningConfigurationTest {
         fromNumberOfMovesTemperatureZero(10).
         gamesWinRatioThresholdNewNetworkUpdate(0.5).
         iterationStart(10000).
-        learningRate(1e-3).
         learningRateSchedule(learningRateSchedule).
         maxTrainExamplesHistory(100000).
         numberOfGamesToDecideUpdate(50).
@@ -67,7 +66,6 @@ class AdversaryLearningConfigurationTest {
     adversaryLearningConfiguration.setFromNumberOfMovesTemperatureZero(10);
     adversaryLearningConfiguration.setGamesWinRatioThresholdNewNetworkUpdate(0.5);
     adversaryLearningConfiguration.setIterationStart(10000);
-    adversaryLearningConfiguration.setLearningRate(1e-3);
     adversaryLearningConfiguration.setLearningRateSchedule(learningRateSchedule);
     adversaryLearningConfiguration.setMaxTrainExamplesHistory(100000);
     adversaryLearningConfiguration.setNumberOfGamesToDecideUpdate(50);
@@ -103,7 +101,6 @@ class AdversaryLearningConfigurationTest {
         () -> assertEquals(10, adversaryLearningConfiguration.getFromNumberOfMovesTemperatureZero()),
         () -> assertEquals(0.5, adversaryLearningConfiguration.getGamesWinRatioThresholdNewNetworkUpdate()),
         () -> assertEquals(10000, adversaryLearningConfiguration.getIterationStart()),
-        () -> assertEquals(0.001, adversaryLearningConfiguration.getLearningRate()),
         () -> assertEquals(learningRateSchedule, adversaryLearningConfiguration.getLearningRateSchedule()),
         () -> assertEquals(100000, adversaryLearningConfiguration.getMaxTrainExamplesHistory()),
         () -> assertEquals(50, adversaryLearningConfiguration.getNumberOfGamesToDecideUpdate()),

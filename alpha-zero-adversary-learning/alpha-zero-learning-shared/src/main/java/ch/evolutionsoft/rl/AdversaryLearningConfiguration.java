@@ -2,7 +2,6 @@ package ch.evolutionsoft.rl;
 
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.Collections;
 import java.util.Map;
 
 import org.apache.commons.lang3.StringUtils;
@@ -22,12 +21,6 @@ import com.fasterxml.jackson.annotation.JsonSetter;
 public class AdversaryLearningConfiguration {
   
   public static final String OBJECT_ENDING = ".obj";
-  
-  /**
-   * FIXME no more working via Rest
-   * Fixed {@link ComputationGraph} learning rate
-   */
-  private double learningRate;
   
   /**
    * A learningRateSchedule defining different learning rates in function of the
@@ -188,12 +181,11 @@ public class AdversaryLearningConfiguration {
    */
   public static class Builder {
 
-    private double learningRate = 1e-4;
     private MapSchedule learningRateSchedule;
     private int batchSize = 8192;
 
-    private double dirichletAlpha = 1.1;
-    private double dirichletWeight = 0.45;
+    private double dirichletAlpha = 1.2;
+    private double dirichletWeight = 0.40;
     private boolean alwaysUpdateNeuralNetwork = true;
     private int numberOfAllAvailableMoves;
     private int numberOfGamesToDecideUpdate = 36;
@@ -217,7 +209,6 @@ public class AdversaryLearningConfiguration {
       
       AdversaryLearningConfiguration configuration = new AdversaryLearningConfiguration();
       
-      configuration.learningRate = learningRate;
       configuration.learningRateSchedule = learningRateSchedule;
       configuration.batchSize = batchSize;
       configuration.dirichletAlpha = dirichletAlpha;
@@ -240,11 +231,6 @@ public class AdversaryLearningConfiguration {
       configuration.trainExamplesFileName = getAbsolutePathFrom(trainExamplesFileName);
       
       return configuration;
-    }
- 
-    public Builder learningRate(double neuralNetworkLearningRate) {
-      this.learningRate = neuralNetworkLearningRate;
-      return this;
     }
 
     public Builder learningRateSchedule(MapSchedule learningRateSchedule) {
@@ -351,7 +337,7 @@ public class AdversaryLearningConfiguration {
   
   public String toString() {
     
-    return " learningRate: " + (null != this.learningRateSchedule ? this.learningRateSchedule : this.learningRate) +
+    return " learningRate: " + this.learningRateSchedule  +
         "\n batch size: " + this.batchSize +
         "\n dirichletAlpha: " + this.dirichletAlpha + 
         "\n dirichletWeight: " + this.dirichletWeight +
@@ -372,14 +358,6 @@ public class AdversaryLearningConfiguration {
         "\n bestModelFileName: " + getAbsolutePathFrom(this.bestModelFileName) +
         "\n trainExamplesFileNames: " + getAbsolutePathFrom(this.trainExamplesFileName);
   }
-
-  public double getLearningRate() {
-    return learningRate;
-  }
-
-  public void setLearningRate(double neuralNetworkLearningRate) {
-    this.learningRate = neuralNetworkLearningRate;
-  }
   
   public MapSchedule getLearningRateSchedule() {
     return learningRateSchedule;
@@ -388,11 +366,8 @@ public class AdversaryLearningConfiguration {
   @JsonProperty("learningRateSchedule")
   public Map<Integer, Double> getLearningRateScheduleMap() {
     
-    if (null != this.learningRateSchedule) {
-      return this.learningRateSchedule.getValues();
-    }
+    return this.learningRateSchedule.getValues();
     
-    return Collections.emptyMap();
   }
 
   public void setLearningRateSchedule(MapSchedule learningRateSchedule) {
@@ -529,10 +504,12 @@ public class AdversaryLearningConfiguration {
   }
 
   public int getMaxTrainExamplesHistory() {
+    
     return maxTrainExamplesHistory;
   }
 
   public void setMaxTrainExamplesHistory(int maxTrainExamplesHistory) {
+
     this.maxTrainExamplesHistory = maxTrainExamplesHistory;
   }
 

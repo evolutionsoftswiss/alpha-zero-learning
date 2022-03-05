@@ -66,13 +66,7 @@ public class TicTacToeReinforcementLearningMain {
   ComputationGraph createConvolutionalConfiguration(AdversaryLearningConfiguration adversaryLearningConfiguration) {
 
     ConvolutionResidualNet convolutionalLayerNet =
-        new ConvolutionResidualNet(adversaryLearningConfiguration.getLearningRate());
-
-    if (null != adversaryLearningConfiguration.getLearningRateSchedule()) {
-
-      convolutionalLayerNet =
-          new ConvolutionResidualNet(adversaryLearningConfiguration.getLearningRateSchedule());
-    }
+        new ConvolutionResidualNet(adversaryLearningConfiguration.getLearningRateSchedule());
     
     ComputationGraphConfiguration convolutionalLayerNetConfiguration =
         convolutionalLayerNet.createConvolutionalGraphConfiguration();

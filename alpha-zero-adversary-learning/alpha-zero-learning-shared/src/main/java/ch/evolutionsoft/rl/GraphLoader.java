@@ -18,10 +18,8 @@ public class GraphLoader {
 
     try {
       ComputationGraph computationGraph = ModelSerializer.restoreComputationGraph(absoluteBestModelPath, true);
-      computationGraph.setLearningRate(adversaryLearningConfiguration.getLearningRate());
-      if (null != adversaryLearningConfiguration.getLearningRateSchedule()) {
-        computationGraph.setLearningRate(adversaryLearningConfiguration.getLearningRateSchedule());
-      }
+      computationGraph.setLearningRate(adversaryLearningConfiguration.getLearningRateSchedule());
+      
       log.info("restored model {}", absoluteBestModelPath);
     
       return computationGraph;

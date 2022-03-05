@@ -154,7 +154,7 @@ public class AdversaryLearning {
 
     if (this.previousNetIteration == this.computationGraph.getIterationCount()) {
 
-      Set<INDArray> trainingBoards = this.sharedHelper.getTrainExampleBoardsByIteration().get(this.iteration);
+      Set<String> trainingBoards = this.sharedHelper.getTrainExampleBoardsByIteration().get(this.iteration);
       Set<AdversaryTrainingExample> previousExamples = new HashSet<>();
 
       trainingBoards.forEach(tb -> previousExamples.add(this.sharedHelper.getTrainExamplesHistory().get(tb)));
@@ -271,16 +271,14 @@ public class AdversaryLearning {
     if (!this.adversaryLearningConfiguration.isAlwaysUpdateNeuralNetwork()) {
 
       this.previousComputationGraph = ModelSerializer.restoreComputationGraph(absoluteBestModelPath, true);
-      this.previousComputationGraph.setLearningRate(this.adversaryLearningConfiguration.getLearningRate());
-      if (null != this.adversaryLearningConfiguration.getLearningRateSchedule()) {
-        this.computationGraph.setLearningRate(this.adversaryLearningConfiguration.getLearningRateSchedule());
-      }
+      this.computationGraph.setLearningRate(this.adversaryLearningConfiguration.getLearningRateSchedule());
+
       log.info("restored temp model from {}", absoluteBestModelPath);
     }
 
   }
 
-  boolean updateNeuralNet() throws IOException {
+  synchronized boolean updateNeuralNet() throws IOException {
 
     this.previousNetIteration = this.computationGraph.getIterationCount();
     boolean updateAfterBetterPlayout = false;
@@ -336,10 +334,7 @@ public class AdversaryLearning {
 
     createCheckpoint(iteration);
 
-    /**
-     * TODO use iteration from NeuralNetUpdater one behind
-     */
-    log.info("Iteration {} ended", iteration);
+    log.info("Iteration {} ended", iteration - 1);
 
     return updateAfterBetterPlayout;
   }
@@ -513,21 +508,21 @@ public class AdversaryLearning {
   }
 
   void writeMapToFile(String trainExamplesKeyPath, String trainExamplesValuesPath,
-      Map<INDArray, AdversaryTrainingExample> sourceMap) throws IOException {
+      Map<String, AdversaryTrainingExample> sourceMap) throws IOException {
 
     if (!sourceMap.isEmpty()) {
       AdversaryTrainingExample example = sourceMap.values().iterator().next();
 
-      long[] boardShape = sourceMap.keySet().iterator().next().shape();
+      long[] boardShape = example.getBoard().shape();
       long[] actionShape = example.getActionIndexProbabilities().shape();
 
       INDArray allBoardsKey = Nd4j.zeros(sourceMap.size(), boardShape[0], boardShape[1], boardShape[2]);
       INDArray allValues = Nd4j.zeros(sourceMap.size(), actionShape[0] + 3);
 
       int exampleNumber = 0;
-      for (Map.Entry<INDArray, AdversaryTrainingExample> currentExampleEntry : sourceMap.entrySet()) {
+      for (Map.Entry<String, AdversaryTrainingExample> currentExampleEntry : sourceMap.entrySet()) {
 
-        allBoardsKey.putSlice(exampleNumber, currentExampleEntry.getKey());
+        allBoardsKey.putSlice(exampleNumber, currentExampleEntry.getValue().getBoard());
         INDArray valueNDArray = Nd4j.zeros(actionShape[0] + 3);
 
         AdversaryTrainingExample value = currentExampleEntry.getValue();
@@ -572,12 +567,12 @@ public class AdversaryLearning {
     return 1 < emptyFields.size();
   }
 
-  public Map<INDArray, AdversaryTrainingExample> getTrainExamplesHistory() {
+  public Map<String, AdversaryTrainingExample> getTrainExamplesHistory() {
 
     return this.sharedHelper.getTrainExamplesHistory();
   }
 
-  public Map<Integer, Set<INDArray>> getTrainExampleBoardsByIteration() {
+  public Map<Integer, Set<String>> getTrainExampleBoardsByIteration() {
 
     return this.sharedHelper.getTrainExampleBoardsByIteration();
   }
