@@ -72,8 +72,6 @@ public class AdversaryLearning {
 
   AdversaryLearningSharedHelper sharedHelper;
 
-  int previousNetIteration = -1;
-
   int iteration = 1;
 
   boolean restoreTrainingExamples;
@@ -152,37 +150,24 @@ public class AdversaryLearning {
 
   public Set<AdversaryTrainingExample> performIteration() throws IOException {
 
-    if (this.previousNetIteration == this.computationGraph.getIterationCount()) {
-
-      Set<String> trainingBoards = this.sharedHelper.getTrainExampleBoardsByIteration().get(this.iteration);
-      Set<AdversaryTrainingExample> previousExamples = new HashSet<>();
-
-      trainingBoards.forEach(tb -> previousExamples.add(this.sharedHelper.getTrainExamplesHistory().get(tb)));
-
-      log.info("returning existing examples from iteration {}", this.iteration);
-
-      return previousExamples;
-    }
-
     final int currentIteration = iteration;
     ThreadPoolExecutor executor = (ThreadPoolExecutor) Executors
         .newFixedThreadPool(adversaryLearningConfiguration.getNumberOfEpisodeThreads());
     CompletionService<List<AdversaryTrainingExample>> completionService = new ExecutorCompletionService<>(executor);
 
     Set<AdversaryTrainingExample> examplesFromEpisodes = new HashSet<>();
+    final MonteCarloTreeSearch mcts = new MonteCarloTreeSearch(this.adversaryLearningConfiguration);
 
     for (int episode = 1; episode <= adversaryLearningConfiguration
         .getNumberOfEpisodesBeforePotentialUpdate(); episode++) {
 
-      final MonteCarloTreeSearch mcts = new MonteCarloTreeSearch(computationGraph.clone(),
-          this.adversaryLearningConfiguration);
       final Game newGameInstance = this.initialGame.createNewInstance();
       completionService.submit(new Callable<List<AdversaryTrainingExample>>() {
 
         @Override
         public List<AdversaryTrainingExample> call() throws Exception {
 
-          return executeEpisode(currentIteration, newGameInstance, mcts);
+          return executeEpisode(currentIteration, newGameInstance, mcts, computationGraph.clone());
         }
 
       });
@@ -221,7 +206,7 @@ public class AdversaryLearning {
     return examplesFromEpisodes;
   }
 
-  public List<AdversaryTrainingExample> executeEpisode(int iteration, Game currentGame, MonteCarloTreeSearch mcts) {
+  public List<AdversaryTrainingExample> executeEpisode(int iteration, Game currentGame, MonteCarloTreeSearch mcts, ComputationGraph computationGraph) {
 
     List<AdversaryTrainingExample> trainExamples = new ArrayList<>();
 
@@ -236,7 +221,7 @@ public class AdversaryLearning {
       Set<Integer> validMoveIndices = currentGame.getValidMoveIndices();
 
       double currentTemperature = adversaryLearningConfiguration.getCurrentTemperature(iteration, moveNumber);
-      INDArray actionProbabilities = mcts.getActionValues(currentGame, treeNode, currentTemperature);
+      INDArray actionProbabilities = mcts.getActionValues(currentGame, treeNode, currentTemperature, computationGraph);
 
       INDArray validActionProbabilities = actionProbabilities.mul(validMoves);
       INDArray normalizedActionProbabilities = validActionProbabilities.div(Nd4j.sum(actionProbabilities));
@@ -280,7 +265,6 @@ public class AdversaryLearning {
 
   synchronized boolean updateNeuralNet() throws IOException {
 
-    this.previousNetIteration = this.computationGraph.getIterationCount();
     boolean updateAfterBetterPlayout = false;
     if (!adversaryLearningConfiguration.isAlwaysUpdateNeuralNetwork()) {
 
@@ -341,9 +325,9 @@ public class AdversaryLearning {
 
   void createCheckpoint(int iteration) throws IOException {
 
-    StringBuilder prependedZeros = prependZeros(iteration);
-
     if (0 == iteration % adversaryLearningConfiguration.getCheckPointIterationsFrequency()) {
+
+      StringBuilder prependedZeros = prependZeros(iteration);
 
       String bestModelPath = AdversaryLearningConfiguration
           .getAbsolutePathFrom(adversaryLearningConfiguration.getBestModelFileName());
@@ -466,7 +450,7 @@ public class AdversaryLearning {
 
   void saveTrainExamplesHistory() throws IOException {
 
-    this.sharedHelper.resizeTrainExamplesHistory();
+    this.sharedHelper.resizeTrainExamplesHistory(this.iteration);
 
     String trainExamplesByBoardPath = AdversaryLearningConfiguration
         .getAbsolutePathFrom(adversaryLearningConfiguration.getTrainExamplesFileName());
@@ -485,7 +469,7 @@ public class AdversaryLearning {
 
   void saveTrainExamplesHistory(int iteration) throws IOException {
 
-    this.sharedHelper.resizeTrainExamplesHistory();
+    this.sharedHelper.resizeTrainExamplesHistory(iteration);
 
     StringBuilder prependedZeros = prependZeros(iteration);
     String trainExamplesPath = AdversaryLearningConfiguration

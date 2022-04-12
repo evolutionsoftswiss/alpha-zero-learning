@@ -85,8 +85,8 @@ public class AdversaryAgentDriver {
   
   public double playGame(Game game, AdversaryLearningConfiguration configuration) {
     
-    MonteCarloTreeSearch player1 = new MonteCarloTreeSearch(this.player1Policy, configuration);
-    MonteCarloTreeSearch player2 = new MonteCarloTreeSearch(this.player2Policy, configuration);
+    MonteCarloTreeSearch player1 = new MonteCarloTreeSearch(configuration);
+    MonteCarloTreeSearch player2 = new MonteCarloTreeSearch(configuration);
     
     Set<Integer> emptyFields = game.getValidMoveIndices();
     
@@ -97,11 +97,11 @@ public class AdversaryAgentDriver {
       INDArray moveActionValues = Nd4j.zeros(game.getNumberOfAllAvailableMoves());
       if (currentPlayer == Game.MAX_PLAYER) {
         
-        moveActionValues = player1.getActionValues(game, 0);
+        moveActionValues = player1.getActionValues(game, 0, this.player1Policy);
         
       } else if (currentPlayer == Game.MIN_PLAYER) {
         
-        moveActionValues = player2.getActionValues(game, 0);
+        moveActionValues = player2.getActionValues(game, 0, this.player2Policy);
       }
       
       int moveAction = moveActionValues.argMax(0).getInt(0);

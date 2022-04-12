@@ -234,7 +234,7 @@ public class ConnectFour extends Game {
     List<AdversaryTrainingExample> symmetries = new ArrayList<>();
 
     INDArray actionMirrorHorizontal = Nd4j.reverse(actionProbabilities);
-    INDArray newPlaygroundMirrorHorizontal = mirrorBoardHorizontally(board);
+    INDArray newPlaygroundMirrorHorizontal = mirrorBoardVertically(board);
     symmetries.add(
         new AdversaryTrainingExample(
             newPlaygroundMirrorHorizontal.dup(),
@@ -246,7 +246,7 @@ public class ConnectFour extends Game {
     return symmetries;
   }
 
-  static INDArray mirrorBoardHorizontally(INDArray playgroundRotation) {
+  static INDArray mirrorBoardVertically(INDArray playgroundRotation) {
 
     INDArray boardPlayerMirrorHorizontal = playgroundRotation.slice(2).dup();
     INDArray maxPlayerMirrorHorizontal = mirrorBoardPartVertically(playgroundRotation.slice(0).dup());

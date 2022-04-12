@@ -21,16 +21,13 @@ public class MonteCarloTreeSearch {
 
   int numberOfSimulations;
 
-  ComputationGraph computationGraph;
+  public MonteCarloTreeSearch(AdversaryLearningConfiguration configuration) {
 
-  public MonteCarloTreeSearch(ComputationGraph computationGraph, AdversaryLearningConfiguration configuration) {
-
-    this.computationGraph = computationGraph;
     this.currentUctConstant = configuration.getuctConstantFactor();
     this.numberOfSimulations = configuration.getNumberOfMonteCarloSimulations();
   }
 
-  void playout(TreeNode treeNode, Game game) {
+  void playout(TreeNode treeNode, Game game, ComputationGraph computationGraph) {
 
     while (treeNode.isExpanded()) {
 
@@ -57,7 +54,7 @@ public class MonteCarloTreeSearch {
       System.arraycopy(currentBoard.shape(), 0, newShape, 1, currentBoard.shape().length);
       newShape[0] = 1;
       INDArray oneBatchBoard = currentBoard.reshape(newShape);
-      INDArray[] neuralNetOutput = this.computationGraph.output(oneBatchBoard);
+      INDArray[] neuralNetOutput = computationGraph.output(oneBatchBoard);
 
       INDArray actionProbabilities = neuralNetOutput[0];
       double leafValue = neuralNetOutput[1].getDouble(0);
@@ -67,29 +64,32 @@ public class MonteCarloTreeSearch {
 
       Number validActionsSum = validActionProbabilities.sumNumber();
 
-      validActionProbabilities = validActionProbabilities.div(validActionsSum);
-
+      if (validActionsSum.doubleValue() > 0) {
+        validActionProbabilities = validActionProbabilities.div(validActionsSum);
+      } else {
+        validActionProbabilities = validMovesMask.div(validMovesMask.sumNumber());
+      }
       treeNode.updateRecursiv(1 - leafValue);
 
       treeNode.expand(game, validActionProbabilities);
     }
   }
 
-  public INDArray getActionValues(Game currentGame, double temperature) {
+  public INDArray getActionValues(Game currentGame, double temperature, ComputationGraph computationGraph) {
 
     TreeNode treeNode = new TreeNode(-1, Game.MIN_PLAYER, 0, 1.0, 0.5, null);
 
-    return this.getActionValues(currentGame, treeNode, temperature);
+    return this.getActionValues(currentGame, treeNode, temperature, computationGraph);
   }
 
-  public INDArray getActionValues(Game currentGame, TreeNode treeNode, double temperature) {
+  public INDArray getActionValues(Game currentGame, TreeNode treeNode, double temperature, ComputationGraph computationGraph) {
 
     int playouts = 0;
 
     while (playouts < numberOfSimulations) {
 
       Game newGameInstance = currentGame.createNewInstance();
-      this.playout(treeNode, newGameInstance);
+      this.playout(treeNode, newGameInstance, computationGraph);
       playouts++;
     }
 

@@ -151,6 +151,11 @@ public class AdversaryLearningConfiguration {
   private int maxTrainExamplesHistory;
 
   /**
+   * 
+   */
+  private int maxTrainExamplesHistoryFromIteration;
+
+  /**
    * {@link MonteCarloTreeSearch} parameter influencing exploration / exploitation of
    * different move actions. TicTacToe uses 0.8. ConnectFour uses 1.2.
    */
@@ -184,7 +189,7 @@ public class AdversaryLearningConfiguration {
     private MapSchedule learningRateSchedule;
     private int batchSize = 8192;
 
-    private double dirichletAlpha = 1.2;
+    private double dirichletAlpha = 2.5;
     private double dirichletWeight = 0.40;
     private boolean alwaysUpdateNeuralNetwork = true;
     private int numberOfAllAvailableMoves;
@@ -193,11 +198,12 @@ public class AdversaryLearningConfiguration {
     private int numberOfEpisodesBeforePotentialUpdate = 10;
     private int numberOfEpisodeThreads = Runtime.getRuntime().availableProcessors() / 2;
     private int iterationStart = 1;
-    private int numberOfIterations = 250;
+    private int numberOfIterations = 180;
     private int checkPointIterationsFrequency = 50;
     private int fromNumberOfIterationsTemperatureZero = -1;
     private int fromNumberOfMovesTemperatureZero = 3;
     private int maxTrainExamplesHistory = 5000;
+    private int maxTrainExamplesHistoryFromIteration = 100;
 
     private String bestModelFileName = "bestmodel.bin";
     private String trainExamplesFileName = "trainExamples.obj";
@@ -225,6 +231,7 @@ public class AdversaryLearningConfiguration {
       configuration.fromNumberOfIterationsTemperatureZero = fromNumberOfIterationsTemperatureZero;
       configuration.fromNumberOfMovesTemperatureZero = fromNumberOfMovesTemperatureZero;
       configuration.maxTrainExamplesHistory = maxTrainExamplesHistory;
+      configuration.maxTrainExamplesHistoryFromIteration = maxTrainExamplesHistoryFromIteration;
       configuration.uctConstantFactor = uctConstantFactor;
       configuration.numberOfMonteCarloSimulations = numberOfMonteCarloSimulations;
       configuration.bestModelFileName = getAbsolutePathFrom(bestModelFileName);
@@ -313,6 +320,11 @@ public class AdversaryLearningConfiguration {
       this.maxTrainExamplesHistory = maxTrainExamplesHistory;
       return this;
     }
+    
+    public Builder maxTrainExamplesHistoryFromIteration(int maxTrainExamplesHistoryFromIteration) {
+      this.maxTrainExamplesHistoryFromIteration = maxTrainExamplesHistoryFromIteration;
+      return this;
+    }
 
     public Builder uctConstantFactor(double uctConstantFactor) {
       this.uctConstantFactor = uctConstantFactor;
@@ -353,6 +365,8 @@ public class AdversaryLearningConfiguration {
         "\n fromNumberOfIterationsTemperatureZero: " + this.fromNumberOfIterationsTemperatureZero +
         "\n fromNumberOfMovesTemperatureZero: " + this.fromNumberOfMovesTemperatureZero +
         "\n maxTrainExamplesHistory: " + this.maxTrainExamplesHistory +
+        "\n maxTrainExamplesHistoryFromIteration: " + this.maxTrainExamplesHistoryFromIteration +
+        "\n currentMaxTrainExamplesHistory: " + this.getCurrentMaxTrainExamplesHistory(iterationStart) +
         "\n cpUct: " + this.uctConstantFactor +
         "\n numberOfMonteCarloSimulations: " + this.numberOfMonteCarloSimulations +
         "\n bestModelFileName: " + getAbsolutePathFrom(this.bestModelFileName) +
@@ -503,6 +517,16 @@ public class AdversaryLearningConfiguration {
     this.fromNumberOfMovesTemperatureZero = fromNumberOfMovesTemperatureZero;
   }
 
+  public int getCurrentMaxTrainExamplesHistory(int currentIteration) {
+    
+    if (currentIteration >= getMaxTrainExamplesHistoryFromIteration()) {
+      
+      return getMaxTrainExamplesHistory();
+    }
+    
+    return (int) (currentIteration / ((float) getMaxTrainExamplesHistoryFromIteration()) * getMaxTrainExamplesHistory());
+  }
+  
   public int getMaxTrainExamplesHistory() {
     
     return maxTrainExamplesHistory;
@@ -511,6 +535,16 @@ public class AdversaryLearningConfiguration {
   public void setMaxTrainExamplesHistory(int maxTrainExamplesHistory) {
 
     this.maxTrainExamplesHistory = maxTrainExamplesHistory;
+  }
+
+  public int getMaxTrainExamplesHistoryFromIteration() {
+    
+    return maxTrainExamplesHistoryFromIteration;
+  }
+
+  public void setMaxTrainExamplesHistoryFromIteration(int maxTrainExamplesHistoryFromIteration) {
+
+    this.maxTrainExamplesHistoryFromIteration = maxTrainExamplesHistoryFromIteration;
   }
 
   public double getuctConstantFactor() {

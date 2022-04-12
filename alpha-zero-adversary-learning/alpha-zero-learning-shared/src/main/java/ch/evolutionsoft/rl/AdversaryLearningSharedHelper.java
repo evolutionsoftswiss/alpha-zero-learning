@@ -123,20 +123,6 @@ public class AdversaryLearningSharedHelper {
 
     return this.trainExampleBoardHashesByIteration;
   }
-  
-  public void putTrainExampleBoardsByIteration(int iteration, Set<String> boardHashes) {
-
-    // Handle duplicated iteration numbers
-    if (this.trainExampleBoardHashesByIteration.containsKey(iteration)) {
-
-      Set<String> earlierIterationBoards = this.trainExampleBoardHashesByIteration.get(iteration);
-      earlierIterationBoards.addAll(boardHashes);
-      
-    } else {
-    
-      this.trainExampleBoardHashesByIteration.put(iteration, boardHashes);
-    }
-  }
 
   public void initializeTrainExampleBoardsByIterationFromTrainExamplesHistory() {
 
@@ -177,7 +163,16 @@ public class AdversaryLearningSharedHelper {
       }
     }
 
-    trainExampleBoardHashesByIteration.put(currentIteration, newIterationBoards);
+    // Handle duplicated iteration numbers
+    if (this.trainExampleBoardHashesByIteration.containsKey(currentIteration)) {
+
+      Set<String> earlierIterationBoards = this.trainExampleBoardHashesByIteration.get(currentIteration);
+      earlierIterationBoards.addAll(newIterationBoards);
+      
+    } else {
+    
+      this.trainExampleBoardHashesByIteration.put(currentIteration, newIterationBoards);
+    }
     
     if (log.isDebugEnabled()) {
       
@@ -193,12 +188,13 @@ public class AdversaryLearningSharedHelper {
     return newExamplesByBoard;
   }
 
-  public void resizeTrainExamplesHistory() {
+  public void resizeTrainExamplesHistory(int currentIteration) {
 
-    if (this.adversaryLearningConfiguration.getMaxTrainExamplesHistory() >=
+    if (this.adversaryLearningConfiguration.getCurrentMaxTrainExamplesHistory(currentIteration) >=
         this.trainExamplesHistory.size()) {
       
-      log.info("New train examples history map size {}",
+      log.info("New train examples history map iteration {} size {}",
+          currentIteration,
           this.trainExamplesHistory.size());
       
       return;
@@ -210,7 +206,8 @@ public class AdversaryLearningSharedHelper {
     Iterator<Integer> latestIterationIterator = sortedIterationKeys.iterator();
     
     StringBuilder removedIterations = new StringBuilder();
-    while (this.trainExamplesHistory.size() > this.adversaryLearningConfiguration.getMaxTrainExamplesHistory()) {
+    while (this.trainExamplesHistory.size() > this.adversaryLearningConfiguration.getCurrentMaxTrainExamplesHistory(currentIteration) &&
+        this.trainExampleBoardHashesByIteration.size() > 1) {
       
       Integer remainingOldestIteration = latestIterationIterator.next();
       removedIterations.append(remainingOldestIteration).append(", ");
@@ -220,7 +217,7 @@ public class AdversaryLearningSharedHelper {
       this.trainExampleBoardHashesByIteration.remove(remainingOldestIteration);
     }
     
-    if (log.isInfoEnabled()) {
+    if (log.isInfoEnabled() && removedIterations.length() > 0) {
       log.info("Board examples from iteration[s] {} removed", removedIterations.substring(0, removedIterations.length() - 2));
       
       log.info(

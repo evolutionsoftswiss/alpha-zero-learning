@@ -136,9 +136,9 @@ public class NeuralNetUpdater {
         // Wait for initilzation
       }
       
-      for (int iteration = adversaryLearningConfiguration.getIterationStart();
+      for (int iteration = adversaryLearningConfiguration.getIterationStart() - 1;
           iteration < adversaryLearningConfiguration.getIterationStart() + 
-          adversaryLearningConfiguration.getNumberOfIterations();
+          adversaryLearningConfiguration.getNumberOfIterations() - 1;
           iteration++) {
           
         previousExamples = newExamples;
@@ -159,7 +159,7 @@ public class NeuralNetUpdater {
           final List<AdversaryTrainingExample> finalInputList = new LinkedList<>(previousExamples);
           netUpdaterExecutor.execute(() -> {
     
-              ComputationGraph computationGraph = fitNeuralNet(finalInputList);
+              ComputationGraph computationGraph = fitNeuralNet(finalInputList, updateIteration);
     
               try {
                   
@@ -217,14 +217,14 @@ public class NeuralNetUpdater {
         block();
   }
   
-  ComputationGraph fitNeuralNet(List<AdversaryTrainingExample> newExamples) {
+  ComputationGraph fitNeuralNet(List<AdversaryTrainingExample> newExamples, int updateIteration) {
     
     log.info("Replace old present examples with new ones");
     this.adversaryLearningSharedHelper.replaceOldTrainingExamplesWithNewActionProbabilities(
         newExamples);
 
     log.info("Resize train examples history");
-    this.adversaryLearningSharedHelper.resizeTrainExamplesHistory();
+    this.adversaryLearningSharedHelper.resizeTrainExamplesHistory(updateIteration);
 
     List<AdversaryTrainingExample> trainingExamples =
         new ArrayList<>(this.adversaryLearningSharedHelper.getTrainExamplesHistory().values());
@@ -239,17 +239,18 @@ public class NeuralNetUpdater {
     log.info("Create minibatches");    
     List<MultiDataSet> batchedMultiDataSet = createMiniBatchList(trainingExamples);
 
-    for (int batchIteration = 0; batchIteration < batchNumber; batchIteration++) {
-      
-      log.info("Batch size for batch number {} is {}", 
-          batchIteration,
-          batchedMultiDataSet.get(batchIteration).asList().size());
-
-      computationGraph.fit(batchedMultiDataSet.get(batchIteration));
-      
-      log.info("Fitted model with batch number {}", batchIteration);
+    for (int updateCycle = 1; updateCycle <= 2; updateCycle++) {
+      for (int batchIteration = 0; batchIteration < batchNumber; batchIteration++) {
+          
+        log.info("Batch size for batch number {} is {}", 
+            batchIteration,
+            batchedMultiDataSet.get(batchIteration).asList().size());
+    
+        computationGraph.fit(batchedMultiDataSet.get(batchIteration));
+          
+        log.info("Fitted model with batch number {}", batchIteration);
+      }
     }
-
     log.info("Iterations (number of updates) from computation graph model is {}",
         computationGraph.getIterationCount());
     log.info("Learning rate from computation graph model layer 'OutputLayer': {}",

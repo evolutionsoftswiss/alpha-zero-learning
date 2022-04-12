@@ -16,14 +16,16 @@ class MonteCarloTreeSearchTest {
 
   MonteCarloTreeSearch mcts;
   
+  ComputationGraph computationGraph;
+  
   @BeforeEach
   void initMonteCarloTreeSearch() {
 
-    ComputationGraph computationGraph = TestHelper.createConvolutionalConfiguration();
+    computationGraph = TestHelper.createConvolutionalConfiguration();
     AdversaryLearningConfiguration adversaryLearningConfiguration =
         new AdversaryLearningConfiguration.Builder().numberOfMonteCarloSimulations(1000).build();
     
-    this.mcts = new MonteCarloTreeSearch(computationGraph, adversaryLearningConfiguration);
+    this.mcts = new MonteCarloTreeSearch(adversaryLearningConfiguration);
   }
 
   @Test
@@ -32,7 +34,7 @@ class MonteCarloTreeSearchTest {
     Game game = TestHelper.createMiddlePositionBoardWithThreat();
 
     TreeNode treeNode = new TreeNode(-1, Game.MAX_PLAYER, 0, 1.0, 0.5, null);
-    INDArray actionProbabilities = this.mcts.getActionValues(game, treeNode, AdversaryLearningConstants.ONE);
+    INDArray actionProbabilities = this.mcts.getActionValues(game, treeNode, AdversaryLearningConstants.ONE, computationGraph.clone());
     
     INDArray zeroProbabilityIndices = actionProbabilities.lte(0);
 

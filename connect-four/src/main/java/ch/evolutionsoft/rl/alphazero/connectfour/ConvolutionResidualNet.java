@@ -17,6 +17,7 @@ import org.deeplearning4j.nn.conf.layers.OutputLayer;
 import org.deeplearning4j.nn.conf.layers.PoolingType;
 import org.deeplearning4j.nn.conf.layers.SeparableConvolution2D;
 import org.deeplearning4j.nn.conf.layers.SubsamplingLayer;
+import org.deeplearning4j.nn.conf.layers.ConvolutionLayer.AlgoMode;
 import org.deeplearning4j.nn.weights.WeightInit;
 import org.nd4j.linalg.activations.Activation;
 import org.nd4j.linalg.learning.config.Adam;
@@ -42,7 +43,8 @@ public class ConvolutionResidualNet {
         updater(new Adam(learningRateSchedule)).
         weightDecay(5e-5, true).
         convolutionMode(ConvolutionMode.Strict).
-        weightInit(WeightInit.RELU);
+        weightInit(WeightInit.RELU).
+        cudnnAlgoMode(AlgoMode.NO_WORKSPACE);
   }
 
   public ComputationGraphConfiguration createConvolutionalGraphConfiguration() {
@@ -143,24 +145,50 @@ public class ConvolutionResidualNet {
                 "block4_sepconv2_bn")
             .addVertex("add3", new ElementWiseVertex(ElementWiseVertex.Op.Add), "block4_pool", "residual3")
 
+            // residual4
+            .addLayer("residual4_conv",
+                new ConvolutionLayer.Builder(1, 1).stride(1, 1).nOut(128).hasBias(false)
+                    .convolutionMode(ConvolutionMode.Same).build(),
+                "add3")
+            .addLayer("residual4", new BatchNormalization(), "residual4_conv")
+
             // block5
-            .addLayer("block5_sepconv1_act", new ActivationLayer(Activation.LEAKYRELU), "add3")
+            .addLayer("block5_sepconv1_act", new ActivationLayer(Activation.LEAKYRELU), "add2")
             .addLayer("block5_sepconv1",
-                new SeparableConvolution2D.Builder(2, 2).nOut(256).hasBias(false).convolutionMode(ConvolutionMode.Same)
+                new SeparableConvolution2D.Builder(2, 2).nOut(128).hasBias(false).convolutionMode(ConvolutionMode.Same)
                     .build(),
                 "block5_sepconv1_act")
             .addLayer("block5_sepconv1_bn", new BatchNormalization(), "block5_sepconv1")
-            .addLayer("block5_sepconv2_act", new ActivationLayer(Activation.LEAKYRELU), "block5_sepconv1_bn");
+            .addLayer("block5_sepconv2_act", new ActivationLayer(Activation.LEAKYRELU), "block5_sepconv1_bn")
+            .addLayer("block5_sepconv2",
+                new SeparableConvolution2D.Builder(2, 2).nOut(128).hasBias(false).convolutionMode(ConvolutionMode.Same)
+                    .build(),
+                "block5_sepconv2_act")
+            .addLayer("block5_sepconv2_bn", new BatchNormalization(), "block5_sepconv2")
+            .addLayer("block5_pool",
+                new SubsamplingLayer.Builder(SubsamplingLayer.PoolingType.MAX).kernelSize(2, 2).stride(1, 1)
+                    .convolutionMode(ConvolutionMode.Same).build(),
+                "block5_sepconv2_bn")
+            .addVertex("add4", new ElementWiseVertex(ElementWiseVertex.Op.Add), "block5_pool", "residual4")
+
+            // block6
+            .addLayer("block6_sepconv1_act", new ActivationLayer(Activation.LEAKYRELU), "add4")
+            .addLayer("block6_sepconv1",
+                new SeparableConvolution2D.Builder(2, 2).nOut(256).hasBias(false).convolutionMode(ConvolutionMode.Same)
+                    .build(),
+                "block6_sepconv1_act")
+            .addLayer("block6_sepconv1_bn", new BatchNormalization(), "block6_sepconv1")
+            .addLayer("block6_sepconv2_act", new ActivationLayer(Activation.LEAKYRELU), "block6_sepconv1_bn");
             
-            graphBuilder.addLayer(AVERAGE_POOL, new GlobalPoolingLayer.Builder(PoolingType.AVG).build(), "block5_sepconv2_act")
+            graphBuilder.addLayer(AVERAGE_POOL, new GlobalPoolingLayer.Builder(PoolingType.AVG).build(), "block6_sepconv2_act")
             
             .addLayer("dense1", new DenseLayer.Builder().
-                nOut(64).
+                nOut(128).
                 activation(Activation.LEAKYRELU).
                 build(), AVERAGE_POOL)
             
             .addLayer("dense2", new DenseLayer.Builder().
-                nOut(32).
+                nOut(64).
                 activation(Activation.LEAKYRELU).
                 build(), AVERAGE_POOL)
             

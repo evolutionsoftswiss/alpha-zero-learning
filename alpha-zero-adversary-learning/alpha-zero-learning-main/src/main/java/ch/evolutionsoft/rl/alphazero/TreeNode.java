@@ -2,10 +2,10 @@ package ch.evolutionsoft.rl.alphazero;
 
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 
 import org.nd4j.linalg.api.ndarray.INDArray;
 import org.slf4j.Logger;
@@ -15,25 +15,29 @@ import ch.evolutionsoft.rl.Game;
 
 public class TreeNode {
 
-    Logger logger = LoggerFactory.getLogger(TreeNode.class);
+  final Object lock = new Object();
+  
+  Logger logger = LoggerFactory.getLogger(TreeNode.class);
 	
-	int lastMove;
+	volatile int lastMove;
 
-	int depth;
+	volatile int depth;
 	
-	int lastMoveColor;
+	volatile int lastMoveColor;
 	
-	int timesVisited = 0;
+	volatile int timesVisited = 0;
 	
-	double qValue = AdversaryLearning.DRAW_VALUE; 
+	volatile int virtualLosses = 0;
 	
-	double uValue = 0;
+	volatile double qValue = AdversaryLearning.DRAW_VALUE; 
 	
-	double moveProbability;
+	volatile double uValue = 0;
 	
-	TreeNode parent;
+	volatile double moveProbability;
 	
-	Map<Integer, TreeNode> children = new HashMap<>();
+	volatile TreeNode parent;
+	
+	ConcurrentMap<Integer, TreeNode> children = new ConcurrentHashMap<>();
 	
 	
 	public TreeNode(
@@ -43,32 +47,33 @@ public class TreeNode {
 	    double moveProbability,
 	    double initialQ,
 	    TreeNode parent){
-		
-		this.parent = parent;
-		this.qValue = initialQ;
-		this.depth = depth;
-		this.lastMove = lastMove;
-		this.moveProbability = moveProbability;
-		this.lastMoveColor = lastMoveColor;
+
+	  this.parent = parent;
+	  this.qValue = initialQ;
+	  this.depth = depth;
+	  this.lastMove = lastMove;
+	  this.moveProbability = moveProbability;
+	  this.lastMoveColor = lastMoveColor;
 	}
 	
 	void expand(Game game, INDArray previousActionProbabilities) {
 
-	  Set<Integer> validMoveIndices = game.getValidMoveIndices();
- 
-	  for (int moveIndex : validMoveIndices) {
-	      
-	    this.children.put(
-	        moveIndex,
-	        new TreeNode(
-	            moveIndex,
-	            game.getOtherPlayer(this.lastMoveColor),
-	            this.depth + 1,
-	            previousActionProbabilities.getDouble(moveIndex),
-	            1 - this.qValue,
-	            this));
-	    }
-	  
+    synchronized(lock) {
+  	  Set<Integer> validMoveIndices = game.getValidMoveIndices();
+   
+  	  for (int moveIndex : validMoveIndices) {
+  	      
+  	    this.children.put(
+  	        moveIndex,
+  	        new TreeNode(
+  	            moveIndex,
+  	            game.getOtherPlayer(this.lastMoveColor),
+  	            this.depth + 1,
+  	            previousActionProbabilities.getDouble(moveIndex),
+  	            1 - this.qValue,
+  	            this));
+  	    }
+    }
 	}
 
 	public boolean isExpanded() {
@@ -76,7 +81,7 @@ public class TreeNode {
 	  return !this.children.isEmpty();
 	}
 	
-	protected TreeNode selectMove(double cpUct) {
+	protected synchronized TreeNode selectMove(double cpUct) {
 
       List<TreeNode> childNodes = new ArrayList<>(this.children.values());
       Collections.shuffle(childNodes);
@@ -95,30 +100,33 @@ public class TreeNode {
         }
       }
 
+      bestNode.virtualLosses++;
+      
       return bestNode;
 	}
 	
 	
-	public double getValue(double cpUct) {
+	public synchronized double getValue(double cpUct) {
 	  
 	  this.uValue = 
           cpUct * this.moveProbability *
-              Math.sqrt(this.parent.timesVisited) / (1 + this.timesVisited);
+              Math.sqrt(this.parent.timesVisited) / (1 + this.timesVisited + this.virtualLosses);
 	  
 	  return this.qValue + this.uValue;
 	}
 	
 	
-	public void update(double newValue) {
+	public synchronized void update(double newValue) {
 
 	  this.timesVisited++;
 	  
 	  this.qValue += (newValue - this.qValue) / (this.timesVisited); 
-      
+
+	  this.virtualLosses--;
 	}
 	
 	
-	public void updateRecursiv(double newValue) {
+	public synchronized void updateRecursiv(double newValue) {
 	  
 
 	  if (null != this.parent) {
