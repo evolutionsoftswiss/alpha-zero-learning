@@ -39,12 +39,12 @@ public class MonteCarloTreeSearch {
 
       double endResult = game.getEndResult(treeNode.lastMoveColor);
 
-      if (Game.MAX_PLAYER == treeNode.lastMoveColor) {
+      if (Game.MIN_PLAYER == treeNode.lastMoveColor) {
 
         endResult = 1 - endResult;
       }
 
-      treeNode.updateRecursiv(1 - endResult);
+      treeNode.updateRecursiv(endResult);
 
     } else {
 
@@ -77,7 +77,7 @@ public class MonteCarloTreeSearch {
 
   public INDArray getActionValues(Game currentGame, double temperature, ComputationGraph computationGraph) {
 
-    TreeNode treeNode = new TreeNode(-1, Game.MIN_PLAYER, 0, 1.0, 0.5, null);
+    TreeNode treeNode = new TreeNode(-1, currentGame.getOtherPlayer(currentGame.getCurrentPlayer()), 0, 1.0, 0.5, null);
 
     return this.getActionValues(currentGame, treeNode, temperature, computationGraph);
   }

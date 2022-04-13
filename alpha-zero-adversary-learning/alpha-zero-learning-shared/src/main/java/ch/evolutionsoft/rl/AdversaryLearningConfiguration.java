@@ -128,20 +128,25 @@ public class AdversaryLearningConfiguration {
 
   /**
    * When the temperature used in {@link MonteCarloTreeSearch} getActionValues() should become 0.
-   * Currently only 1 or 0 are used. With too small values > 0 can overflows were observed.
+   * Currently only 1 or 0 are used. With too small values > 0 overflows were observed.
    * A temperature == 0 will lead to move action probabilities all zero, expect
    * one being one. Temperatures > 0 keep probabilities > 0 for all move actions
    * in function of the number of visits during {@link MonteCarloTreeSearch}.
    */
-  private int fromNumberOfIterationsTemperatureZero;
+  private int fromNumberOfIterationsReducedTemperature;
   
   /**
    * Currently used approach in TicTacToe example implementation.
    * Also in early iterations use zero temperature after having reached the
    * specified number of moves in an alpha zero iteration.
    */
-  private int fromNumberOfMovesTemperatureZero;
+  private int fromNumberOfMovesReducedTemperature;
 
+  /**
+   * Use another value than zero for reduced temperature
+   */
+  private double reducedTemperature;
+  
   /**
    * The maximum number of train examples to keep in history and reuse for neural net fit.
    * TicTacToe never exceeds the used value of 5000. ConnectFour uses 80'000 and removes
@@ -200,8 +205,9 @@ public class AdversaryLearningConfiguration {
     private int iterationStart = 1;
     private int numberOfIterations = 180;
     private int checkPointIterationsFrequency = 50;
-    private int fromNumberOfIterationsTemperatureZero = -1;
-    private int fromNumberOfMovesTemperatureZero = 3;
+    private int fromNumberOfIterationsReducedTemperature = -1;
+    private int fromNumberOfMovesReducedTemperature = 3;
+    private double reducedTemperature = 0;
     private int maxTrainExamplesHistory = 5000;
     private int maxTrainExamplesHistoryFromIteration = 100;
 
@@ -228,8 +234,9 @@ public class AdversaryLearningConfiguration {
       configuration.iterationStart = iterationStart;
       configuration.numberOfIterations = numberOfIterations;
       configuration.checkPointIterationsFrequency = checkPointIterationsFrequency;
-      configuration.fromNumberOfIterationsTemperatureZero = fromNumberOfIterationsTemperatureZero;
-      configuration.fromNumberOfMovesTemperatureZero = fromNumberOfMovesTemperatureZero;
+      configuration.fromNumberOfIterationsReducedTemperature = fromNumberOfIterationsReducedTemperature;
+      configuration.fromNumberOfMovesReducedTemperature = fromNumberOfMovesReducedTemperature;
+      configuration.reducedTemperature = reducedTemperature;
       configuration.maxTrainExamplesHistory = maxTrainExamplesHistory;
       configuration.maxTrainExamplesHistoryFromIteration = maxTrainExamplesHistoryFromIteration;
       configuration.uctConstantFactor = uctConstantFactor;
@@ -260,13 +267,18 @@ public class AdversaryLearningConfiguration {
       return this;
     }
 
-    public Builder fromNumberOfIterationsTemperatureZero(int fromNumberOfIterationsTemperatureZero) {
-      this.fromNumberOfIterationsTemperatureZero = fromNumberOfIterationsTemperatureZero;
+    public Builder fromNumberOfIterationsReducedTemperature(int fromNumberOfIterationsReducedTemperature) {
+      this.fromNumberOfIterationsReducedTemperature = fromNumberOfIterationsReducedTemperature;
       return this;
     }
 
-    public Builder fromNumberOfMovesTemperatureZero(int fromNumberOfMovesTemperatureZero) {
-      this.fromNumberOfMovesTemperatureZero = fromNumberOfMovesTemperatureZero;
+    public Builder fromNumberOfMovesReducedTemperature(int fromNumberOfMovesReducedTemperature) {
+      this.fromNumberOfMovesReducedTemperature = fromNumberOfMovesReducedTemperature;
+      return this;
+    }
+    
+    public Builder reducedTemperature(double temperature) {
+      this.reducedTemperature = temperature;
       return this;
     }
     
@@ -362,8 +374,8 @@ public class AdversaryLearningConfiguration {
         "\n iterationStart: " + this.iterationStart + 
         "\n numberOfIterations: " + this.numberOfIterations +
         "\n checkPointIterationsFrequency: " + this.checkPointIterationsFrequency +
-        "\n fromNumberOfIterationsTemperatureZero: " + this.fromNumberOfIterationsTemperatureZero +
-        "\n fromNumberOfMovesTemperatureZero: " + this.fromNumberOfMovesTemperatureZero +
+        "\n fromNumberOfIterationsTemperatureZero: " + this.fromNumberOfIterationsReducedTemperature +
+        "\n fromNumberOfMovesTemperatureZero: " + this.fromNumberOfMovesReducedTemperature +
         "\n maxTrainExamplesHistory: " + this.maxTrainExamplesHistory +
         "\n maxTrainExamplesHistoryFromIteration: " + this.maxTrainExamplesHistoryFromIteration +
         "\n currentMaxTrainExamplesHistory: " + this.getCurrentMaxTrainExamplesHistory(iterationStart) +
@@ -495,28 +507,36 @@ public class AdversaryLearningConfiguration {
 
     if (getFromNumberOfIterationsTemperatureZero() >= 0 && iteration >= getFromNumberOfIterationsTemperatureZero() ||
         getFromNumberOfMovesTemperatureZero() >= 0 && moveNumber >= getFromNumberOfMovesTemperatureZero()) {
-      return AdversaryLearningConstants.ZERO;
+      return reducedTemperature;
     }
     
     return AdversaryLearningConstants.ONE;
   }
  
   public int getFromNumberOfIterationsTemperatureZero() {
-    return fromNumberOfIterationsTemperatureZero;
+    return fromNumberOfIterationsReducedTemperature;
   }
 
   public void setFromNumberOfIterationsTemperatureZero(int fromNumberOfIterationsTemperatureZero) {
-    this.fromNumberOfIterationsTemperatureZero = fromNumberOfIterationsTemperatureZero;
+    this.fromNumberOfIterationsReducedTemperature = fromNumberOfIterationsTemperatureZero;
   }
   
   public int getFromNumberOfMovesTemperatureZero() {
-    return fromNumberOfMovesTemperatureZero;
+    return fromNumberOfMovesReducedTemperature;
   }
 
   public void setFromNumberOfMovesTemperatureZero(int fromNumberOfMovesTemperatureZero) {
-    this.fromNumberOfMovesTemperatureZero = fromNumberOfMovesTemperatureZero;
+    this.fromNumberOfMovesReducedTemperature = fromNumberOfMovesTemperatureZero;
   }
 
+  public double getReducedTemperature() {
+    return reducedTemperature;
+  }
+  
+  public void setReducedTemperature(double reducedTemperature) {
+    this.reducedTemperature = reducedTemperature;
+  }
+  
   public int getCurrentMaxTrainExamplesHistory(int currentIteration) {
     
     if (currentIteration >= getMaxTrainExamplesHistoryFromIteration()) {

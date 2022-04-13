@@ -30,8 +30,9 @@ class AdversaryLearningConfigurationTest {
         checkPointIterationsFrequency(5).
         dirichletAlpha(0.8).
         dirichletWeight(0.4).
-        fromNumberOfIterationsTemperatureZero(1000).
-        fromNumberOfMovesTemperatureZero(10).
+        fromNumberOfIterationsReducedTemperature(1000).
+        fromNumberOfMovesReducedTemperature(10).
+        reducedTemperature(0.5).
         gamesWinRatioThresholdNewNetworkUpdate(0.5).
         iterationStart(10000).
         learningRateSchedule(learningRateSchedule).
@@ -64,6 +65,7 @@ class AdversaryLearningConfigurationTest {
     adversaryLearningConfiguration.setDirichletWeight(0.4);
     adversaryLearningConfiguration.setFromNumberOfIterationsTemperatureZero(1000);
     adversaryLearningConfiguration.setFromNumberOfMovesTemperatureZero(10);
+    adversaryLearningConfiguration.setReducedTemperature(0.5);
     adversaryLearningConfiguration.setGamesWinRatioThresholdNewNetworkUpdate(0.5);
     adversaryLearningConfiguration.setIterationStart(10000);
     adversaryLearningConfiguration.setLearningRateSchedule(learningRateSchedule);
@@ -91,10 +93,10 @@ class AdversaryLearningConfigurationTest {
         () -> assertTrue(adversaryLearningConfiguration.getTrainExamplesFileName().endsWith("trainingExamplesHistory.obj")),
         () -> assertEquals(5, adversaryLearningConfiguration.getCheckPointIterationsFrequency()),
         () -> assertEquals(1.0, adversaryLearningConfiguration.getCurrentTemperature(0, 9)),
-        () -> assertEquals(0.0, adversaryLearningConfiguration.getCurrentTemperature(0, 10)),
+        () -> assertEquals(0.5, adversaryLearningConfiguration.getCurrentTemperature(0, 10)),
         () -> assertEquals(1.0, adversaryLearningConfiguration.getCurrentTemperature(999, 1)),
-        () -> assertEquals(0.0, adversaryLearningConfiguration.getCurrentTemperature(1000, 1)),
-        () -> assertEquals(0.0, adversaryLearningConfiguration.getCurrentTemperature(1000, 10)),
+        () -> assertEquals(0.5, adversaryLearningConfiguration.getCurrentTemperature(1000, 1)),
+        () -> assertEquals(0.5, adversaryLearningConfiguration.getCurrentTemperature(1000, 10)),
         () -> assertEquals(0.8, adversaryLearningConfiguration.getDirichletAlpha()),
         () -> assertEquals(0.4, adversaryLearningConfiguration.getDirichletWeight()),
         () -> assertEquals(1000, adversaryLearningConfiguration.getFromNumberOfIterationsTemperatureZero()),
