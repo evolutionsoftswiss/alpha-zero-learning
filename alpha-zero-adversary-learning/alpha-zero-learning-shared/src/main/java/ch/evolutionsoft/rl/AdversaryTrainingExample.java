@@ -34,6 +34,8 @@ public class AdversaryTrainingExample implements Serializable {
 
   INDArray board;
   
+  String boardString;
+  
   int currentPlayer;
   
   INDArray actionIndexProbabilities;
@@ -52,7 +54,8 @@ public class AdversaryTrainingExample implements Serializable {
   public AdversaryTrainingExample(INDArray board, int currentPlayer, 
       INDArray actionIndexProbabilities, int iteration) {
     
-    this.board = board.dup();
+    this.board = board;
+    this.boardString = AdversaryLearningSharedHelper.writeStringForArray(this.board);
     this.currentPlayer = currentPlayer;
     this.actionIndexProbabilities = actionIndexProbabilities;
     this.iteration = iteration;
@@ -72,12 +75,12 @@ public class AdversaryTrainingExample implements Serializable {
 
   public String getBoardString() {
     
-    return AdversaryLearningSharedHelper.writeStringForArray(this.board);
+    return this.boardString;
   }
   
   @JsonProperty(value = "board")
   public String getBoardAsText() {
-    return AdversaryLearningSharedHelper.writeStringForArray(getBoard());
+    return this.boardString;
   }
 
   public void setBoard(INDArray board) {
@@ -87,6 +90,7 @@ public class AdversaryTrainingExample implements Serializable {
   @JsonSetter
   public void setBoard(String board) {
     this.board = Nd4j.readTxtString(new ByteArrayInputStream(board.getBytes()));
+    this.boardString = board;
   }
 
   public INDArray getActionIndexProbabilities() {
@@ -132,12 +136,12 @@ public class AdversaryTrainingExample implements Serializable {
     
     AdversaryTrainingExample otherExample = (AdversaryTrainingExample) other;
     
-    return this.board.equals(otherExample.board);
+    return this.getBoardString().equals(otherExample.getBoardString());
   }
   
   public int hashCode() {
     
-    return this.board.hashCode();
+    return this.getBoardString().hashCode();
   }
   
   public String toString() {

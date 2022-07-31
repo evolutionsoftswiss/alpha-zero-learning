@@ -1,6 +1,8 @@
 package ch.evolutionsoft.rl.alphazero;
 
+import java.io.Serializable;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
@@ -13,29 +15,25 @@ import org.slf4j.LoggerFactory;
 
 import ch.evolutionsoft.rl.Game;
 
-public class TreeNode {
-
-  final Object lock = new Object();
+public class TreeNode implements Serializable {
   
-  Logger logger = LoggerFactory.getLogger(TreeNode.class);
+  transient Logger logger = LoggerFactory.getLogger(TreeNode.class);
 	
-	volatile int lastMove;
+	int lastMove;
 
-	volatile int depth;
+	int depth;
 	
-	volatile int lastMoveColor;
+	int lastMoveColor;
 	
-	volatile int timesVisited = 0;
+	int timesVisited = 0;
 	
-	volatile int virtualLosses = 0;
+	double qValue = AdversaryLearning.DRAW_VALUE; 
 	
-	volatile double qValue = AdversaryLearning.DRAW_VALUE; 
+	double uValue = 0;
 	
-	volatile double uValue = 0;
+	double moveProbability = 0;
 	
-	volatile double moveProbability;
-	
-	volatile TreeNode parent;
+	TreeNode parent;
 	
 	ConcurrentMap<Integer, TreeNode> children = new ConcurrentHashMap<>();
 	
@@ -54,11 +52,11 @@ public class TreeNode {
 	  this.lastMove = lastMove;
 	  this.moveProbability = moveProbability;
 	  this.lastMoveColor = lastMoveColor;
+
 	}
 	
 	void expand(Game game, INDArray previousActionProbabilities) {
 
-    synchronized(lock) {
   	  Set<Integer> validMoveIndices = game.getValidMoveIndices();
    
   	  for (int moveIndex : validMoveIndices) {
@@ -73,17 +71,12 @@ public class TreeNode {
   	            1 - this.qValue,
   	            this));
   	    }
-    }
-	}
-
-	public boolean isExpanded() {
-	  
-	  return !this.children.isEmpty();
 	}
 	
-	protected synchronized TreeNode selectMove(double cpUct) {
+	protected TreeNode selectMove(double cpUct) {
 
-      List<TreeNode> childNodes = new ArrayList<>(this.children.values());
+	  List<TreeNode> childNodes = new ArrayList<>(this.children.values());
+    
       Collections.shuffle(childNodes);
 
       double bestValue = Integer.MIN_VALUE;
@@ -100,51 +93,54 @@ public class TreeNode {
         }
       }
 
-      bestNode.virtualLosses++;
-      
       return bestNode;
 	}
 	
 	
-	public synchronized double getValue(double cpUct) {
-	  
+	public double getValue(double cpUct) {
+
 	  this.uValue = 
           cpUct * this.moveProbability *
-              Math.sqrt(this.parent.timesVisited) / (1 + this.timesVisited + this.virtualLosses);
+              Math.sqrt(this.parent.timesVisited) / (1 + this.timesVisited);
 	  
 	  return this.qValue + this.uValue;
 	}
+
 	
-	
-	public synchronized void update(double newValue) {
+	public void update(double newValue, TreeNode currentRoot) {
 
 	  this.timesVisited++;
-	  
-	  this.qValue += (newValue - this.qValue) / (this.timesVisited); 
 
-	  this.virtualLosses--;
+	  this.qValue = this.qValue + ((newValue - this.qValue) / (this.timesVisited));
+	}
+  
+  
+  public void updateRecursiv(double newValue, TreeNode currentRoot) {
+
+    if (this != currentRoot) {
+      
+      this.parent.updateRecursiv(1 - newValue, currentRoot);
+    }
+    
+    this.update(newValue, currentRoot);
+  }
+
+  public boolean isExpanded() {
+    return !this.children.isEmpty();
+  }
+
+	public Collection<TreeNode> getChildren() {
+  
+	  return this.children.values();
 	}
 	
-	
-	public synchronized void updateRecursiv(double newValue) {
-	  
-
-	  if (null != this.parent) {
-	    
-	    this.parent.updateRecursiv(1 - newValue);
-	  }
-	  
-	  this.update(newValue);
-	  
-	}
-
 	public TreeNode getChildWithMoveIndex(int moveIndex) {
-	  
+
 	  return this.children.get(moveIndex);
 	}
 	
 	public boolean containsChildMoveIndex(int moveIndex) {
-	  
+     
 	  return this.children.containsKey(moveIndex);
 	}
 }

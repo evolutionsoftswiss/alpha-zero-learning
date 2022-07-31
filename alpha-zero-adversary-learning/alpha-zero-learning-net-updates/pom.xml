@@ -18,7 +18,7 @@
 		<dependency>
 			<groupId>org.nd4j</groupId>
 			<artifactId>nd4j-cuda-11.2</artifactId>
-			<version>1.0.0-M1.1</version>
+			<version>1.0.0-M2</version>
 		</dependency>
 		<dependency>
 			<groupId>org.nd4j</groupId>
@@ -31,7 +31,7 @@
 	        <artifactId>deeplearning4j-cuda-11.2</artifactId>
 	        <version>1.0.0-M1.1</version>
 	    </dependency>
-    
+
 		
 		<dependency>
 			<groupId>ch.evolutionsoft</groupId>
@@ -69,7 +69,6 @@
 		<dependency>
 		    <groupId>io.projectreactor.netty</groupId>
 		    <artifactId>reactor-netty-http</artifactId>
-		    <version>1.0.12</version>
 		</dependency>
 		
         <!-- Required for converting JSON data to Java object and vice versa -->

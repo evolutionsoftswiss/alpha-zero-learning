@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
@@ -123,33 +124,25 @@ public class NeuralNetUpdater {
   public void listenForNewTrainingExamples() {
 
     String targetUrl = CONTROLLER_BASE_URL + "/newTrainingExamples";
-    Set<AdversaryTrainingExample> newExamples = null;
+    Set<AdversaryTrainingExample> newExamples = new HashSet<>();
     Set<AdversaryTrainingExample> previousExamples = null;
     
     ExecutorService netUpdaterExecutor = null;
-    
-    boolean firstUpdate = true;
 
     try {
       
       while (!this.initializationExecutor.awaitTermination(Long.MAX_VALUE, TimeUnit.MINUTES)) {
-        // Wait for initilzation
+        // Wait for initialization
       }
       
       for (int iteration = adversaryLearningConfiguration.getIterationStart() - 1;
           iteration < adversaryLearningConfiguration.getIterationStart() + 
-          adversaryLearningConfiguration.getNumberOfIterations() - 1;
+          adversaryLearningConfiguration.getNumberOfIterations();
           iteration++) {
-          
-        previousExamples = newExamples;
-        newExamples = 
-              webClient.get().
-              uri(URI.create(targetUrl)).
-              retrieve().
-              bodyToMono(parameterizedTypeReference).
-              block();
         
-        if (!firstUpdate) {
+        previousExamples = newExamples;
+        
+        if (iteration > 0) {
           while (null != netUpdaterExecutor && !netUpdaterExecutor.awaitTermination(Long.MAX_VALUE, TimeUnit.MINUTES)) {
             // Wait for previous net update
           }
@@ -161,38 +154,49 @@ public class NeuralNetUpdater {
     
               ComputationGraph computationGraph = fitNeuralNet(finalInputList, updateIteration);
     
-              try {
-                  
-                  ModelSerializer.writeModel(computationGraph, adversaryLearningConfiguration.getBestModelFileName(), true);
-    
-                  webClient.
-                  put().
-                  uri(URI.create(CONTROLLER_BASE_URL + "/modelUpdated")).
-                  retrieve().
-                  bodyToMono(Void.class).
-                  block();
-                
-                } catch (WebClientRequestException wcre) {
-    
-                  log.warn("Continue next iteration, current iteration {} failed, "
-                      + "encountered ResourceAccessException", updateIteration);
-    
-                } catch (IOException ioe) {
-    
-                  log.error("Error writing updated model", ioe);
-                }
+              writeUpdatedModel(updateIteration, computationGraph);
             }
           );
 
           netUpdaterExecutor.shutdown();
         }
-        firstUpdate = false;
+        
+        newExamples = 
+            webClient.get().
+            uri(URI.create(targetUrl)).
+            retrieve().
+            bodyToMono(parameterizedTypeReference).
+            block();
       }
     } catch (InterruptedException ie) {
       
       Thread.currentThread().interrupt();
       throw new NeuralNetUpdaterRuntimeException(ie);
     }
+  }
+
+  void writeUpdatedModel(final int updateIteration, ComputationGraph computationGraph) {
+
+    try {
+        
+        ModelSerializer.writeModel(computationGraph, adversaryLearningConfiguration.getBestModelFileName(), true);
+  
+        webClient.
+        put().
+        uri(URI.create(CONTROLLER_BASE_URL + "/modelUpdated")).
+        retrieve().
+        bodyToMono(Void.class).
+        block();
+      
+      } catch (WebClientRequestException wcre) {
+  
+        log.warn("Continue next iteration, current iteration {} failed, "
+            + "encountered ResourceAccessException", updateIteration);
+  
+      } catch (IOException ioe) {
+  
+        log.error("Error writing updated model", ioe);
+      }
   }
 
   boolean adversaryLearningIsReady() {
@@ -223,7 +227,7 @@ public class NeuralNetUpdater {
     this.adversaryLearningSharedHelper.replaceOldTrainingExamplesWithNewActionProbabilities(
         newExamples);
 
-    log.info("Resize train examples history");
+    log.info("Resize train examples history for iteration {}", updateIteration);
     this.adversaryLearningSharedHelper.resizeTrainExamplesHistory(updateIteration);
 
     List<AdversaryTrainingExample> trainingExamples =

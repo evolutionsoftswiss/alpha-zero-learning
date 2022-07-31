@@ -374,8 +374,9 @@ public class AdversaryLearningConfiguration {
         "\n iterationStart: " + this.iterationStart + 
         "\n numberOfIterations: " + this.numberOfIterations +
         "\n checkPointIterationsFrequency: " + this.checkPointIterationsFrequency +
-        "\n fromNumberOfIterationsTemperatureZero: " + this.fromNumberOfIterationsReducedTemperature +
-        "\n fromNumberOfMovesTemperatureZero: " + this.fromNumberOfMovesReducedTemperature +
+        "\n fromNumberOfIterationsReducedTemperature: " + this.fromNumberOfIterationsReducedTemperature +
+        "\n fromNumberOfMovesReducedTemperature: " + this.fromNumberOfMovesReducedTemperature +
+        "\n reducedTemperature: " + this.reducedTemperature +
         "\n maxTrainExamplesHistory: " + this.maxTrainExamplesHistory +
         "\n maxTrainExamplesHistoryFromIteration: " + this.maxTrainExamplesHistoryFromIteration +
         "\n currentMaxTrainExamplesHistory: " + this.getCurrentMaxTrainExamplesHistory(iterationStart) +

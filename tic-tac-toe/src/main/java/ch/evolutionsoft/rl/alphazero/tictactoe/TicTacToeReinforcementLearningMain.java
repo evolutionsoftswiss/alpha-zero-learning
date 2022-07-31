@@ -46,9 +46,10 @@ public class TicTacToeReinforcementLearningMain {
         new AdversaryLearningConfiguration.Builder().
         learningRateSchedule(learningRateMapSchedule).
         numberOfAllAvailableMoves(tictactoeGame.getNumberOfAllAvailableMoves()).
+        numberOfIterations(250).
         dirichletAlpha(2.5).
         numberOfMonteCarloSimulations(25).
-        uctConstantFactor(1.4).
+        uctConstantFactor(1.5).
         maxTrainExamplesHistoryFromIteration(0).
         build();
    

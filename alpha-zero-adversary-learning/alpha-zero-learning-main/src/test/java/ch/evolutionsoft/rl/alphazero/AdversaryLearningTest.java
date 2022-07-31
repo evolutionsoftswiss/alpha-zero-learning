@@ -4,7 +4,6 @@ import static org.junit.jupiter.api.Assertions.*;
 
 import java.io.IOException;
 import java.nio.file.Files;
-import java.nio.file.NoSuchFileException;
 import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.Collections;
@@ -82,6 +81,7 @@ class AdversaryLearningTest {
     adversaryLearning.iteration = 400;
 
     adversaryLearning.saveTrainExamplesHistory();
+    adversaryLearning.sharedHelper.resizeTrainExamplesHistory(adversaryLearning.iteration);
     
     assertEquals(3, adversaryLearning.getTrainExamplesHistory().size());
     assertFalse(adversaryLearning.getTrainExamplesHistory().containsKey(AdversaryLearningSharedHelper.writeStringForArray(dummyBoard1)));
@@ -131,6 +131,7 @@ class AdversaryLearningTest {
     adversaryLearning.iteration = 400;
 
     adversaryLearning.saveTrainExamplesHistory();
+    adversaryLearning.sharedHelper.resizeTrainExamplesHistory(adversaryLearning.iteration);
     
     assertEquals(2, adversaryLearning.getTrainExamplesHistory().size());
     assertFalse(adversaryLearning.getTrainExamplesHistory().containsKey(AdversaryLearningSharedHelper.writeStringForArray(dummyBoard1)));
@@ -169,6 +170,7 @@ class AdversaryLearningTest {
     adversaryLearning.iteration = 400;
     
     adversaryLearning.saveTrainExamplesHistory();
+    adversaryLearning.sharedHelper.resizeTrainExamplesHistory(adversaryLearning.iteration);
     
     assertEquals(3, adversaryLearning.getTrainExamplesHistory().size());
     assertTrue(adversaryLearning.getTrainExamplesHistory().containsKey(AdversaryLearningSharedHelper.writeStringForArray(dummyBoard1)));
@@ -199,6 +201,7 @@ class AdversaryLearningTest {
     adversaryLearning.iteration = 400;
 
     adversaryLearning.saveTrainExamplesHistory();
+    adversaryLearning.sharedHelper.resizeTrainExamplesHistory(adversaryLearning.iteration);
     
     assertEquals(2, adversaryLearning.getTrainExamplesHistory().size());
     assertTrue(adversaryLearning.getTrainExamplesHistory().containsKey(AdversaryLearningSharedHelper.writeStringForArray(dummyBoard1)));

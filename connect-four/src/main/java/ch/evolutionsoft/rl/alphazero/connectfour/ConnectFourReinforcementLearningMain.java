@@ -45,29 +45,29 @@ public class ConnectFourReinforcementLearningMain {
     ConnectFour connectFourGame = new ConnectFour(Game.MAX_PLAYER);
 
     Map<Integer, Double> learningRatesByIterations = new HashMap<>();
-    learningRatesByIterations.put(0, 1e-3);
-    learningRatesByIterations.put(3000, 5e-4);
-    learningRatesByIterations.put(6000, 1e-4);
-    learningRatesByIterations.put(9000, 5e-5);
+    learningRatesByIterations.put(0, 5e-4);
+    learningRatesByIterations.put(40000, 2e-4);
+    learningRatesByIterations.put(100000, 8e-5);
     MapSchedule learningRateMapSchedule = new MapSchedule(ScheduleType.ITERATION, learningRatesByIterations);
     AdversaryLearningConfiguration adversaryLearningConfiguration =
         new AdversaryLearningConfiguration.Builder().
         learningRateSchedule(learningRateMapSchedule).
         alwaysUpdateNeuralNetwork(true).
         numberOfAllAvailableMoves(connectFourGame.getNumberOfAllAvailableMoves()).
-        batchSize(16384).
+        batchSize(1024).
         checkPointIterationsFrequency(50).
-        dirichletAlpha(1.4).
-        dirichletWeight(0.4).
-        fromNumberOfIterationsTemperatureZero(-1).
-        fromNumberOfMovesTemperatureZero(9).
+        dirichletAlpha(2.0).
+        dirichletWeight(0.35).
+        fromNumberOfIterationsReducedTemperature(-1).
+        fromNumberOfMovesReducedTemperature(11).
         iterationStart(1).
-        maxTrainExamplesHistory(163840).
-        numberOfIterations(1500).
+        maxTrainExamplesHistory(81920).
+        maxTrainExamplesHistoryFromIteration(300).
+        numberOfIterations(150).
         numberOfEpisodesBeforePotentialUpdate(20).
         numberOfEpisodeThreads(20).
         numberOfMonteCarloSimulations(200).
-        uctConstantFactor(1.5).
+        uctConstantFactor(3.5).
         
         build();
    
@@ -86,13 +86,7 @@ public class ConnectFourReinforcementLearningMain {
   ComputationGraph createConvolutionalConfiguration(AdversaryLearningConfiguration adversaryLearningConfiguration) {
 
     ConvolutionResidualNet convolutionalLayerNet =
-        new ConvolutionResidualNet(adversaryLearningConfiguration.getLearningRate());
-
-    if (null != adversaryLearningConfiguration.getLearningRateSchedule()) {
-
-      convolutionalLayerNet =
-          new ConvolutionResidualNet(adversaryLearningConfiguration.getLearningRateSchedule());
-    }
+        new ConvolutionResidualNet(adversaryLearningConfiguration.getLearningRateSchedule());
     
     ComputationGraphConfiguration convolutionalLayerNetConfiguration =
         convolutionalLayerNet.createConvolutionalGraphConfiguration();

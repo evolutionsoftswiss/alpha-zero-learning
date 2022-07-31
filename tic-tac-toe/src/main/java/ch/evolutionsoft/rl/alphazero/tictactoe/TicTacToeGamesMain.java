@@ -12,7 +12,6 @@ import org.slf4j.LoggerFactory;
 import ch.evolutionsoft.rl.AdversaryLearningConfiguration;
 import ch.evolutionsoft.rl.Game;
 import ch.evolutionsoft.rl.alphazero.AdversaryLearning;
-import ch.evolutionsoft.rl.alphazero.MonteCarloTreeSearch;
 
 public class TicTacToeGamesMain {
 
@@ -89,9 +88,10 @@ public class TicTacToeGamesMain {
 
   static INDArray doMoveFromAlphaZeroNet(ComputationGraph alphaNet, Game ticTacToe, boolean xPlayer) {
 
-    int moveIndex = new MonteCarloTreeSearch(new AdversaryLearningConfiguration.
-        Builder().build()).getActionValues(ticTacToe, 0, alphaNet).argMax(0).getInt(0);
+    INDArray inputBoardBatch = createSingleBatchBoardInput(ticTacToe.getCurrentBoard());
+    INDArray actionOutput = alphaNet.output(inputBoardBatch)[0];
     
+    int moveIndex = actionOutput.argMax(1).getInt(0);
     if (!ticTacToe.getValidMoveIndices().contains(moveIndex)) {
       log.warn("Invalid O move from alpha zero net.");
       moveIndex = ticTacToe.getValidMoveIndices().iterator().next();
@@ -115,11 +115,19 @@ public class TicTacToeGamesMain {
 
   public static int getBestMove(ComputationGraph computationGraph, INDArray board) {
 
-    INDArray inputBoardBatch = Nd4j.zeros(1, TicTacToeConstants.IMAGE_CHANNELS, TicTacToeConstants.IMAGE_SIZE, TicTacToeConstants.IMAGE_SIZE);
-    inputBoardBatch.putRow(0, board);
+    INDArray inputBoardBatch = createSingleBatchBoardInput(board);
+    
     INDArray[] output = computationGraph.output(inputBoardBatch);
 
     return output[0].argMax(1).getInt(0);
+  }
+
+  static INDArray createSingleBatchBoardInput(INDArray board) {
+
+    INDArray inputBoardBatch = Nd4j.zeros(1, TicTacToeConstants.IMAGE_CHANNELS, TicTacToeConstants.IMAGE_SIZE, TicTacToeConstants.IMAGE_SIZE);
+    inputBoardBatch.putRow(0, board);
+    
+    return inputBoardBatch;
   }
   
 }

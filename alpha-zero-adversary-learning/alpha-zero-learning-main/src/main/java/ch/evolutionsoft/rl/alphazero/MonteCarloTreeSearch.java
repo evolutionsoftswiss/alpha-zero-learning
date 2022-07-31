@@ -17,6 +17,8 @@ public class MonteCarloTreeSearch {
 
   Logger logger = LoggerFactory.getLogger(MonteCarloTreeSearch.class);
 
+  final Object lock = new Object();
+
   double currentUctConstant = 1.5;
 
   int numberOfSimulations;
@@ -27,52 +29,54 @@ public class MonteCarloTreeSearch {
     this.numberOfSimulations = configuration.getNumberOfMonteCarloSimulations();
   }
 
-  void playout(TreeNode treeNode, Game game, ComputationGraph computationGraph) {
+  void playout(TreeNode rootNode, Game game, ComputationGraph computationGraph) {
 
-    while (treeNode.isExpanded()) {
+    TreeNode mctsRoot = rootNode;
+    TreeNode currentNode = rootNode;
 
-      treeNode = treeNode.selectMove(this.currentUctConstant);
-      game.makeMove(treeNode.lastMove, treeNode.lastMoveColor);
+    while (currentNode.isExpanded()) {
+      currentNode = currentNode.selectMove(this.currentUctConstant);
+      game.makeMove(currentNode.lastMove, currentNode.lastMoveColor);
     }
-
+    
     if (game.gameEnded()) {
 
-      double endResult = game.getEndResult(treeNode.lastMoveColor);
+      double endResult = game.getEndResult(currentNode.lastMoveColor);
 
-      if (Game.MIN_PLAYER == treeNode.lastMoveColor) {
+      if (Game.MIN_PLAYER == currentNode.lastMoveColor) {
 
         endResult = 1 - endResult;
       }
-
-      treeNode.updateRecursiv(endResult);
-
+      currentNode.updateRecursiv(endResult, mctsRoot);
+      
     } else {
-
       INDArray currentBoard = game.getCurrentBoard();
 
       long[] newShape = new long[currentBoard.shape().length + 1];
       System.arraycopy(currentBoard.shape(), 0, newShape, 1, currentBoard.shape().length);
       newShape[0] = 1;
+      
       INDArray oneBatchBoard = currentBoard.reshape(newShape);
-      INDArray[] neuralNetOutput = computationGraph.output(oneBatchBoard);
-
+      INDArray[] neuralNetOutput; neuralNetOutput = computationGraph.output(oneBatchBoard);
+      
+      
       INDArray actionProbabilities = neuralNetOutput[0];
       double leafValue = neuralNetOutput[1].getDouble(0);
-
+      
       INDArray validMovesMask = game.getValidMoves();
       INDArray validActionProbabilities = actionProbabilities.mul(validMovesMask);
-
+      
       Number validActionsSum = validActionProbabilities.sumNumber();
+      INDArray normalizedValidActionProbabilities;
 
       if (validActionsSum.doubleValue() > 0) {
-        validActionProbabilities = validActionProbabilities.div(validActionsSum);
+        normalizedValidActionProbabilities = validActionProbabilities.div(validActionsSum);
       } else {
-        validActionProbabilities = validMovesMask.div(validMovesMask.sumNumber());
+        normalizedValidActionProbabilities = validMovesMask.div(validMovesMask.sumNumber());
       }
-      treeNode.updateRecursiv(1 - leafValue);
-
-      treeNode.expand(game, validActionProbabilities);
-    }
+      currentNode.updateRecursiv(1 - leafValue, mctsRoot);
+      currentNode.expand(game, normalizedValidActionProbabilities);
+      }
   }
 
   public INDArray getActionValues(Game currentGame, double temperature, ComputationGraph computationGraph) {
@@ -82,14 +86,16 @@ public class MonteCarloTreeSearch {
     return this.getActionValues(currentGame, treeNode, temperature, computationGraph);
   }
 
-  public INDArray getActionValues(Game currentGame, TreeNode treeNode, double temperature, ComputationGraph computationGraph) {
+  public INDArray getActionValues(Game currentGame, TreeNode rootNode, double temperature, ComputationGraph computationGraph) {
 
     int playouts = 0;
 
     while (playouts < numberOfSimulations) {
 
       Game newGameInstance = currentGame.createNewInstance();
-      this.playout(treeNode, newGameInstance, computationGraph);
+      
+      this.playout(rootNode, newGameInstance, computationGraph);
+      
       playouts++;
     }
 
@@ -98,9 +104,9 @@ public class MonteCarloTreeSearch {
 
     for (int index = 0; index < currentGame.getNumberOfCurrentMoves(); index++) {
 
-      if (treeNode.containsChildMoveIndex(index)) {
+      if (rootNode.containsChildMoveIndex(index)) {
 
-        visitedCounts[index] = treeNode.getChildWithMoveIndex(index).timesVisited;
+        visitedCounts[index] = rootNode.getChildWithMoveIndex(index).timesVisited;
         if (visitedCounts[index] > maxVisitedCounts) {
 
           maxVisitedCounts = visitedCounts[index];
@@ -152,5 +158,20 @@ public class MonteCarloTreeSearch {
     moveProbabilities = moveProbabilities.div(moveProbabilities.sumNumber());
 
     return moveProbabilities;
+  }
+
+  public TreeNode updateMonteCarloSearchRoot(Game game, TreeNode lastRoot, int moveAction) {
+
+    if (lastRoot.containsChildMoveIndex(moveAction)) {
+
+      return lastRoot.getChildWithMoveIndex(moveAction);
+    } else {
+
+      logger.warn("{}", game);
+      logger.error("no child with move {} " + "found for current root node with last move {}", moveAction,
+          lastRoot.lastMove);
+
+      return null;
+    }
   }
 }

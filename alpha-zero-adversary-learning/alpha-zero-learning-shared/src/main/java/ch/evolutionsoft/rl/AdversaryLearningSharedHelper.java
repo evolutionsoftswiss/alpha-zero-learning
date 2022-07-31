@@ -5,6 +5,7 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -104,7 +105,7 @@ public class AdversaryLearningSharedHelper {
 
       currentAdversaryExample.setCurrentPlayerValue(playerValue);
       
-      this.trainExamplesHistory.put(writeStringForArray(currentBoardKey), currentAdversaryExample);
+      this.trainExamplesHistory.put(currentAdversaryExample.getBoardString(), currentAdversaryExample);
     }
       
     int size = this.trainExamplesHistory.size();
@@ -135,6 +136,11 @@ public class AdversaryLearningSharedHelper {
   public Map<String, AdversaryTrainingExample> replaceOldTrainingExamplesWithNewActionProbabilities(
       Collection<AdversaryTrainingExample> newExamples) {
 
+    if (newExamples.isEmpty()) {
+      
+      return Collections.emptyMap();
+    }
+    
     int replacedNumber = 0;
     Set<String> newIterationBoards = new HashSet<>();
     int currentIteration = newExamples.iterator().next().getIteration();

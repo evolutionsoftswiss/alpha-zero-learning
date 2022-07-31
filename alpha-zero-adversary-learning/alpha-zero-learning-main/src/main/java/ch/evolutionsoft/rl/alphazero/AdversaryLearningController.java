@@ -35,7 +35,9 @@ public class AdversaryLearningController {
   @GetMapping("/isInitialized")
   public Boolean isInitialized() {
     
-    log.debug("AdversaryLearning isInitialized {}", adversaryLearning.initialized);
+    if (log.isDebugEnabled()) {
+      log.debug("AdversaryLearning isInitialized {}", adversaryLearning.initialized);
+    }
     
     if (adversaryLearning.initialized) {
 
@@ -74,7 +76,7 @@ public class AdversaryLearningController {
     
     boolean updatedNetIsUsedForNextIteration = this.adversaryLearning.updateNeuralNet();
 
-    log.info("Updated neural net is used for next iteration {}", updatedNetIsUsedForNextIteration);
+    log.info("Updated neural net is used for iteration after current {}", updatedNetIsUsedForNextIteration);
     
     return Void.TYPE;
   }
