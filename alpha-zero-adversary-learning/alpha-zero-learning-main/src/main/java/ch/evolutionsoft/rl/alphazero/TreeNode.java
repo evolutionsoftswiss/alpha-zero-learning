@@ -35,7 +35,7 @@ public class TreeNode implements Serializable {
 	
 	TreeNode parent;
 	
-	ConcurrentMap<Integer, TreeNode> children = new ConcurrentHashMap<>();
+	transient ConcurrentMap<Integer, TreeNode> children = new ConcurrentHashMap<>();
 	
 	
 	public TreeNode(
@@ -107,7 +107,7 @@ public class TreeNode implements Serializable {
 	}
 
 	
-	public void update(double newValue, TreeNode currentRoot) {
+	public void update(double newValue) {
 
 	  this.timesVisited++;
 
@@ -122,7 +122,7 @@ public class TreeNode implements Serializable {
       this.parent.updateRecursiv(1 - newValue, currentRoot);
     }
     
-    this.update(newValue, currentRoot);
+    this.update(newValue);
   }
 
   public boolean isExpanded() {

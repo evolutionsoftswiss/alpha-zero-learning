@@ -170,7 +170,7 @@ public class AdversaryLearning {
         @Override
         public List<AdversaryTrainingExample> call() throws Exception {
 
-          return executeEpisode(iteration, initialGame, computationGraph.clone());
+          return executeEpisode(iteration, computationGraph.clone());
         }
 
       });
@@ -233,7 +233,6 @@ public class AdversaryLearning {
 
   public List<AdversaryTrainingExample> executeEpisode(
       int iteration,
-      Game initialGame,
       ComputationGraph computationGraph) {
 
     Game currentGame = this.initialGame.createNewInstance();

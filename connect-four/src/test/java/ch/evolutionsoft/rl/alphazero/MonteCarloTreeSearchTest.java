@@ -95,8 +95,7 @@ class MonteCarloTreeSearchTest {
     INDArray actionValues = mcts.getActionValues(game, 0.5, model);
     assertEquals(0, actionValues.argMax(0).getInt(0));
   }
-  
-  @Disabled
+
   @Test
   void testMonteCarloSearchSecondPlayer3() throws IOException {
     
@@ -117,6 +116,6 @@ class MonteCarloTreeSearchTest {
     Game game = connectFour.createNewInstance(arrayPlayground);
     
     INDArray actionValues = mcts.getActionValues(game, 0.5, model);
-    assertNotEquals(4, actionValues.argMax(0).getInt(0));
+    assertEquals(4, actionValues.argMax(0).getInt(0));
   }
 }
