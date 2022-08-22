@@ -27,6 +27,9 @@ You can use the existing Java alpha-zero-learning with the generic published rel
 
 ch.evolutionsoft.rl.alphazero.adversary-learning-1.1.0-jar-with-dependencies would let you reuse the general part of the implementation for other board games. The submodule [alpha-zero-adversary-learning/README.md](./alpha-zero-adversary-learning/README.md) contains hints about a new board game implementation.
 
+### Running the Connect Four implementation
+
+
 ### Running the Tic Tac Toe implementation
 You should run the different main methods from within the same directory. The alpha zero learning files, bestmodel.bin and trainexamples.obj, are searched or created in the current directory.
 
@@ -95,8 +98,3 @@ You may want to prefer to always update the model after having it trained with n
 
 ### Mvn build and packaging
 The mvn builds for each submodule take several minutes and a lot of different system architecture dependencies are packaged into the jar's with dependencies. That is a deeplearning4j related issue leading to very large distribution packages.
-
-## Potential next steps in this repository
-
-### Provide a Connect Four game
-Ii is foreseen to provide a connect four implementation as the next step.
