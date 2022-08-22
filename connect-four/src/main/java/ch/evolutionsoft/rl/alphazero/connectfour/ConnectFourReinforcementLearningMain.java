@@ -46,8 +46,8 @@ public class ConnectFourReinforcementLearningMain {
 
     Map<Integer, Double> learningRatesByIterations = new HashMap<>();
     learningRatesByIterations.put(0, 5e-4);
-    learningRatesByIterations.put(100000, 2e-4);
-    learningRatesByIterations.put(150000, 8e-5);
+    learningRatesByIterations.put(40000, 2e-4);
+    learningRatesByIterations.put(100000, 8e-5);
     MapSchedule learningRateMapSchedule = new MapSchedule(ScheduleType.ITERATION, learningRatesByIterations);
     AdversaryLearningConfiguration adversaryLearningConfiguration =
         new AdversaryLearningConfiguration.Builder().
@@ -59,15 +59,15 @@ public class ConnectFourReinforcementLearningMain {
         dirichletAlpha(2.0).
         dirichletWeight(0.35).
         fromNumberOfIterationsReducedTemperature(-1).
-        fromNumberOfMovesReducedTemperature(11).
+        fromNumberOfMovesReducedTemperature(-1).
         iterationStart(1).
         maxTrainExamplesHistory(81920).
         maxTrainExamplesHistoryFromIteration(300).
-        numberOfIterations(2000).
+        numberOfIterations(4000).
         numberOfEpisodesBeforePotentialUpdate(20).
         numberOfEpisodeThreads(20).
         numberOfMonteCarloSimulations(200).
-        uctConstantFactor(3.5).
+        uctConstantFactor(2.5).
         
         build();
    
