@@ -57,7 +57,7 @@ public abstract class Game {
     
     int[] validIndices = new int[validIndicesList.size()];
 
-    int allMovesSize = getNumberOfCurrentMoves();
+    int allMovesSize = getNumberOfAllAvailableMoves();
     int validIndex = 0;
     for (int index = 0; index < allMovesSize; index++) {
       
