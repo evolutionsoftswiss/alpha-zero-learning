@@ -193,10 +193,10 @@ public class TicTacToe extends Game {
     INDArray newBoard = this.currentBoard.dup();
     if (MIN_PLAYER_CHANNEL == player) {
 
-      newBoard.putRow(CURRENT_PLAYER_CHANNEL, ONES_PLAYGROUND_IMAGE); 
+      newBoard.putSlice(CURRENT_PLAYER_CHANNEL, ONES_PLAYGROUND_IMAGE); 
     } else {
 
-      newBoard.putRow(CURRENT_PLAYER_CHANNEL, MINUS_ONES_PLAYGROUND_IMAGE);
+      newBoard.putSlice(CURRENT_PLAYER_CHANNEL, MINUS_ONES_PLAYGROUND_IMAGE);
     }
     newBoard.putScalar(player, row, column, OCCUPIED_IMAGE_POINT);
 
@@ -272,7 +272,7 @@ public class TicTacToe extends Game {
     INDArray[] fieldOneCenterTwoOpeningAnswer = convolutionalNetwork
         .output(generateFieldOneCenterAndTwoThreatConvolutional());
     INDArray emptyFieldBatch = Nd4j.create(1, IMAGE_CHANNELS, IMAGE_SIZE, IMAGE_SIZE);
-    emptyFieldBatch.putRow(0, TicTacToeConstants.EMPTY_CONVOLUTIONAL_PLAYGROUND);
+    emptyFieldBatch.putSlice(0, TicTacToeConstants.EMPTY_CONVOLUTIONAL_PLAYGROUND);
     INDArray[] emptyFieldProbs = convolutionalNetwork.output(emptyFieldBatch);
     
     log.info("Answer to center field opening: {}\nValue: {}", centerFieldOpeningAnswer[0], centerFieldOpeningAnswer[1]);
@@ -286,10 +286,10 @@ public class TicTacToe extends Game {
 
     INDArray middleFieldMove = TicTacToeConstants.EMPTY_CONVOLUTIONAL_PLAYGROUND.dup();
     INDArray emptyImage1 = Nd4j.ones(1, IMAGE_SIZE, IMAGE_SIZE).mul(-1);
-    middleFieldMove.putRow(0, emptyImage1);
+    middleFieldMove.putSlice(0, emptyImage1);
     middleFieldMove.putScalar(1, 1, 1, OCCUPIED_IMAGE_POINT);
     INDArray graphSingleBatchInput1 = Nd4j.create(1, IMAGE_CHANNELS, IMAGE_SIZE, IMAGE_SIZE);
-    graphSingleBatchInput1.putRow(0, middleFieldMove);
+    graphSingleBatchInput1.putSlice(0, middleFieldMove);
     return graphSingleBatchInput1;
   }
 
@@ -297,10 +297,10 @@ public class TicTacToe extends Game {
 
     INDArray cornerFieldMove = TicTacToeConstants.EMPTY_CONVOLUTIONAL_PLAYGROUND.dup();
     INDArray emptyImage2 = Nd4j.ones(1, IMAGE_SIZE, IMAGE_SIZE).mul(-1);
-    cornerFieldMove.putRow(0, emptyImage2);
+    cornerFieldMove.putSlice(0, emptyImage2);
     cornerFieldMove.putScalar(1, 2, 2, OCCUPIED_IMAGE_POINT);
     INDArray graphSingleBatchInput2 = Nd4j.create(1, IMAGE_CHANNELS, IMAGE_SIZE, IMAGE_SIZE);
-    graphSingleBatchInput2.putRow(0, cornerFieldMove);
+    graphSingleBatchInput2.putSlice(0, cornerFieldMove);
     return graphSingleBatchInput2;
   }
 
@@ -308,10 +308,10 @@ public class TicTacToe extends Game {
 
     INDArray fieldOneMaxMove = TicTacToeConstants.EMPTY_CONVOLUTIONAL_PLAYGROUND.dup();
     INDArray emptyImage1 = Nd4j.ones(1, IMAGE_SIZE, IMAGE_SIZE).mul(-1);
-    fieldOneMaxMove.putRow(0, emptyImage1);
+    fieldOneMaxMove.putSlice(0, emptyImage1);
     fieldOneMaxMove.putScalar(1, 0, 0, OCCUPIED_IMAGE_POINT);
     INDArray graphSingleBatchInput2 = Nd4j.create(1, IMAGE_CHANNELS, IMAGE_SIZE, IMAGE_SIZE);
-    graphSingleBatchInput2.putRow(0, fieldOneMaxMove);
+    graphSingleBatchInput2.putSlice(0, fieldOneMaxMove);
     return graphSingleBatchInput2;
   }
 
@@ -319,12 +319,12 @@ public class TicTacToe extends Game {
 
     INDArray fieldOneCenterTwoMoves = TicTacToeConstants.EMPTY_CONVOLUTIONAL_PLAYGROUND.dup();
     INDArray emptyImage1 = Nd4j.ones(1, IMAGE_SIZE, IMAGE_SIZE).mul(-1);
-    fieldOneCenterTwoMoves.putRow(0, emptyImage1);
+    fieldOneCenterTwoMoves.putSlice(0, emptyImage1);
     fieldOneCenterTwoMoves.putScalar(1, 0, 0, OCCUPIED_IMAGE_POINT);
     fieldOneCenterTwoMoves.putScalar(2, 1, 1, OCCUPIED_IMAGE_POINT);
     fieldOneCenterTwoMoves.putScalar(1, 0, 1, OCCUPIED_IMAGE_POINT);
     INDArray graphSingleBatchInput2 = Nd4j.create(1, IMAGE_CHANNELS, IMAGE_SIZE, IMAGE_SIZE);
-    graphSingleBatchInput2.putRow(0, fieldOneCenterTwoMoves);
+    graphSingleBatchInput2.putSlice(0, fieldOneCenterTwoMoves);
     return graphSingleBatchInput2;
   }
 
@@ -382,9 +382,9 @@ public class TicTacToe extends Game {
   static INDArray mirrorBoardPartHorizontally(INDArray toMirror) {
     
     INDArray mirrorHorizontal = Nd4j.ones(toMirror.shape()).neg();
-    mirrorHorizontal.putRow(0, toMirror.slice(2));
-    mirrorHorizontal.putRow(1, toMirror.slice(1));
-    mirrorHorizontal.putRow(2, toMirror.slice(0));
+    mirrorHorizontal.putSlice(0, toMirror.slice(2));
+    mirrorHorizontal.putSlice(1, toMirror.slice(1));
+    mirrorHorizontal.putSlice(2, toMirror.slice(0));
     
     return mirrorHorizontal;
   }
@@ -401,9 +401,9 @@ public class TicTacToe extends Game {
   static INDArray createNewBoard(INDArray newEmptyBoardPart, INDArray newMaxPlayerBoardPart, INDArray newMinPlayerBoardPart) {
 
     INDArray newPlaygroundRotation = Nd4j.create(IMAGE_CHANNELS, IMAGE_SIZE, IMAGE_SIZE);
-    newPlaygroundRotation.putRow(CURRENT_PLAYER_CHANNEL, newEmptyBoardPart);
-    newPlaygroundRotation.putRow(MAX_PLAYER_CHANNEL, newMaxPlayerBoardPart);
-    newPlaygroundRotation.putRow(MIN_PLAYER_CHANNEL, newMinPlayerBoardPart);
+    newPlaygroundRotation.putSlice(CURRENT_PLAYER_CHANNEL, newEmptyBoardPart);
+    newPlaygroundRotation.putSlice(MAX_PLAYER_CHANNEL, newMaxPlayerBoardPart);
+    newPlaygroundRotation.putSlice(MIN_PLAYER_CHANNEL, newMinPlayerBoardPart);
 
     return newPlaygroundRotation;
   }
@@ -415,7 +415,7 @@ public class TicTacToe extends Game {
     for (int col = 0; col < toRotate.shape()[1]; col++) {
      
       INDArray slice = toRotate.getColumn(col).dup();
-      rotated90.putRow(col, Nd4j.reverse(slice));
+      rotated90.putSlice(col, Nd4j.reverse(slice));
     } 
     return rotated90;
   }

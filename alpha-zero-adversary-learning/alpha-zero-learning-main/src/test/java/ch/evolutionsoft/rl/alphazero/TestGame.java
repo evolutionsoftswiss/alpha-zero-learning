@@ -17,12 +17,12 @@ public class TestGame extends Game {
 
   @Override
   public int getNumberOfAllAvailableMoves() {
-    return 0;
+    return 7;
   }
 
   @Override
   public int getNumberOfCurrentMoves() {
-    return 0;
+    return 5;
   }
 
   @Override

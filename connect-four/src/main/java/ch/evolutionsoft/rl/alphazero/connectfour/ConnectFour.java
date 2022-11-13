@@ -4,6 +4,7 @@ import static ch.evolutionsoft.rl.alphazero.connectfour.playground.ArrayPlaygrou
 
 import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
 
@@ -20,15 +21,15 @@ public class ConnectFour extends Game {
   public static final int CURRENT_PLAYER_CHANNEL = 2;
   public static final int NUMBER_OF_BOARD_CHANNELS = 3;
   
-  public static final INDArray ZEROS_PLAYGROUND_IMAGE = Nd4j.zeros(1, ROW_COUNT, COLUMN_COUNT);
-  public static final INDArray ONES_PLAYGROUND_IMAGE = Nd4j.ones(1, ROW_COUNT, COLUMN_COUNT);
+  public static final INDArray ZEROS_PLAYGROUND_IMAGE = Nd4j.zeros(ROW_COUNT, COLUMN_COUNT);
+  public static final INDArray ONES_PLAYGROUND_IMAGE = Nd4j.ones(ROW_COUNT, COLUMN_COUNT);
   public static final INDArray MINUS_ONES_PLAYGROUND_IMAGE = ZEROS_PLAYGROUND_IMAGE.sub(1);
   
   public static final INDArray EMPTY_CONVOLUTIONAL_PLAYGROUND = Nd4j.create(3, ROW_COUNT, COLUMN_COUNT);
   static {
-    EMPTY_CONVOLUTIONAL_PLAYGROUND.putRow(YELLOW, ZEROS_PLAYGROUND_IMAGE);
-    EMPTY_CONVOLUTIONAL_PLAYGROUND.putRow(RED, ZEROS_PLAYGROUND_IMAGE);
-    EMPTY_CONVOLUTIONAL_PLAYGROUND.putRow(EMPTY, ONES_PLAYGROUND_IMAGE);
+    EMPTY_CONVOLUTIONAL_PLAYGROUND.putSlice(YELLOW, ZEROS_PLAYGROUND_IMAGE);
+    EMPTY_CONVOLUTIONAL_PLAYGROUND.putSlice(RED, ZEROS_PLAYGROUND_IMAGE);
+    EMPTY_CONVOLUTIONAL_PLAYGROUND.putSlice(EMPTY, ONES_PLAYGROUND_IMAGE);
   }
   
   ArrayPlayground arrayPlayground = new ArrayPlayground();
@@ -104,13 +105,13 @@ public class ConnectFour extends Game {
     }
     if (yellowStones == redStones) {
 
-      connectFour.currentBoard.putRow(
+      connectFour.currentBoard.putSlice(
           CURRENT_PLAYER_CHANNEL,
           ONES_PLAYGROUND_IMAGE); 
     
     } else {
 
-      connectFour.currentBoard.putRow(
+      connectFour.currentBoard.putSlice(
           CURRENT_PLAYER_CHANNEL,
           MINUS_ONES_PLAYGROUND_IMAGE);
       connectFour.currentPlayer = Game.MIN_PLAYER;
@@ -188,21 +189,20 @@ public class ConnectFour extends Game {
     int connectFourPlayer = convertGamePlayerToConnectFourPlayer(player);
     int playedRow = this.arrayPlayground.trySetField(moveIndex, connectFourPlayer);
     this.lastMoveColumn = moveIndex;
-    
-    INDArray newBoard = this.currentBoard.dup();
+
     if (Game.MIN_PLAYER == player) {
 
-      newBoard.putRow(CURRENT_PLAYER_CHANNEL, ONES_PLAYGROUND_IMAGE); 
+      this.currentBoard.putSlice(CURRENT_PLAYER_CHANNEL, ONES_PLAYGROUND_IMAGE); 
     } else {
 
-      newBoard.putRow(CURRENT_PLAYER_CHANNEL, MINUS_ONES_PLAYGROUND_IMAGE);
+      this.currentBoard.putSlice(CURRENT_PLAYER_CHANNEL, MINUS_ONES_PLAYGROUND_IMAGE);
     }
-    newBoard.putScalar(connectFourPlayer, ROW_COUNT - playedRow - 1L, moveIndex, AdversaryLearningConstants.ONE);
-    
-    this.currentBoard = newBoard;
+
+    this.currentBoard.putScalar(connectFourPlayer, ROW_COUNT - playedRow - 1L, moveIndex, AdversaryLearningConstants.ONE);
+
     this.currentPlayer = getOtherPlayer(this.currentPlayer);
     
-    return newBoard.dup();
+    return this.currentBoard.dup();
   }
 
   @Override
@@ -237,7 +237,7 @@ public class ConnectFour extends Game {
     INDArray newPlaygroundMirrorHorizontal = mirrorBoardVertically(board);
     symmetries.add(
         new AdversaryTrainingExample(
-            newPlaygroundMirrorHorizontal.dup(),
+            newPlaygroundMirrorHorizontal,
             currentPlayer,
             actionMirrorHorizontal,
             iteration)
@@ -248,29 +248,26 @@ public class ConnectFour extends Game {
 
   static INDArray mirrorBoardVertically(INDArray playgroundRotation) {
 
-    INDArray boardPlayerMirrorHorizontal = playgroundRotation.slice(2).dup();
-    INDArray maxPlayerMirrorHorizontal = mirrorBoardPartVertically(playgroundRotation.slice(0).dup());
-    INDArray minPlayerMirrorHorizontal = mirrorBoardPartVertically(playgroundRotation.slice(1).dup());
+    INDArray boardPlayerMirrorHorizontal = playgroundRotation.slice(2);
+    INDArray maxPlayerMirrorHorizontal = mirrorBoardPartVertically(playgroundRotation.slice(0));
+    INDArray minPlayerMirrorHorizontal = mirrorBoardPartVertically(playgroundRotation.slice(1));
     
-    INDArray newPlaygroundRotation = Nd4j.create(3, 6, 7);
-    newPlaygroundRotation.putRow(2, boardPlayerMirrorHorizontal);
-    newPlaygroundRotation.putRow(0, maxPlayerMirrorHorizontal);
-    newPlaygroundRotation.putRow(1, minPlayerMirrorHorizontal);
-
-    return newPlaygroundRotation;
+    return Nd4j.create(
+        List.of(maxPlayerMirrorHorizontal, minPlayerMirrorHorizontal, boardPlayerMirrorHorizontal),
+        new long[] {3, 6, 7});
   }
   
   static INDArray mirrorBoardPartVertically(INDArray toMirror) {
-    
-    INDArray mirrorVertical = Nd4j.ones(toMirror.shape()).neg();
 
+    List<INDArray> verticalMirrors = new LinkedList<>();
     for (int row = 0; row < toMirror.shape()[0]; row++) {
       
-      mirrorVertical.putRow(row, Nd4j.reverse(toMirror.getRow(row)));
+      verticalMirrors.add(Nd4j.reverse(toMirror.getRow(row)));
     }
-
     
-    return mirrorVertical;
+    return Nd4j.create(
+        verticalMirrors,
+        new long[] {6, 7});
   }
 
   int convertGamePlayerToConnectFourPlayer(int gamePlayer) {

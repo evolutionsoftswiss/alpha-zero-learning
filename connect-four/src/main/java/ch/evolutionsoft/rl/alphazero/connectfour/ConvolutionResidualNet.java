@@ -69,7 +69,7 @@ public class ConvolutionResidualNet {
                 new ConvolutionLayer.Builder(1, 1).stride(1, 1).nOut(32).hasBias(false)
                     .convolutionMode(ConvolutionMode.Same).build(),
                 BLOCK1_CONV2_ACTIVATION)
-            .addLayer(RESIDUAL1, new BatchNormalization(), RESIDUAL1_CONVOLUTION)
+            .addLayer(RESIDUAL1_BATCH_NORMALIZATION, new BatchNormalization(), RESIDUAL1_CONVOLUTION)
 
             // block2
             .addLayer(BLOCK2_SEPARABLE_CONVOLUTION1,
@@ -91,14 +91,14 @@ public class ConvolutionResidualNet {
                     .convolutionMode(ConvolutionMode.Same).build(),
                 BLOCK2_SEPARABLE_CONVOLUTION2_BATCH_NORMALIZATION)
 
-            .addVertex(ADD1, new ElementWiseVertex(ElementWiseVertex.Op.Add), BLOCK2_POOL, RESIDUAL1)
+            .addVertex(ADD1, new ElementWiseVertex(ElementWiseVertex.Op.Add), BLOCK2_POOL, RESIDUAL1_BATCH_NORMALIZATION)
 
             // residual2
             .addLayer("residual2_conv",
                 new ConvolutionLayer.Builder(1, 1).stride(1, 1).nOut(64).hasBias(false)
                     .convolutionMode(ConvolutionMode.Same).build(),
                 "add1")
-            .addLayer("residual2", new BatchNormalization(), "residual2_conv")
+            .addLayer("residual2_bn", new BatchNormalization(), "residual2_conv")
 
             // block3
             .addLayer("block3_sepconv1_act", new ActivationLayer(Activation.LEAKYRELU), "add1")
@@ -117,7 +117,7 @@ public class ConvolutionResidualNet {
                 new SubsamplingLayer.Builder(SubsamplingLayer.PoolingType.MAX).kernelSize(2, 2).stride(1, 1)
                     .convolutionMode(ConvolutionMode.Same).build(),
                 "block3_sepconv2_bn")
-            .addVertex("add2", new ElementWiseVertex(ElementWiseVertex.Op.Add), "block3_pool", "residual2")
+            .addVertex("add2", new ElementWiseVertex(ElementWiseVertex.Op.Add), "block3_pool", "residual2_bn")
 
             // residual3
             .addLayer("residual3_conv",

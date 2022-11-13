@@ -54,10 +54,10 @@ public class AdversaryTrainingExample implements Serializable {
   public AdversaryTrainingExample(INDArray board, int currentPlayer, 
       INDArray actionIndexProbabilities, int iteration) {
     
-    this.board = board;
+    this.board = board.dup();
     this.boardString = AdversaryLearningSharedHelper.writeStringForArray(this.board);
     this.currentPlayer = currentPlayer;
-    this.actionIndexProbabilities = actionIndexProbabilities;
+    this.actionIndexProbabilities = actionIndexProbabilities.dup();
     this.iteration = iteration;
   }
 

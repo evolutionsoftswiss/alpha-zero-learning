@@ -101,7 +101,7 @@ public class NeuralNetMoveEvaluation {
 
     // Create horizontal double threat possibility on max next move
     boardInput.putScalar(YELLOW, ArrayPlaygroundConstants.ROW_COUNT - 1L, 3, AdversaryLearningConstants.ONE);
-    boardInput.putRow(CURRENT_PLAYER_CHANNEL, MINUS_ONES_PLAYGROUND_IMAGE.dup());
+    boardInput.putSlice(CURRENT_PLAYER_CHANNEL, MINUS_ONES_PLAYGROUND_IMAGE.dup());
     
     return boardInput;
   }
@@ -112,7 +112,7 @@ public class NeuralNetMoveEvaluation {
 
     // Create horizontal double threat possibility on max next move
     boardInput.putScalar(YELLOW, ArrayPlaygroundConstants.ROW_COUNT - 1L, 0, AdversaryLearningConstants.ONE);
-    boardInput.putRow(CURRENT_PLAYER_CHANNEL, MINUS_ONES_PLAYGROUND_IMAGE.dup());
+    boardInput.putSlice(CURRENT_PLAYER_CHANNEL, MINUS_ONES_PLAYGROUND_IMAGE.dup());
     
     return boardInput;
   }
@@ -125,7 +125,7 @@ public class NeuralNetMoveEvaluation {
     boardInput.putScalar(YELLOW, ArrayPlaygroundConstants.ROW_COUNT - 1L, 3, AdversaryLearningConstants.ONE);
     boardInput.putScalar(RED, ArrayPlaygroundConstants.ROW_COUNT - 2L, 3, AdversaryLearningConstants.ONE);
     boardInput.putScalar(YELLOW, ArrayPlaygroundConstants.ROW_COUNT - 1L, 2, AdversaryLearningConstants.ONE);
-    boardInput.putRow(CURRENT_PLAYER_CHANNEL, MINUS_ONES_PLAYGROUND_IMAGE.dup());
+    boardInput.putSlice(CURRENT_PLAYER_CHANNEL, MINUS_ONES_PLAYGROUND_IMAGE.dup());
     
     return boardInput;
   }

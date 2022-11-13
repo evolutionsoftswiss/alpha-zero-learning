@@ -87,7 +87,7 @@ public class AdversaryLearningSharedHelper {
 
     long[] actionShape = storedValues.shape();
     int actionIndicesCount = (int) (actionShape[1] - 3);
-    for (int index = 0; index < storedBoardKeys.shape() [0]; index++) {
+    for (int index = 0; index < storedBoardKeys.shape()[0]; index++) {
       
       INDArray currentBoardKey = storedBoardKeys.slice(index);
       INDArray currentStoredValue = storedValues.getRow(index);
@@ -233,18 +233,18 @@ public class AdversaryLearningSharedHelper {
     }
   }
   
-  public static String writeStringForArray(INDArray write) {
-    if(write.isView() || !Shape.hasDefaultStridesForShape(write))
-      write = write.dup();
+  public static String writeStringForArray(INDArray ndArray) {
+    if(ndArray.isView() || !Shape.hasDefaultStridesForShape(ndArray))
+      ndArray = ndArray.dup();
 
     String format = "0.00000000E0";
   
     return "{\n" +
             "\"filefrom\": \"dl4j\",\n" +
-            "\"ordering\": \"" + write.ordering() + "\",\n" +
-            "\"shape\":\t" + Arrays.toString(write.shape()) + ",\n" +
+            "\"ordering\": \"" + ndArray.ordering() + "\",\n" +
+            "\"shape\":\t" + Arrays.toString(ndArray.shape()) + ",\n" +
             "\"data\":\n" +
-            new NDArrayStrings(",", format).format(write, false) +
+            new NDArrayStrings(",", format).format(ndArray, false) +
             "\n}\n";
   }
 

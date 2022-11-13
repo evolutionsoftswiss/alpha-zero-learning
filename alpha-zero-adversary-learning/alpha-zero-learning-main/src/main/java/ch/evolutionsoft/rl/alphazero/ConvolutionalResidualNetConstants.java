@@ -14,7 +14,7 @@ public class ConvolutionalResidualNetConstants {
 
   public static final String BLOCK2_POOL = "block2_pool";
 
-  public static final String RESIDUAL1 = "residual1";
+  public static final String RESIDUAL1_BATCH_NORMALIZATION = "residual1_bn";
 
   public static final String RESIDUAL1_CONVOLUTION = "residual1_conv";
 

@@ -243,17 +243,15 @@ public class NeuralNetUpdater {
     log.info("Create minibatches");    
     List<MultiDataSet> batchedMultiDataSet = createMiniBatchList(trainingExamples);
 
-    for (int updateCycle = 1; updateCycle <= 2; updateCycle++) {
-      for (int batchIteration = 0; batchIteration < batchNumber; batchIteration++) {
-          
-        log.info("Batch size for batch number {} is {}", 
-            batchIteration,
-            batchedMultiDataSet.get(batchIteration).asList().size());
-    
-        computationGraph.fit(batchedMultiDataSet.get(batchIteration));
-          
-        log.info("Fitted model with batch number {}", batchIteration);
-      }
+    for (int batchIteration = 0; batchIteration < batchNumber; batchIteration++) {
+        
+      log.info("Batch size for batch number {} is {}", 
+          batchIteration,
+          batchedMultiDataSet.get(batchIteration).asList().size());
+  
+      computationGraph.fit(batchedMultiDataSet.get(batchIteration));
+        
+      log.info("Fitted model with batch number {}", batchIteration);
     }
     log.info("Iterations (number of updates) from computation graph model is {}",
         computationGraph.getIterationCount());
@@ -298,8 +296,8 @@ public class NeuralNetUpdater {
           exampleNumber++, batchExample++) {
         
         AdversaryTrainingExample currentTrainingExample = trainingExamples.get(exampleNumber);
-        inputBoards.putRow(batchExample, currentTrainingExample.getBoard());
-  
+        inputBoards.putSlice(batchExample, currentTrainingExample.getBoard());
+        
         probabilitiesLabels.putRow(batchExample, currentTrainingExample.getActionIndexProbabilities());
   
         valueLabels.putRow(batchExample, Nd4j.zeros(1).putScalar(0, currentTrainingExample.getCurrentPlayerValue()));

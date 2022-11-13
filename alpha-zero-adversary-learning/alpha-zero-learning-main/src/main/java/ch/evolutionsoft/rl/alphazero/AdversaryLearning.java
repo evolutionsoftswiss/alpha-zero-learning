@@ -156,9 +156,6 @@ public class AdversaryLearning {
 
     this.computationGraph = GraphLoader.loadComputationGraph(adversaryLearningConfiguration);
 
-    Map<String, AdversaryTrainingExample> examplesFromEpisodes = new HashMap<>();
-    Map<String, Integer> examplesOccurance = new HashMap<>();
-
     ThreadPoolExecutor executor = (ThreadPoolExecutor) Executors
         .newFixedThreadPool(adversaryLearningConfiguration.getNumberOfEpisodeThreads());
     CompletionService<List<AdversaryTrainingExample>> completionService = new ExecutorCompletionService<>(executor);
@@ -180,6 +177,9 @@ public class AdversaryLearning {
 
     executor.shutdown();
 
+    Map<String, AdversaryTrainingExample> examplesFromEpisodes = new HashMap<>();
+    Map<String, Integer> examplesOccurance = new HashMap<>();
+
     try {
       while (received < adversaryLearningConfiguration.getNumberOfEpisodesBeforePotentialUpdate()) {
 
@@ -200,7 +200,7 @@ public class AdversaryLearning {
                 (occurances * existingExample.getCurrentPlayerValue() + currentAdversaryTrainingExample.getCurrentPlayerValue()) /
                 (occurances + 1);
             existingExample.setCurrentPlayerValue(meanPlayerValue);
-            examplesOccurance.put(boardString, occurances + 1);
+            examplesOccurance.replace(boardString, occurances + 1);
           }
         });
 
@@ -378,8 +378,8 @@ public class AdversaryLearning {
 
     newTrainingExamples.add(trainingExample);
 
-    List<AdversaryTrainingExample> symmetries = initialGame.getSymmetries(currentBoard.dup(),
-        normalizedActionProbabilities.dup(), currentPlayer, iteration);
+    List<AdversaryTrainingExample> symmetries = initialGame.getSymmetries(currentBoard,
+        normalizedActionProbabilities, currentPlayer, iteration);
 
     Set<AdversaryTrainingExample> addedSymmetries = new HashSet<>();
     addedSymmetries.add(trainingExample);
@@ -526,7 +526,7 @@ public class AdversaryLearning {
         valueNDArray.putScalar(actionShape[0], value.getCurrentPlayer());
         valueNDArray.putScalar(actionShape[0] + 1, value.getCurrentPlayerValue());
         valueNDArray.putScalar(actionShape[0] + 2, value.getIteration());
-        allValues.putRow(exampleNumber, valueNDArray);
+        allValues.putSlice(exampleNumber, valueNDArray);
 
         exampleNumber++;
       }

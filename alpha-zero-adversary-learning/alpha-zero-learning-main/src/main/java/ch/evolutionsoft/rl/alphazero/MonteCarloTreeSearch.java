@@ -17,8 +17,6 @@ public class MonteCarloTreeSearch {
 
   Logger logger = LoggerFactory.getLogger(MonteCarloTreeSearch.class);
 
-  final Object lock = new Object();
-
   double currentUctConstant = 1.5;
 
   int numberOfSimulations;
