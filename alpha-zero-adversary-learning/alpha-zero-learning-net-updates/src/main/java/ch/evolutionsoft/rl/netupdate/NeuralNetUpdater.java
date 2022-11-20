@@ -125,7 +125,6 @@ public class NeuralNetUpdater {
 
     String targetUrl = CONTROLLER_BASE_URL + "/newTrainingExamples";
     Set<AdversaryTrainingExample> newExamples = new HashSet<>();
-    Set<AdversaryTrainingExample> previousExamples = null;
     
     ExecutorService netUpdaterExecutor = null;
 
@@ -140,16 +139,14 @@ public class NeuralNetUpdater {
           adversaryLearningConfiguration.getNumberOfIterations();
           iteration++) {
         
-        previousExamples = newExamples;
-        
-        if (iteration > 0) {
+        if (iteration >= adversaryLearningConfiguration.getIterationStart()) {
           while (null != netUpdaterExecutor && !netUpdaterExecutor.awaitTermination(Long.MAX_VALUE, TimeUnit.MINUTES)) {
             // Wait for previous net update
           }
           
           final int updateIteration = iteration;
           netUpdaterExecutor = Executors.newSingleThreadExecutor();
-          final List<AdversaryTrainingExample> finalInputList = new LinkedList<>(previousExamples);
+          final List<AdversaryTrainingExample> finalInputList = new LinkedList<>(newExamples);
           netUpdaterExecutor.execute(() -> {
     
               ComputationGraph computationGraph = fitNeuralNet(finalInputList, updateIteration);

@@ -189,7 +189,8 @@ public class ConnectFour extends Game {
     int connectFourPlayer = convertGamePlayerToConnectFourPlayer(player);
     int playedRow = this.arrayPlayground.trySetField(moveIndex, connectFourPlayer);
     this.lastMoveColumn = moveIndex;
-
+ 
+    this.currentBoard = this.currentBoard.dup();
     if (Game.MIN_PLAYER == player) {
 
       this.currentBoard.putSlice(CURRENT_PLAYER_CHANNEL, ONES_PLAYGROUND_IMAGE); 
@@ -233,8 +234,8 @@ public class ConnectFour extends Game {
 
     List<AdversaryTrainingExample> symmetries = new ArrayList<>();
 
-    INDArray actionMirrorHorizontal = Nd4j.reverse(actionProbabilities);
-    INDArray newPlaygroundMirrorHorizontal = mirrorBoardVertically(board);
+    INDArray actionMirrorHorizontal = Nd4j.reverse(actionProbabilities.dup());
+    INDArray newPlaygroundMirrorHorizontal = mirrorBoardVertically(board.dup());
     symmetries.add(
         new AdversaryTrainingExample(
             newPlaygroundMirrorHorizontal,
