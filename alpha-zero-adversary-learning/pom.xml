@@ -4,7 +4,7 @@
   <parent>
     <artifactId>ch.evolutionsoft.rl.alphazero</artifactId>
     <groupId>ch.evolutionsoft</groupId>
-    <version>1.1.1-SNAPSHOT</version>
+    <version>1.1.1</version>
   </parent>
 
   <artifactId>ch.evolutionsoft.rl.alphazero.adversary-learning</artifactId>
