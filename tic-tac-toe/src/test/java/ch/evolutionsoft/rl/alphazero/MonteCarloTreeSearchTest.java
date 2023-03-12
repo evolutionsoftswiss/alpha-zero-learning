@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.*;
 import java.io.IOException;
 
 import org.deeplearning4j.nn.graph.ComputationGraph;
+import org.deeplearning4j.util.ModelSerializer;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.nd4j.linalg.api.ndarray.INDArray;
@@ -16,9 +17,17 @@ import ch.evolutionsoft.rl.Game;
 class MonteCarloTreeSearchTest {
   
   ComputationGraph computationGraph;
+  AdversaryLearningConfiguration adversaryLearningConfiguration;
   
   @BeforeEach
   void initMonteCarloTreeSearch() {
+
+    adversaryLearningConfiguration =
+        new AdversaryLearningConfiguration.Builder().
+        numberOfEpisodesBeforePotentialUpdate(10).
+        numberOfMonteCarloSimulations(1000).
+        uctConstantFactor(1.5).
+        build();
 
     computationGraph = TestHelper.createConvolutionalConfiguration();
   }
@@ -27,17 +36,11 @@ class MonteCarloTreeSearchTest {
   void checkMonteCarloMoveValidityAndTreeVisitCounts() throws IOException {
     
     Game game = TestHelper.createMiddlePositionBoardWithThreat();
-    AdversaryLearningConfiguration adversaryLearningConfiguration =
-        new AdversaryLearningConfiguration.Builder().
-        numberOfEpisodesBeforePotentialUpdate(10).
-        numberOfEpisodeThreads(16).
-        numberOfMonteCarloSimulations(1000).
-        build();
 
     TreeNode rootNode = new TreeNode(-1, game.getOtherPlayer(game.getCurrentPlayer()), 0, 1.0, 0.5, null);
     MonteCarloTreeSearch mcts = new MonteCarloTreeSearch(adversaryLearningConfiguration);
 
-    INDArray actionProbabilities = mcts.getActionValues(game, rootNode, 0, computationGraph);
+    INDArray actionProbabilities = mcts.getActionValues(game, rootNode, 0, computationGraph, false);
     
     INDArray zeroProbabilityIndices = actionProbabilities.lte(0);
 
@@ -59,11 +62,6 @@ class MonteCarloTreeSearchTest {
   void checkMonteCarloMoveSelect() throws IOException {
     
     Game game = TestHelper.createMiddlePositionBoardWithThreat();
-    AdversaryLearningConfiguration adversaryLearningConfiguration =
-        new AdversaryLearningConfiguration.Builder().
-        numberOfEpisodesBeforePotentialUpdate(10).
-        numberOfMonteCarloSimulations(1000).
-        build();
 
     MonteCarloTreeSearch mcts = new MonteCarloTreeSearch(adversaryLearningConfiguration);
     

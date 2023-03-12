@@ -22,11 +22,11 @@ public class Field{
         
         if (Character.isLowerCase(columnChar)) {
          
-        	this.position = (rowChar - '0') * ArrayPlaygroundConstants.ARRAY_COLUMN_COUNT  + (columnChar - 'a') + 1;
+        	this.position = (rowChar - '0') * PlaygroundConstants.ARRAY_COLUMN_COUNT  + (columnChar - 'a') + 1;
         }
         else{
          
-        	this.position = (rowChar - '0') * ArrayPlaygroundConstants.ARRAY_COLUMN_COUNT  + (columnChar - 'A') + 1;
+        	this.position = (rowChar - '0') * PlaygroundConstants.ARRAY_COLUMN_COUNT  + (columnChar - 'A') + 1;
         }
     }
     
@@ -38,13 +38,13 @@ public class Field{
     
     public int getColumn(){
     	
-    	return this.position % ArrayPlaygroundConstants.ARRAY_COLUMN_COUNT - 1;
+    	return this.position % PlaygroundConstants.ARRAY_COLUMN_COUNT - 1;
     }
     
     
     public int getRow(){
     	
-    	return this.position / ArrayPlaygroundConstants.ARRAY_COLUMN_COUNT - 1;
+    	return this.position / PlaygroundConstants.ARRAY_COLUMN_COUNT - 1;
     }
     
     public boolean equalsField(Field otherField) {
@@ -61,14 +61,14 @@ public class Field{
             
             if (Character.isLowerCase(columnChar)){
             	
-            	return this.position / ArrayPlaygroundConstants.ARRAY_COLUMN_COUNT == (rowChar - '0') &&
-            	       this.position % ArrayPlaygroundConstants.ARRAY_COLUMN_COUNT == (columnChar -'a') + 1;
+            	return this.position / PlaygroundConstants.ARRAY_COLUMN_COUNT == (rowChar - '0') &&
+            	       this.position % PlaygroundConstants.ARRAY_COLUMN_COUNT == (columnChar -'a') + 1;
             }
             
             if (Character.isUpperCase(columnChar)){
             	
-            	return this.position / ArrayPlaygroundConstants.ARRAY_COLUMN_COUNT == (rowChar - '0') &&
-            	       this.position % ArrayPlaygroundConstants.ARRAY_COLUMN_COUNT == (columnChar -'A') + 1;
+            	return this.position / PlaygroundConstants.ARRAY_COLUMN_COUNT == (rowChar - '0') &&
+            	       this.position % PlaygroundConstants.ARRAY_COLUMN_COUNT == (columnChar -'A') + 1;
             }
         }
         return false;

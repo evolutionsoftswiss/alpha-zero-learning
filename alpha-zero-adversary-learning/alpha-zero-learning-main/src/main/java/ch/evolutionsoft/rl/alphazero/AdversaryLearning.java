@@ -50,10 +50,7 @@ import ch.evolutionsoft.rl.GraphLoader;
 @Component
 public class AdversaryLearning {
 
-  public static final double DRAW_VALUE = 0.5;
   public static final double DRAW_WEIGHT = 0.5;
-  public static final double MAX_WIN = AdversaryLearningConstants.ONE;
-  public static final double MIN_WIN = AdversaryLearningConstants.ZERO;
 
   public static final int NO_MOVE = -2;
 
@@ -239,7 +236,7 @@ public class AdversaryLearning {
     List<AdversaryTrainingExample> trainExamples = new ArrayList<>();
     int currentPlayer = currentGame.getCurrentPlayer();
     int moveNumber = 1;
-    TreeNode treeNode = new TreeNode(NO_MOVE, currentGame.getOtherPlayer(currentGame.getCurrentPlayer()), 0, 1.0, 0.5, null);
+    TreeNode treeNode = new TreeNode(NO_MOVE, currentGame.getCurrentPlayer(), 0, 1.0, 0.5, null);
     MonteCarloTreeSearch mcts = new MonteCarloTreeSearch(adversaryLearningConfiguration);
 
     while (!currentGame.gameEnded()) {
@@ -249,7 +246,7 @@ public class AdversaryLearning {
 
       double currentTemperature = adversaryLearningConfiguration.getCurrentTemperature(iteration, moveNumber);
       INDArray actionProbabilities =
-          mcts.getActionValues(currentGame, treeNode, currentTemperature, computationGraph);
+          mcts.getActionValues(currentGame, treeNode, currentTemperature, computationGraph, true);
       
       INDArray validActionProbabilities = actionProbabilities.mul(validMoves);
       INDArray normalizedActionProbabilities = validActionProbabilities.div(Nd4j.sum(actionProbabilities));
@@ -433,25 +430,25 @@ public class AdversaryLearning {
 
   void handleGameEnded(List<AdversaryTrainingExample> trainExamples, Game currentGame, int currentPlayer) {
 
-    double gameResult = currentGame.getEndResult(currentPlayer);
+    double endResult = currentGame.getEndResult(currentPlayer);
 
-    if (gameResult != DRAW_VALUE) {
+    if (endResult != Game.DRAW) {
 
       if (currentPlayer == Game.MIN_PLAYER) {
 
-        gameResult = 1 - gameResult;
+        endResult = Game.getInversedResult(endResult);
       }
 
       for (AdversaryTrainingExample trainExample : trainExamples) {
 
         trainExample.setCurrentPlayerValue(
-            (float) (trainExample.getCurrentPlayer() == currentPlayer ? gameResult : 1 - gameResult));
+            (float) (trainExample.getCurrentPlayer() == currentPlayer ? endResult : Game.getInversedResult(endResult)));
       }
     } else {
 
       for (AdversaryTrainingExample trainExample : trainExamples) {
 
-        trainExample.setCurrentPlayerValue((float) DRAW_VALUE);
+        trainExample.setCurrentPlayerValue((float) Game.DRAW);
       }
     }
   }

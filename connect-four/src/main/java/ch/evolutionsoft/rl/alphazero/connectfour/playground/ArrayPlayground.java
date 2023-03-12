@@ -57,9 +57,9 @@ public class ArrayPlayground implements Playground {
 		
 		for (int index = 0; index < 7; index++){
 			
-			if (this.columnHeights[ArrayPlaygroundConstants.columnsPrioritySorted[index]] < 6){
+			if (this.columnHeights[PlaygroundConstants.columnsPrioritySorted[index]] < 6){
 				
-				result.add(ArrayPlaygroundConstants.columnsPrioritySorted[index]);
+				result.add(PlaygroundConstants.columnsPrioritySorted[index]);
 			}
 		}
 		
@@ -115,7 +115,7 @@ public class ArrayPlayground implements Playground {
     	int position = this.getPosition(column);
     	this.playground[position] = color;
 
-        int playedRow = this.columnHeights[column];
+      int playedRow = this.columnHeights[column];
     	this.columnHeights[column]++;
     	
     	this.fieldsLeft--;
@@ -140,7 +140,7 @@ public class ArrayPlayground implements Playground {
 			}
 			
 			int position = this.getPosition(column);
-			this.playground[position] = ArrayPlaygroundConstants.EMPTY;
+			this.playground[position] = PlaygroundConstants.EMPTY;
 			
 			return emptiedRow;
 		}
@@ -157,7 +157,7 @@ public class ArrayPlayground implements Playground {
 		this.fieldsLeft++;
 		
 		int position = this.getPosition(column);
-		this.playground[position] = ArrayPlaygroundConstants.EMPTY;
+		this.playground[position] = PlaygroundConstants.EMPTY;
 		
 		return emptiedRow;
 	}
@@ -197,23 +197,23 @@ public class ArrayPlayground implements Playground {
 	
 	public int getRowFromIndex(int index){
 		
-		if (index < 0 || index >= 72 || this.playground[index] == ArrayPlaygroundConstants.GREY){
+		if (index < 0 || index >= 72 || this.playground[index] == PlaygroundConstants.GREY){
 			
 			throw new IllegalArgumentException("invalid index for row and column calculation.");
 		}
 		
-		return (index - ArrayPlaygroundConstants.ARRAY_COLUMN_COUNT) / ArrayPlaygroundConstants.ARRAY_COLUMN_COUNT;
+		return (index - PlaygroundConstants.ARRAY_COLUMN_COUNT) / PlaygroundConstants.ARRAY_COLUMN_COUNT;
 	}
 	
 	
 	public int getColumnFromIndex(int index){
 		
-		if (index < 0 || index >= 72 || this.playground[index] == ArrayPlaygroundConstants.GREY){
+		if (index < 0 || index >= 72 || this.playground[index] == PlaygroundConstants.GREY){
 			
 			throw new IllegalArgumentException("invalid index for row and column calculation.");
 		}
 		
-		return (index - 1) % ArrayPlaygroundConstants.ARRAY_COLUMN_COUNT;
+		return (index - 1) % PlaygroundConstants.ARRAY_COLUMN_COUNT;
 	}
 
 
@@ -226,7 +226,7 @@ public class ArrayPlayground implements Playground {
 		
 		if (this.fourInARowVertically(position, color)){
 
-			direction = ArrayPlaygroundConstants.ARRAY_COLUMN_COUNT;
+			direction = PlaygroundConstants.ARRAY_COLUMN_COUNT;
 		}
 		else if (this.fourInARowHorizontally(position, color)){
 
@@ -234,11 +234,11 @@ public class ArrayPlayground implements Playground {
 		}
 		else if (this.fourInARowDiagonallyDown(position, color)){
 
-			direction = ArrayPlaygroundConstants.ARRAY_COLUMN_COUNT - 1;
+			direction = PlaygroundConstants.ARRAY_COLUMN_COUNT - 1;
 		}
 		else if (this.fourInARowDiagonallyUp(position, color)){
 			
-			direction = ArrayPlaygroundConstants.ARRAY_COLUMN_COUNT + 1;
+			direction = PlaygroundConstants.ARRAY_COLUMN_COUNT + 1;
 		}
 
 		forwardCount = this.countStonesForward(position + direction, color, direction);
@@ -283,7 +283,7 @@ public class ArrayPlayground implements Playground {
 		int stoneCount = 0;
 		
 		for (int position = lastPosition; 
-		     stoneCount < 4 && this.playground[position] != ArrayPlaygroundConstants.GREY;
+		     stoneCount < 4 && this.playground[position] != PlaygroundConstants.GREY;
 		     position++){
 			
 			if (this.playground[position] == color){
@@ -296,7 +296,7 @@ public class ArrayPlayground implements Playground {
 		}		
 		
 		for (int position = lastPosition - 1; 
-	         stoneCount < 4 && this.playground[position] != ArrayPlaygroundConstants.GREY;
+	         stoneCount < 4 && this.playground[position] != PlaygroundConstants.GREY;
 	         position--){
 		
 			if (this.playground[position] == color){
@@ -317,8 +317,8 @@ public class ArrayPlayground implements Playground {
 		int stoneCount = 0;
 		
 		for (int position = lastPosition; 
-		     stoneCount < 4 && this.playground[position] != ArrayPlaygroundConstants.GREY;
-		     position += ArrayPlaygroundConstants.ARRAY_COLUMN_COUNT + 1){
+		     stoneCount < 4 && this.playground[position] != PlaygroundConstants.GREY;
+		     position += PlaygroundConstants.ARRAY_COLUMN_COUNT + 1){
 			
 			if (this.playground[position] == color){
 				
@@ -329,9 +329,9 @@ public class ArrayPlayground implements Playground {
 			}
 		}		
 		
-		for (int position = lastPosition - ArrayPlaygroundConstants.ARRAY_COLUMN_COUNT - 1; 
-	         stoneCount < 4 && this.playground[position] != ArrayPlaygroundConstants.GREY;
-	         position -= ArrayPlaygroundConstants.ARRAY_COLUMN_COUNT + 1){
+		for (int position = lastPosition - PlaygroundConstants.ARRAY_COLUMN_COUNT - 1; 
+	         stoneCount < 4 && this.playground[position] != PlaygroundConstants.GREY;
+	         position -= PlaygroundConstants.ARRAY_COLUMN_COUNT + 1){
 		
 			if (this.playground[position] == color){
 			
@@ -351,8 +351,8 @@ public class ArrayPlayground implements Playground {
 		int stoneCount = 0;
 		
 		for (int position = lastPosition; 
-		     stoneCount < 4 && this.playground[position] != ArrayPlaygroundConstants.GREY;
-		     position += ArrayPlaygroundConstants.ARRAY_COLUMN_COUNT - 1){
+		     stoneCount < 4 && this.playground[position] != PlaygroundConstants.GREY;
+		     position += PlaygroundConstants.ARRAY_COLUMN_COUNT - 1){
 			
 			if (this.playground[position] == color){
 				
@@ -363,9 +363,9 @@ public class ArrayPlayground implements Playground {
 			}
 		}		
 		
-		for (int position = lastPosition - ArrayPlaygroundConstants.ARRAY_COLUMN_COUNT + 1; 
-	         stoneCount < 4 && this.playground[position] != ArrayPlaygroundConstants.GREY;
-	         position -= ArrayPlaygroundConstants.ARRAY_COLUMN_COUNT - 1){
+		for (int position = lastPosition - PlaygroundConstants.ARRAY_COLUMN_COUNT + 1; 
+	         stoneCount < 4 && this.playground[position] != PlaygroundConstants.GREY;
+	         position -= PlaygroundConstants.ARRAY_COLUMN_COUNT - 1){
 		
 			if (this.playground[position] == color){
 			
@@ -385,8 +385,8 @@ public class ArrayPlayground implements Playground {
 		int stoneCount = 0;
 		
 		for (int position = lastPosition; 
-		     stoneCount < 4 && this.playground[position] != ArrayPlaygroundConstants.GREY;
-		     position += ArrayPlaygroundConstants.ARRAY_COLUMN_COUNT){
+		     stoneCount < 4 && this.playground[position] != PlaygroundConstants.GREY;
+		     position += PlaygroundConstants.ARRAY_COLUMN_COUNT){
 			
 			if (this.playground[position] == color){
 				
@@ -397,9 +397,9 @@ public class ArrayPlayground implements Playground {
 			}
 		}		
 		
-		for (int position = lastPosition - ArrayPlaygroundConstants.ARRAY_COLUMN_COUNT; 
-	         stoneCount < 4 && this.playground[position] != ArrayPlaygroundConstants.GREY;
-	         position -= ArrayPlaygroundConstants.ARRAY_COLUMN_COUNT){
+		for (int position = lastPosition - PlaygroundConstants.ARRAY_COLUMN_COUNT; 
+	         stoneCount < 4 && this.playground[position] != PlaygroundConstants.GREY;
+	         position -= PlaygroundConstants.ARRAY_COLUMN_COUNT){
 		
 			if (this.playground[position] == color){
 			
@@ -416,13 +416,13 @@ public class ArrayPlayground implements Playground {
 	
 	protected int getPosition(int column){
 		
-		return (this.columnHeights[column] + 1) * ArrayPlaygroundConstants.ARRAY_COLUMN_COUNT + column + 1;
+		return (this.columnHeights[column] + 1) * PlaygroundConstants.ARRAY_COLUMN_COUNT + column + 1;
 	}
 	
 	
 	protected int getLastPosition(int column){
 		
-		return this.columnHeights[column] * ArrayPlaygroundConstants.ARRAY_COLUMN_COUNT + column + 1;
+		return this.columnHeights[column] * PlaygroundConstants.ARRAY_COLUMN_COUNT + column + 1;
 	}
 	
 	
@@ -440,18 +440,18 @@ public class ArrayPlayground implements Playground {
 	
 	protected boolean checkColor(int color){
 		
-		return color == ArrayPlaygroundConstants.YELLOW || color == ArrayPlaygroundConstants.RED;
+		return color == PlaygroundConstants.YELLOW || color == PlaygroundConstants.RED;
 	}
 	
 	
 	protected int otherColor(int color){
 		
-		if (color == ArrayPlaygroundConstants.YELLOW){
+		if (color == PlaygroundConstants.YELLOW){
 			
-			return ArrayPlaygroundConstants.RED;
+			return PlaygroundConstants.RED;
 		}
 		
-		return ArrayPlaygroundConstants.YELLOW;
+		return PlaygroundConstants.YELLOW;
 	}
 	
 	
@@ -459,25 +459,25 @@ public class ArrayPlayground implements Playground {
 
 		for (int index = 0; index < this.playground.length; index ++){
 			
-			this.playground[index] = ArrayPlaygroundConstants.EMPTY;
+			this.playground[index] = PlaygroundConstants.EMPTY;
 		} 
 		
-		for (int position = ArrayPlaygroundConstants.UPPER_LEFT; position <= ArrayPlaygroundConstants.UPPER_RIGHT; position++){
+		for (int position = PlaygroundConstants.UPPER_LEFT; position <= PlaygroundConstants.UPPER_RIGHT; position++){
 			
-			this.playground[position] = ArrayPlaygroundConstants.GREY;
+			this.playground[position] = PlaygroundConstants.GREY;
 		}
-        for (int position = ArrayPlaygroundConstants.LOWER_LEFT; position <= ArrayPlaygroundConstants.LOWER_RIGHT; position++){
+        for (int position = PlaygroundConstants.LOWER_LEFT; position <= PlaygroundConstants.LOWER_RIGHT; position++){
 			
-			this.playground[position] = ArrayPlaygroundConstants.GREY;
+			this.playground[position] = PlaygroundConstants.GREY;
 		}
         
-        for (int position = ArrayPlaygroundConstants.UPPER_LEFT; position <= ArrayPlaygroundConstants.LOWER_LEFT; position += ArrayPlaygroundConstants.ARRAY_COLUMN_COUNT){
+        for (int position = PlaygroundConstants.UPPER_LEFT; position <= PlaygroundConstants.LOWER_LEFT; position += PlaygroundConstants.ARRAY_COLUMN_COUNT){
 			
-			this.playground[position] = ArrayPlaygroundConstants.GREY;
+			this.playground[position] = PlaygroundConstants.GREY;
 		}     
-        for (int position = ArrayPlaygroundConstants.UPPER_RIGHT; position <= ArrayPlaygroundConstants.LOWER_RIGHT; position += ArrayPlaygroundConstants.ARRAY_COLUMN_COUNT){
+        for (int position = PlaygroundConstants.UPPER_RIGHT; position <= PlaygroundConstants.LOWER_RIGHT; position += PlaygroundConstants.ARRAY_COLUMN_COUNT){
 			
-			this.playground[position] = ArrayPlaygroundConstants.GREY;
+			this.playground[position] = PlaygroundConstants.GREY;
 		}
 	}
 	
@@ -486,11 +486,11 @@ public class ArrayPlayground implements Playground {
 		
 		StringBuilder result = new StringBuilder();
 		
-		for (int row = ArrayPlaygroundConstants.ARRAY_ROW_COUNT - 1; row >= 0; row--) {
+		for (int row = PlaygroundConstants.ARRAY_ROW_COUNT - 1; row >= 0; row--) {
 			
-			for (int column = 0; column < ArrayPlaygroundConstants.ARRAY_COLUMN_COUNT; column++) {
+			for (int column = 0; column < PlaygroundConstants.ARRAY_COLUMN_COUNT; column++) {
 				
-				int fieldColor = this.playground[row * ArrayPlaygroundConstants.ARRAY_COLUMN_COUNT + column];
+				int fieldColor = this.playground[row * PlaygroundConstants.ARRAY_COLUMN_COUNT + column];
 				
 				result = addFieldColor(result, fieldColor);
 			}
@@ -505,15 +505,15 @@ public class ArrayPlayground implements Playground {
 
     switch(fieldColor){
     	
-    	case ArrayPlaygroundConstants.EMPTY : {
+    	case PlaygroundConstants.EMPTY : {
     		
     		return appendFieldColorEmpty(currentPlayground);
     	}
-    	case ArrayPlaygroundConstants.YELLOW : {
+    	case PlaygroundConstants.YELLOW : {
     		
     		return appendFieldColorYellow(currentPlayground);
     	}
-    	case ArrayPlaygroundConstants.RED : {
+    	case PlaygroundConstants.RED : {
     		
     		return appendFieldColorRed(currentPlayground);
     	}

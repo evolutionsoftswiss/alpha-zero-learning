@@ -23,6 +23,10 @@ public abstract class Game {
    */
   public static final int MIN_PLAYER = 2;
   
+  public static final double MAX_WIN = 1.0;
+  public static final double MIN_WIN = 0.0;
+  public static final double DRAW = (MAX_WIN + MIN_WIN) / 2;
+  
 
   protected int currentPlayer = MAX_PLAYER;
   
@@ -126,6 +130,11 @@ public abstract class Game {
       int iteration) {
     
     return Collections.emptyList();
+  }
+  
+  public static double getInversedResult(double gameResult) {
+
+    return MAX_WIN + MIN_WIN - gameResult;
   }
   
   /**

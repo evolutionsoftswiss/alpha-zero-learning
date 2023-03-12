@@ -168,7 +168,7 @@ public class TicTacToe extends Game {
     
     if (maxWin) {
       
-      return 1.0;
+      return MAX_WIN;
     }
     
     boolean minWin = horizontalWin(this.currentBoard, Game.MIN_PLAYER) || 
@@ -177,11 +177,11 @@ public class TicTacToe extends Game {
     
     if (minWin) {
       
-      return 0.0;
+      return MIN_WIN;
     
     }
     
-    return 0.5;
+    return DRAW;
   }
 
   @Override
@@ -285,7 +285,7 @@ public class TicTacToe extends Game {
   INDArray generateCenterFieldInputImagesConvolutional() {
 
     INDArray middleFieldMove = TicTacToeConstants.EMPTY_CONVOLUTIONAL_PLAYGROUND.dup();
-    INDArray emptyImage1 = Nd4j.ones(1, IMAGE_SIZE, IMAGE_SIZE).mul(-1);
+    INDArray emptyImage1 = Nd4j.ones(IMAGE_SIZE, IMAGE_SIZE).mul(-1);
     middleFieldMove.putSlice(0, emptyImage1);
     middleFieldMove.putScalar(1, 1, 1, OCCUPIED_IMAGE_POINT);
     INDArray graphSingleBatchInput1 = Nd4j.create(1, IMAGE_CHANNELS, IMAGE_SIZE, IMAGE_SIZE);
@@ -296,7 +296,7 @@ public class TicTacToe extends Game {
   INDArray generateLastCornerFieldInputImagesConvolutional() {
 
     INDArray cornerFieldMove = TicTacToeConstants.EMPTY_CONVOLUTIONAL_PLAYGROUND.dup();
-    INDArray emptyImage2 = Nd4j.ones(1, IMAGE_SIZE, IMAGE_SIZE).mul(-1);
+    INDArray emptyImage2 = Nd4j.ones(IMAGE_SIZE, IMAGE_SIZE).mul(-1);
     cornerFieldMove.putSlice(0, emptyImage2);
     cornerFieldMove.putScalar(1, 2, 2, OCCUPIED_IMAGE_POINT);
     INDArray graphSingleBatchInput2 = Nd4j.create(1, IMAGE_CHANNELS, IMAGE_SIZE, IMAGE_SIZE);
@@ -307,7 +307,7 @@ public class TicTacToe extends Game {
   INDArray generateFieldOneInputImagesConvolutional() {
 
     INDArray fieldOneMaxMove = TicTacToeConstants.EMPTY_CONVOLUTIONAL_PLAYGROUND.dup();
-    INDArray emptyImage1 = Nd4j.ones(1, IMAGE_SIZE, IMAGE_SIZE).mul(-1);
+    INDArray emptyImage1 = Nd4j.ones(IMAGE_SIZE, IMAGE_SIZE).mul(-1);
     fieldOneMaxMove.putSlice(0, emptyImage1);
     fieldOneMaxMove.putScalar(1, 0, 0, OCCUPIED_IMAGE_POINT);
     INDArray graphSingleBatchInput2 = Nd4j.create(1, IMAGE_CHANNELS, IMAGE_SIZE, IMAGE_SIZE);
@@ -318,7 +318,7 @@ public class TicTacToe extends Game {
   INDArray generateFieldOneCenterAndTwoThreatConvolutional() {
 
     INDArray fieldOneCenterTwoMoves = TicTacToeConstants.EMPTY_CONVOLUTIONAL_PLAYGROUND.dup();
-    INDArray emptyImage1 = Nd4j.ones(1, IMAGE_SIZE, IMAGE_SIZE).mul(-1);
+    INDArray emptyImage1 = Nd4j.ones(IMAGE_SIZE, IMAGE_SIZE).mul(-1);
     fieldOneCenterTwoMoves.putSlice(0, emptyImage1);
     fieldOneCenterTwoMoves.putScalar(1, 0, 0, OCCUPIED_IMAGE_POINT);
     fieldOneCenterTwoMoves.putScalar(2, 1, 1, OCCUPIED_IMAGE_POINT);

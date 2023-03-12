@@ -3,7 +3,6 @@ package ch.evolutionsoft.rl.alphazero;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -23,11 +22,11 @@ public class TreeNode implements Serializable {
 
 	int depth;
 	
-	int lastMoveColor;
+	int currentMoveColor;
 	
 	int timesVisited = 0;
 	
-	double qValue = AdversaryLearning.DRAW_VALUE; 
+	double qValue = Game.DRAW; 
 	
 	double uValue = 0;
 	
@@ -40,7 +39,7 @@ public class TreeNode implements Serializable {
 	
 	public TreeNode(
 	    int lastMove,
-	    int lastMoveColor,
+	    int currentMoveColor,
 	    int depth,
 	    double moveProbability,
 	    double initialQ,
@@ -51,7 +50,7 @@ public class TreeNode implements Serializable {
 	  this.depth = depth;
 	  this.lastMove = lastMove;
 	  this.moveProbability = moveProbability;
-	  this.lastMoveColor = lastMoveColor;
+	  this.currentMoveColor = currentMoveColor;
 
 	}
 	
@@ -65,10 +64,10 @@ public class TreeNode implements Serializable {
   	        moveIndex,
   	        new TreeNode(
   	            moveIndex,
-  	            game.getOtherPlayer(this.lastMoveColor),
+  	            game.getOtherPlayer(this.currentMoveColor),
   	            this.depth + 1,
   	            previousActionProbabilities.getDouble(moveIndex),
-  	            1 - this.qValue,
+  	            Game.getInversedResult(this.qValue),
   	            this));
   	    }
 	}
@@ -76,24 +75,22 @@ public class TreeNode implements Serializable {
 	protected TreeNode selectMove(double cpUct) {
 
 	  List<TreeNode> childNodes = new ArrayList<>(this.children.values());
+
+    double bestValue = Integer.MIN_VALUE;
+    TreeNode bestNode = null;
     
-      Collections.shuffle(childNodes);
-
-      double bestValue = Integer.MIN_VALUE;
-      TreeNode bestNode = null;
-      
-      for (TreeNode treeNode : childNodes) {
-        	
-        double currentValue = treeNode.getValue(cpUct);
-          
-        if (currentValue > bestValue) {
-            	
-          bestValue = currentValue;
-          bestNode = treeNode;
-        }
+    for (TreeNode treeNode : childNodes) {
+      	
+      double currentValue = treeNode.getValue(cpUct);
+        
+      if (currentValue > bestValue) {
+          	
+        bestValue = currentValue;
+        bestNode = treeNode;
       }
+    }
 
-      return bestNode;
+    return bestNode;
 	}
 	
 	
@@ -119,10 +116,27 @@ public class TreeNode implements Serializable {
 
     if (this != currentRoot) {
       
-      this.parent.updateRecursiv(1 - newValue, currentRoot);
+      this.parent.updateRecursiv(Game.getInversedResult(newValue), currentRoot);
     }
     
     this.update(newValue);
+  }
+
+  
+  public void incrementVisited() {
+
+    this.timesVisited++;
+  }
+  
+  
+  public void updateRecursivVisited(TreeNode currentRoot) {
+
+    if (this != currentRoot) {
+      
+      this.parent.updateRecursivVisited(currentRoot);
+    }
+    
+    this.incrementVisited();
   }
 
   public boolean isExpanded() {

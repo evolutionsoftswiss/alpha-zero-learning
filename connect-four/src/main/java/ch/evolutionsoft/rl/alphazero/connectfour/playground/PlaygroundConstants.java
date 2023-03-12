@@ -3,7 +3,7 @@ package ch.evolutionsoft.rl.alphazero.connectfour.playground;
 /**
  * @author evolutionsoft
  */
-public class ArrayPlaygroundConstants {
+public class PlaygroundConstants {
 
   public static final int EMPTY = 2;
   public static final int YELLOW = 0;
@@ -23,7 +23,7 @@ public class ArrayPlaygroundConstants {
   public static final int ARRAY_COLUMN_COUNT = 9;
   public static final int ARRAY_ROW_COUNT = 8;
   
-  private ArrayPlaygroundConstants() {
+  private PlaygroundConstants() {
     // Hide constructor
   }
 }

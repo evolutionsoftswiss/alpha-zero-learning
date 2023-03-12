@@ -44,11 +44,11 @@ public class AdversaryAgentDriver {
       
       double gameResult = this.playGame(game.createNewInstance(), configuration);
       
-      if (gameResult >= MAX_WIN) {
+      if (gameResult >= Game.MAX_WIN) {
         
         player1Wins++;
       
-      } else if (gameResult <= MIN_WIN) {
+      } else if (gameResult <= Game.MIN_WIN) {
         
         player2Wins++;
       
@@ -66,11 +66,11 @@ public class AdversaryAgentDriver {
       
       double gameResult = this.playGame(game.createNewInstance(), configuration);
       
-      if (gameResult <= MIN_WIN) {
+      if (gameResult <= Game.MIN_WIN) {
         
         player1Wins++;
       
-      } else if (gameResult >= MAX_WIN) {
+      } else if (gameResult >= Game.MAX_WIN) {
         
         player2Wins++;
       
@@ -116,15 +116,15 @@ public class AdversaryAgentDriver {
     }
     
     double endResult = game.getEndResult(currentPlayer);
-    if (endResult > 0.5) {
+    if (endResult > Game.DRAW) {
 
-      return MAX_WIN;    
+      return Game.MAX_WIN;    
 
-    } else if (endResult < 0.5) {
+    } else if (endResult < Game.DRAW) {
       
-      return MIN_WIN;
+      return Game.MIN_WIN;
     }
     
-    return DRAW_VALUE;
+    return Game.DRAW;
   }
 }

@@ -12,7 +12,7 @@ class LineTest {
 		Field beginningField = new Field(10);
 		Field endField = new Field(37);
 		
-		Line line = new Line(beginningField, endField, ArrayPlaygroundConstants.RED);
+		Line line = new Line(beginningField, endField, PlaygroundConstants.RED);
 		
 		assertSame(4, line.getWinningRowLength());
 		assertSame(0, line.getWinningRowColumnDirection());
@@ -26,7 +26,7 @@ class LineTest {
 		Field beginningField = new Field(37);
 		Field endField = new Field(10);
 		
-		Line line = new Line(beginningField, endField, ArrayPlaygroundConstants.RED);
+		Line line = new Line(beginningField, endField, PlaygroundConstants.RED);
 		
 		assertSame(4, line.getWinningRowLength());
 		assertSame(0, line.getWinningRowColumnDirection());
@@ -40,7 +40,7 @@ class LineTest {
 		Field beginningField = new Field(31);
 		Field endField = new Field(34);
 		
-		Line line = new Line(beginningField, endField, ArrayPlaygroundConstants.RED);
+		Line line = new Line(beginningField, endField, PlaygroundConstants.RED);
 		
 		assertSame(4, line.getWinningRowLength());
 		assertSame(1, line.getWinningRowColumnDirection());
@@ -54,7 +54,7 @@ class LineTest {
 		Field beginningField = new Field(34);
 		Field endField = new Field(31);
 		
-		Line line = new Line(beginningField, endField, ArrayPlaygroundConstants.RED);
+		Line line = new Line(beginningField, endField, PlaygroundConstants.RED);
 		
 		assertSame(4, line.getWinningRowLength());
 		assertSame(-1, line.getWinningRowColumnDirection());
@@ -68,7 +68,7 @@ class LineTest {
 		Field beginningField = new Field(55);
 		Field endField = new Field(31);
 		
-		Line line = new Line(beginningField, endField, ArrayPlaygroundConstants.RED);
+		Line line = new Line(beginningField, endField, PlaygroundConstants.RED);
 		
 		assertSame(4, line.getWinningRowLength());
 		assertSame(1, line.getWinningRowColumnDirection());
@@ -82,7 +82,7 @@ class LineTest {
 		Field beginningField = new Field(31);
 		Field endField = new Field(55);
 		
-		Line line = new Line(beginningField, endField, ArrayPlaygroundConstants.RED);
+		Line line = new Line(beginningField, endField, PlaygroundConstants.RED);
 		
 		assertSame(4, line.getWinningRowLength());
 		assertSame(-1, line.getWinningRowColumnDirection());
@@ -96,7 +96,7 @@ class LineTest {
 		Field beginningField = new Field(31);
 		Field endField = new Field(61);
 		
-		Line line = new Line(beginningField, endField, ArrayPlaygroundConstants.RED);
+		Line line = new Line(beginningField, endField, PlaygroundConstants.RED);
 		
 		assertSame(4, line.getWinningRowLength());
 		assertSame(1, line.getWinningRowColumnDirection());
@@ -110,7 +110,7 @@ class LineTest {
 		Field beginningField = new Field(61);
 		Field endField = new Field(31);
 		
-		Line line = new Line(beginningField, endField, ArrayPlaygroundConstants.RED);
+		Line line = new Line(beginningField, endField, PlaygroundConstants.RED);
 		
 		assertSame(4, line.getWinningRowLength());
 		assertSame(-1, line.getWinningRowColumnDirection());

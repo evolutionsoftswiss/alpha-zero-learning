@@ -17,7 +17,7 @@ public class MonteCarloTreeSearch {
 
   Logger logger = LoggerFactory.getLogger(MonteCarloTreeSearch.class);
 
-  double currentUctConstant = 1.5;
+  double currentUctConstant = 2.5;
 
   int numberOfSimulations;
 
@@ -27,23 +27,24 @@ public class MonteCarloTreeSearch {
     this.numberOfSimulations = configuration.getNumberOfMonteCarloSimulations();
   }
 
-  void playout(TreeNode rootNode, Game game, ComputationGraph computationGraph) {
+  void playout(TreeNode rootNode, Game game, ComputationGraph computationGraph, boolean isTraining) {
 
     TreeNode mctsRoot = rootNode;
     TreeNode currentNode = rootNode;
 
     while (currentNode.isExpanded()) {
       currentNode = currentNode.selectMove(this.currentUctConstant);
-      game.makeMove(currentNode.lastMove, currentNode.lastMoveColor);
+      game.makeMove(currentNode.lastMove, game.getOtherPlayer(currentNode.currentMoveColor));
     }
+
+    int lastMoveColor = game.getOtherPlayer(currentNode.currentMoveColor);
     
     if (game.gameEnded()) {
 
-      double endResult = game.getEndResult(currentNode.lastMoveColor);
+      double endResult = game.getEndResult(lastMoveColor);
+      if (Game.MIN_PLAYER == lastMoveColor) {
 
-      if (Game.MIN_PLAYER == currentNode.lastMoveColor) {
-
-        endResult = 1 - endResult;
+        endResult = Game.getInversedResult(endResult);
       }
       currentNode.updateRecursiv(endResult, mctsRoot);
       
@@ -55,8 +56,7 @@ public class MonteCarloTreeSearch {
       newShape[0] = 1;
       
       INDArray oneBatchBoard = currentBoard.reshape(newShape);
-      INDArray[] neuralNetOutput; neuralNetOutput = computationGraph.output(oneBatchBoard);
-      
+      INDArray[] neuralNetOutput = computationGraph.output(oneBatchBoard);
       
       INDArray actionProbabilities = neuralNetOutput[0];
       double leafValue = neuralNetOutput[1].getDouble(0);
@@ -72,19 +72,21 @@ public class MonteCarloTreeSearch {
       } else {
         normalizedValidActionProbabilities = validMovesMask.div(validMovesMask.sumNumber());
       }
-      currentNode.updateRecursiv(1 - leafValue, mctsRoot);
+
+      currentNode.updateRecursiv(Game.getInversedResult(leafValue), mctsRoot);
+
       currentNode.expand(game, normalizedValidActionProbabilities);
       }
   }
 
   public INDArray getActionValues(Game currentGame, double temperature, ComputationGraph computationGraph) {
 
-    TreeNode treeNode = new TreeNode(-1, currentGame.getOtherPlayer(currentGame.getCurrentPlayer()), 0, 1.0, 0.5, null);
+    TreeNode treeNode = new TreeNode(-1, currentGame.getCurrentPlayer(), 0, 1.0, Game.DRAW, null);
 
-    return this.getActionValues(currentGame, treeNode, temperature, computationGraph);
+    return this.getActionValues(currentGame, treeNode, temperature, computationGraph, false);
   }
 
-  public INDArray getActionValues(Game currentGame, TreeNode rootNode, double temperature, ComputationGraph computationGraph) {
+  public INDArray getActionValues(Game currentGame, TreeNode rootNode, double temperature, ComputationGraph computationGraph, boolean isTraining) {
 
     int playouts = 0;
 
@@ -92,7 +94,7 @@ public class MonteCarloTreeSearch {
 
       Game newGameInstance = currentGame.createNewInstance();
       
-      this.playout(rootNode, newGameInstance, computationGraph);
+      this.playout(rootNode, newGameInstance, computationGraph, isTraining);
       
       playouts++;
     }

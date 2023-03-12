@@ -9,7 +9,7 @@ import org.nd4j.linalg.factory.Nd4j;
 
 import ch.evolutionsoft.rl.AdversaryTrainingExample;
 import ch.evolutionsoft.rl.Game;
-import ch.evolutionsoft.rl.alphazero.connectfour.playground.ArrayPlaygroundConstants;
+import ch.evolutionsoft.rl.alphazero.connectfour.playground.PlaygroundConstants;
 
 class ConnectFourTest {
 
@@ -64,12 +64,12 @@ class ConnectFourTest {
         new AdversaryTrainingExample(
             this.connectFour.getCurrentBoard(),
             Game.MAX_PLAYER,
-            Nd4j.zeros(ArrayPlaygroundConstants.COLUMN_COUNT),
+            Nd4j.zeros(PlaygroundConstants.COLUMN_COUNT),
             -1);
     
     List<AdversaryTrainingExample> symmetries = this.connectFour.getSymmetries(
         this.connectFour.getCurrentBoard(),
-        Nd4j.zeros(ArrayPlaygroundConstants.COLUMN_COUNT),
+        Nd4j.zeros(PlaygroundConstants.COLUMN_COUNT),
         Game.MAX_PLAYER,
         -1);
     
@@ -91,12 +91,12 @@ class ConnectFourTest {
         new AdversaryTrainingExample(
             newMirroredInstance.getCurrentBoard(),
             Game.MAX_PLAYER,
-            Nd4j.zeros(ArrayPlaygroundConstants.COLUMN_COUNT),
+            Nd4j.zeros(PlaygroundConstants.COLUMN_COUNT),
             -1);
     
     List<AdversaryTrainingExample> symmetries = this.connectFour.getSymmetries(
         this.connectFour.getCurrentBoard(),
-        Nd4j.zeros(ArrayPlaygroundConstants.COLUMN_COUNT),
+        Nd4j.zeros(PlaygroundConstants.COLUMN_COUNT),
         Game.MAX_PLAYER,
         -1);
     

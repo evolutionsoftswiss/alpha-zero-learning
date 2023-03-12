@@ -64,12 +64,12 @@ public class TicTacToeGamesMain {
 
       double endResult = ticTacToe.getEndResult(-1);
       
-      if (endResult > AdversaryLearning.DRAW_VALUE) {
+      if (endResult > Game.DRAW) {
 
         log.info("X wins after {} moves", numberOfMoves);
         results[0]++;
       
-      } else if (endResult < AdversaryLearning.DRAW_VALUE) {
+      } else if (endResult < Game.DRAW) {
 
         log.info("O wins after {} moves", numberOfMoves);
         results[2]++;

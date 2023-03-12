@@ -4,10 +4,10 @@ import static org.junit.Assert.*;
 
 import java.io.IOException;
 
-import org.deeplearning4j.nn.conf.CNN2DFormat;
 import org.deeplearning4j.nn.conf.ComputationGraphConfiguration;
-import org.deeplearning4j.nn.conf.inputs.InputType;
 import org.deeplearning4j.nn.graph.ComputationGraph;
+import org.deeplearning4j.util.ModelSerializer;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.nd4j.linalg.api.ndarray.INDArray;
@@ -20,6 +20,9 @@ import ch.evolutionsoft.rl.alphazero.connectfour.playground.ArrayPlayground;
 
 class MonteCarloTreeSearchTest {
 
+  private ComputationGraph model;
+  private AdversaryLearningConfiguration configuration;
+  
   int[] testPosition = new int[]{
       3, 3, 3, 3, 3, 3, 3, 3, 3, 
       3, 0, 1, 0, 0, 1, 1, 2, 3,
@@ -32,7 +35,7 @@ class MonteCarloTreeSearchTest {
 
   int[] testPosition2 = new int[]{
       3, 3, 3, 3, 3, 3, 3, 3, 3, 
-      3, 1, 0, 1, 1, 0, 0, 1, 3,
+      3, 1, 0, 1, 1, 0, 0, 0, 3,
       3, 1, 0, 1, 0, 1, 0, 2, 3,
       3, 1, 2, 0, 1, 2, 0, 2, 3,
       3, 2, 2, 1, 0, 2, 1, 2, 3,
@@ -49,27 +52,51 @@ class MonteCarloTreeSearchTest {
       3, 1, 1, 0, 1, 2, 0, 2, 3,
       3, 0, 1, 1, 1, 2, 2, 2, 3,
       3, 3, 3, 3, 3, 3, 3, 3, 3};
+  /*
+  * * * * * * * * * 
+  * . . . . . . . * 
+  * . . O . . . . * 
+  * . X O X . . . * 
+  * . X O O . . . * 
+  * . O X O . X . * 
+  * . O X X X O . * 
+  * * * * * * * * *
+  */
+
+  int[] testPosition4 = new int[]{
+      3, 3, 3, 3, 3, 3, 3, 3, 3, 
+      3, 2, 1, 0, 0, 0, 1, 2, 3,
+      3, 2, 1, 0, 1, 2, 0, 2, 3,
+      3, 2, 0, 1, 1, 2, 2, 2, 3,
+      3, 2, 0, 1, 0, 2, 2, 2, 3,
+      3, 2, 2, 1, 2, 2, 2, 2, 3,
+      3, 2, 2, 2, 2, 2, 2, 2, 3,
+      3, 3, 3, 3, 3, 3, 3, 3, 3};
+  
+  @BeforeEach
+  void initializeModel() throws IOException {
+
+    configuration = new AdversaryLearningConfiguration.Builder().
+        numberOfMonteCarloSimulations(200).
+        uctConstantFactor(2.0).
+        build();
+    ComputationGraphConfiguration modelConfiguration =
+        new ConvolutionResidualNet(configuration.getLearningRateSchedule()).createConvolutionalGraphConfiguration();
+    model = new ComputationGraph(modelConfiguration);
+    model.init();
+  }
   
   @Test
   void testMonteCarloSearchSecondPlayerWithThreat() throws IOException {
     
     ArrayPlayground arrayPlayground = new ArrayPlayground(testPosition, new int[] {3, 2, 4, 4, 2, 4, 0});
-    AdversaryLearningConfiguration configuration = new AdversaryLearningConfiguration.Builder().
-        numberOfMonteCarloSimulations(300).
-        uctConstantFactor(1.5).
-        build();
-
-    ComputationGraphConfiguration modelConfiguration =
-        new ConvolutionResidualNet(configuration.getLearningRateSchedule()).createConvolutionalGraphConfiguration();
-    ComputationGraph model = new ComputationGraph(modelConfiguration);
-    model.init();
 
     MonteCarloTreeSearch mcts = new MonteCarloTreeSearch(configuration);
 
-    ConnectFour connectFour = new ConnectFour();
+    ConnectFour connectFour = new ConnectFour(Game.MIN_PLAYER);
     Game game = connectFour.createNewInstance(arrayPlayground);
     
-    INDArray actionValues = mcts.getActionValues(game, 0.5, model);
+    INDArray actionValues = mcts.getActionValues(game, 0.5, this.model);
     assertEquals(0, actionValues.argMax(0).getInt(0));
   }
   
@@ -77,22 +104,13 @@ class MonteCarloTreeSearchTest {
   void testMonteCarloSearchFirstPlayerWithThreat() throws IOException {
     
     ArrayPlayground arrayPlayground = new ArrayPlayground(testPosition2, new int[] {3, 2, 4, 4, 2, 4, 1});
-    AdversaryLearningConfiguration configuration = new AdversaryLearningConfiguration.Builder().
-        numberOfMonteCarloSimulations(300).
-        uctConstantFactor(1.5).
-        build();
-
-    ComputationGraphConfiguration modelConfiguration =
-        new ConvolutionResidualNet(configuration.getLearningRateSchedule()).createConvolutionalGraphConfiguration();
-    ComputationGraph model = new ComputationGraph(modelConfiguration);
-    model.init();
     
     MonteCarloTreeSearch mcts = new MonteCarloTreeSearch(configuration);
 
     ConnectFour connectFour = new ConnectFour();
     Game game = connectFour.createNewInstance(arrayPlayground);
     
-    INDArray actionValues = mcts.getActionValues(game, 0.5, model);
+    INDArray actionValues = mcts.getActionValues(game, 0.5, this.model);
     assertEquals(0, actionValues.argMax(0).getInt(0));
   }
 
@@ -100,22 +118,30 @@ class MonteCarloTreeSearchTest {
   void testMonteCarloSearchSecondPlayer3() throws IOException {
     
     ArrayPlayground arrayPlayground = new ArrayPlayground(testPosition3, new int[] {6, 6, 6, 6, 3, 5, 0});
-    AdversaryLearningConfiguration configuration = new AdversaryLearningConfiguration.Builder().
-        numberOfMonteCarloSimulations(300).
-        uctConstantFactor(1.5).
-        build();
-
-    ComputationGraphConfiguration modelConfiguration =
-        new ConvolutionResidualNet(configuration.getLearningRateSchedule()).createConvolutionalGraphConfiguration();
-    ComputationGraph model = new ComputationGraph(modelConfiguration);
-    model.init();
     
     MonteCarloTreeSearch mcts = new MonteCarloTreeSearch(configuration);
 
     ConnectFour connectFour = new ConnectFour();
     Game game = connectFour.createNewInstance(arrayPlayground);
     
-    INDArray actionValues = mcts.getActionValues(game, 0.5, model);
+    INDArray actionValues = mcts.getActionValues(game, 0.5, this.model);
     assertEquals(4, actionValues.argMax(0).getInt(0));
   }
+  
+  @Test
+  @Disabled
+  void testMonteCarloSearchSimpleThread1() throws IOException {
+    
+    ArrayPlayground arrayPlayground = new ArrayPlayground(testPosition4, new int[] {0, 4, 5, 4, 1, 2, 0});
+    
+    MonteCarloTreeSearch mcts = new MonteCarloTreeSearch(configuration);
+
+    ConnectFour connectFour = new ConnectFour();
+    Game game = connectFour.createNewInstance(arrayPlayground);
+    
+    INDArray actionValues = mcts.getActionValues(game, 1.0, this.model);
+    System.out.println(actionValues);
+    assertEquals(2, actionValues.argMax(0).getInt(0));
+  }
+  
 }

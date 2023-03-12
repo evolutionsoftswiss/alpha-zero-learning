@@ -90,7 +90,7 @@ public class NeuralNetUpdater {
     applicationContext.close();
   }
 
-  public void initialize() throws IOException {
+  public void initialize() throws IOException, InterruptedException {
 
     log.info("Wait for AdversaryLearning readiness");
     
@@ -240,15 +240,17 @@ public class NeuralNetUpdater {
     log.info("Create minibatches");    
     List<MultiDataSet> batchedMultiDataSet = createMiniBatchList(trainingExamples);
 
-    for (int batchIteration = 0; batchIteration < batchNumber; batchIteration++) {
-        
-      log.info("Batch size for batch number {} is {}", 
-          batchIteration,
-          batchedMultiDataSet.get(batchIteration).asList().size());
-  
-      computationGraph.fit(batchedMultiDataSet.get(batchIteration));
-        
-      log.info("Fitted model with batch number {}", batchIteration);
+    for (int updateCycle = 1; updateCycle <= 2; updateCycle++) {
+      for (int batchIteration = 0; batchIteration < batchNumber; batchIteration++) {
+          
+        log.info("Batch size for batch number {} is {}", 
+            batchIteration,
+            batchedMultiDataSet.get(batchIteration).asList().size());
+    
+        computationGraph.fit(batchedMultiDataSet.get(batchIteration));
+          
+        log.info("Fitted model with batch number {}", batchIteration);
+      }
     }
     log.info("Iterations (number of updates) from computation graph model is {}",
         computationGraph.getIterationCount());
