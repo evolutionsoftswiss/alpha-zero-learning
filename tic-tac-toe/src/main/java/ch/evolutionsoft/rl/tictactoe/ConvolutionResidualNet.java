@@ -157,12 +157,13 @@ public class ConvolutionResidualNet {
         .addLayer(AdversaryLearningConstants.DEFAULT_OUTPUT_LAYER_NAME, new OutputLayer.Builder()
             .nOut(9)
             .activation(Activation.SOFTMAX)
+            .lossFunction(LossFunction.MCXENT)
             .build(), "dense1")
         
         .addLayer(AdversaryLearningConstants.DEFAULT_OUTPUT_LAYER_NAME + "_value", new OutputLayer.Builder()
             .nOut(1)
             .activation(Activation.SIGMOID)
-            .lossFunction(LossFunction.MSE)
+            .lossFunction(LossFunction.XENT)
             .build(), "dense2")
  
         .setOutputs(AdversaryLearningConstants.DEFAULT_OUTPUT_LAYER_NAME, AdversaryLearningConstants.DEFAULT_OUTPUT_LAYER_NAME + "_value")
