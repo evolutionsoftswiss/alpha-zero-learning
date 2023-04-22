@@ -11,11 +11,8 @@ import org.deeplearning4j.nn.conf.layers.ActivationLayer;
 import org.deeplearning4j.nn.conf.layers.BatchNormalization;
 import org.deeplearning4j.nn.conf.layers.ConvolutionLayer;
 import org.deeplearning4j.nn.conf.layers.DenseLayer;
-import org.deeplearning4j.nn.conf.layers.GlobalPoolingLayer;
 import org.deeplearning4j.nn.conf.layers.OutputLayer;
-import org.deeplearning4j.nn.conf.layers.PoolingType;
 import org.deeplearning4j.nn.conf.layers.SeparableConvolution2D;
-import org.deeplearning4j.nn.conf.layers.SubsamplingLayer;
 import org.deeplearning4j.nn.weights.WeightInit;
 import org.nd4j.linalg.activations.Activation;
 import org.nd4j.linalg.learning.config.Adam;
@@ -85,12 +82,8 @@ public class ConvolutionResidualNet {
                 .build(),
             BLOCK2_SEPCONV1_ACTIVATION)
         .addLayer(BLOCK2_SEPARABLE_CONVOLUTION2_BATCH_NORMALIZATION, new BatchNormalization(), BLOCK2_SEPARABLE_CONVOLUTION2)
-        .addLayer(BLOCK2_POOL,
-            new SubsamplingLayer.Builder(SubsamplingLayer.PoolingType.AVG).kernelSize(2, 2).stride(1, 1)
-                .convolutionMode(ConvolutionMode.Same).build(),
-            BLOCK2_SEPARABLE_CONVOLUTION2_BATCH_NORMALIZATION)
         
-        .addVertex(ADD1, new ElementWiseVertex(ElementWiseVertex.Op.Add), BLOCK2_POOL, RESIDUAL1_BATCH_NORMALIZATION)
+        .addVertex(ADD1, new ElementWiseVertex(ElementWiseVertex.Op.Add), BLOCK2_SEPARABLE_CONVOLUTION2_BATCH_NORMALIZATION, RESIDUAL1_BATCH_NORMALIZATION)
 
         // residual2
         .addLayer("residual2_conv", new ConvolutionLayer.Builder(1,1).nOut(21).hasBias(false)
@@ -110,11 +103,7 @@ public class ConvolutionResidualNet {
                 .build(),
             "block3_sepconv2_act")
         .addLayer("block3_sepconv2_bn", new BatchNormalization(), "block3_sepconv2")
-        .addLayer("block3_pool",
-            new SubsamplingLayer.Builder(SubsamplingLayer.PoolingType.MAX).kernelSize(2, 2).stride(1, 1)
-                .convolutionMode(ConvolutionMode.Same).build(),
-            "block3_sepconv2_bn")
-        .addVertex("add2", new ElementWiseVertex(ElementWiseVertex.Op.Add), "block3_pool", "residual2")
+        .addVertex("add2", new ElementWiseVertex(ElementWiseVertex.Op.Add), "block3_sepconv2_bn", "residual2")
 
         // block4
         .addLayer("block4_sepconv1_act", new ActivationLayer(Activation.LEAKYRELU), "add2")
@@ -125,17 +114,15 @@ public class ConvolutionResidualNet {
         .addLayer("block4_sepconv1_bn", new BatchNormalization(), "block4_sepconv1")
         .addLayer("block4_sepconv2_act", new ActivationLayer(Activation.LEAKYRELU), "block4_sepconv1_bn")
         
-        .addLayer(AVERAGE_POOL, new GlobalPoolingLayer.Builder(PoolingType.AVG).build(), "block4_sepconv2_act")
-        
         .addLayer("dense1", new DenseLayer.Builder().
             nOut(32).
             activation(Activation.LEAKYRELU).
-            build(), AVERAGE_POOL)
+            build(), "block4_sepconv2_act")
         
         .addLayer("dense2", new DenseLayer.Builder().
             nOut(16).
             activation(Activation.LEAKYRELU).
-            build(), AVERAGE_POOL)
+            build(), "block4_sepconv2_act")
         
         .addLayer(AdversaryLearningConstants.DEFAULT_OUTPUT_LAYER_NAME, new OutputLayer
             .Builder(LossFunctions.LossFunction.MCXENT)
@@ -146,7 +133,7 @@ public class ConvolutionResidualNet {
         .addLayer(AdversaryLearningConstants.DEFAULT_OUTPUT_LAYER_NAME + "_value", new OutputLayer.Builder()
             .nOut(1)
             .activation(Activation.SIGMOID)
-            .lossFunction(LossFunction.MSE)
+            .lossFunction(LossFunction.XENT)
             .build(), "dense2")
  
         .setOutputs(AdversaryLearningConstants.DEFAULT_OUTPUT_LAYER_NAME, AdversaryLearningConstants.DEFAULT_OUTPUT_LAYER_NAME + "_value")

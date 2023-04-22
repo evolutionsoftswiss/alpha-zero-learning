@@ -11,7 +11,6 @@ import org.slf4j.LoggerFactory;
 
 import ch.evolutionsoft.rl.AdversaryLearningConfiguration;
 import ch.evolutionsoft.rl.Game;
-import ch.evolutionsoft.rl.alphazero.AdversaryLearning;
 
 public class TicTacToeGamesMain {
 

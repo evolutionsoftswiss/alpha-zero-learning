@@ -5,7 +5,6 @@ import static org.junit.jupiter.api.Assertions.*;
 import java.io.IOException;
 
 import org.deeplearning4j.nn.graph.ComputationGraph;
-import org.deeplearning4j.util.ModelSerializer;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.nd4j.linalg.api.ndarray.INDArray;
@@ -40,7 +39,7 @@ class MonteCarloTreeSearchTest {
     TreeNode rootNode = new TreeNode(-1, game.getOtherPlayer(game.getCurrentPlayer()), 0, 1.0, 0.5, null);
     MonteCarloTreeSearch mcts = new MonteCarloTreeSearch(adversaryLearningConfiguration);
 
-    INDArray actionProbabilities = mcts.getActionValues(game, rootNode, 0, computationGraph, false);
+    INDArray actionProbabilities = mcts.getActionValues(game, rootNode, 0, computationGraph);
     
     INDArray zeroProbabilityIndices = actionProbabilities.lte(0);
 
