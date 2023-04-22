@@ -17,37 +17,63 @@
 		
 		<dependency>
 			<groupId>org.nd4j</groupId>
-			<artifactId>nd4j-cuda-11.2</artifactId>
-			<version>1.0.0-M1.1</version>
+			<artifactId>nd4j-cuda-11.4</artifactId>
+			<version>1.0.0-M2.1</version>
+			<exclusions>
+				<exclusion>
+					<groupId>org.bytedeco</groupId>
+					<artifactId>javacpp</artifactId>
+				</exclusion>
+			</exclusions>
 		</dependency>
-		<dependency>
-			<groupId>org.nd4j</groupId>
-			<artifactId>nd4j-cuda-11.2</artifactId>
-			<version>1.0.0-M1.1</version>
-			<classifier>linux-x86_64-cudnn</classifier>
-		</dependency>
-	    <dependency>
-	        <groupId>org.deeplearning4j</groupId>
-	        <artifactId>deeplearning4j-cuda-11.2</artifactId>
-	        <version>1.0.0-M1.1</version>
-	    </dependency>
-
 		
 		<dependency>
 			<groupId>ch.evolutionsoft</groupId>
 			<artifactId>ch.evolutionsoft.rl.alphazero.adversary-learning.shared</artifactId>
 			<version>${project.version}</version>
+			<exclusions>
+				<exclusion>
+					<groupId>org.bytedeco</groupId>
+					<artifactId>javacpp-platform</artifactId>
+				</exclusion>
+				<exclusion>
+					<groupId>org.bytedeco</groupId>
+					<artifactId>javacpp</artifactId>
+				</exclusion>
+			</exclusions>
 		</dependency>
 
 		<!-- Core DL4J functionality -->
 		<dependency>
 			<groupId>org.deeplearning4j</groupId>
 			<artifactId>deeplearning4j-core</artifactId>
+			<exclusions>
+				<exclusion>
+					<groupId>org.bytedeco</groupId>
+					<artifactId>javacpp-platform</artifactId>
+				</exclusion>
+				<exclusion>
+					<groupId>org.bytedeco</groupId>
+					<artifactId>javacpp</artifactId>
+				</exclusion>
+			</exclusions>
 		</dependency>
 
 		<dependency>
 			<groupId>org.deeplearning4j</groupId>
 			<artifactId>deeplearning4j-nn</artifactId>
+			<exclusions>
+				<exclusion>
+					<groupId>org.bytedeco</groupId>
+					<artifactId>javacpp</artifactId>
+				</exclusion>
+			</exclusions>
+		</dependency>
+
+		<dependency>		
+			<groupId>org.bytedeco</groupId>
+			<artifactId>javacpp</artifactId>
+			<version>1.5.6</version>
 		</dependency>
 
         <dependency>
@@ -128,7 +154,6 @@
             <plugin>
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>
-                <version>2.5.6</version>
                 <configuration>
                     <fork>true</fork>
                     <mainClass>ch.evolutionsoft.rl.netupdate.NeuralNetUpdater</mainClass>

@@ -37,7 +37,7 @@ class MonteCarloTreeSearchTest {
     Game mockedGame = new GameMock(0, Game.MAX_WIN, 3, Game.MAX_PLAYER);
     
     TreeNode rootNode = new TreeNode(-2, Game.MAX_PLAYER, 0, 0.5, 0.0, null);
-    this.mcts.getActionValues(mockedGame, rootNode, 0, mockedComputationGraph, false);
+    this.mcts.getActionValues(mockedGame, rootNode, 0, mockedComputationGraph);
 
     // The mcts value is taken from parent and for parent min here < 0.5
     assertTrue(rootNode.qValue < 0.5);
@@ -49,7 +49,7 @@ class MonteCarloTreeSearchTest {
     Game mockedGame = new GameMock(0, Game.MIN_WIN, 2, Game.MAX_PLAYER);
     
     TreeNode rootNode = new TreeNode(-2, Game.MAX_PLAYER, 0, 0.5, 0.0, null);
-    this.mcts.getActionValues(mockedGame, rootNode, 0, mockedComputationGraph, false);
+    this.mcts.getActionValues(mockedGame, rootNode, 0, mockedComputationGraph);
 
     // The mcts value is taken from parent and for parent max here > 0.5
     assertTrue(rootNode.qValue > 0.5);
@@ -61,7 +61,7 @@ class MonteCarloTreeSearchTest {
     Game mockedGame = new GameMock(0, Game.MAX_WIN, 1, Game.MAX_PLAYER);
     
     TreeNode rootNode = new TreeNode(-2, Game.MAX_PLAYER, 0, 0.5, 0.0, null);
-    this.mcts.getActionValues(mockedGame, rootNode, 0, mockedComputationGraph, false);
+    this.mcts.getActionValues(mockedGame, rootNode, 0, mockedComputationGraph);
 
     // The mcts value is taken from parent and for parent min here < 0.5
     assertTrue(rootNode.qValue < 0.5);
@@ -73,7 +73,7 @@ class MonteCarloTreeSearchTest {
     Game mockedGame = new GameMock(0, Game.MAX_WIN, 2, Game.MIN_PLAYER);
     
     TreeNode rootNode = new TreeNode(2, Game.MIN_PLAYER, 0, 0.5, 0.0, null);
-    this.mcts.getActionValues(mockedGame, rootNode, 0, mockedComputationGraph, false);
+    this.mcts.getActionValues(mockedGame, rootNode, 0, mockedComputationGraph);
 
     // The mcts value is taken from parent and for parent max here > 0.5   
     assertTrue(rootNode.qValue > 0.5);
@@ -85,7 +85,7 @@ class MonteCarloTreeSearchTest {
     Game mockedGame = new GameMock(0, Game.MIN_WIN, 1, Game.MIN_PLAYER);
     
     TreeNode rootNode = new TreeNode(2, Game.MIN_PLAYER, 0, 0.5, 0.0, null);
-    this.mcts.getActionValues(mockedGame, rootNode, 0, mockedComputationGraph, false);
+    this.mcts.getActionValues(mockedGame, rootNode, 0, mockedComputationGraph);
 
     // The mcts value is taken from parent and for parent min here < 0.5   
     assertTrue(rootNode.qValue < 0.5);

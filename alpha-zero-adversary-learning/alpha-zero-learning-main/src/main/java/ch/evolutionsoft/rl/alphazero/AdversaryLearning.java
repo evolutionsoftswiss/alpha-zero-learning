@@ -30,7 +30,6 @@ import org.springframework.stereotype.Component;
 
 import cc.mallet.types.Dirichlet;
 import ch.evolutionsoft.rl.AdversaryLearningConfiguration;
-import ch.evolutionsoft.rl.AdversaryLearningConstants;
 import ch.evolutionsoft.rl.AdversaryLearningSharedHelper;
 import ch.evolutionsoft.rl.AdversaryTrainingExample;
 import ch.evolutionsoft.rl.Game;
@@ -204,11 +203,7 @@ public class AdversaryLearning {
         received++;
 
         log.info("Episode {}-{} ended", iteration, received);
-
-        if (log.isDebugEnabled()) {
-
-          log.debug("Got {} potentially new train examples", currentAdversaryTrainingExamples.size());
-        }
+        log.info("Got {} potentially new train examples", currentAdversaryTrainingExamples.size());
       }
     } catch (InterruptedException | ExecutionException exception) {
 
@@ -246,7 +241,7 @@ public class AdversaryLearning {
 
       double currentTemperature = adversaryLearningConfiguration.getCurrentTemperature(iteration, moveNumber);
       INDArray actionProbabilities =
-          mcts.getActionValues(currentGame, treeNode, currentTemperature, computationGraph, true);
+          mcts.getActionValues(currentGame, treeNode, currentTemperature, computationGraph);
       
       INDArray validActionProbabilities = actionProbabilities.mul(validMoves);
       INDArray normalizedActionProbabilities = validActionProbabilities.div(Nd4j.sum(actionProbabilities));

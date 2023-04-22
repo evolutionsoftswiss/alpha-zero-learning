@@ -27,7 +27,7 @@ public class MonteCarloTreeSearch {
     this.numberOfSimulations = configuration.getNumberOfMonteCarloSimulations();
   }
 
-  void playout(TreeNode rootNode, Game game, ComputationGraph computationGraph, boolean isTraining) {
+  void playout(TreeNode rootNode, Game game, ComputationGraph computationGraph) {
 
     TreeNode mctsRoot = rootNode;
     TreeNode currentNode = rootNode;
@@ -37,8 +37,8 @@ public class MonteCarloTreeSearch {
       game.makeMove(currentNode.lastMove, game.getOtherPlayer(currentNode.currentMoveColor));
     }
 
-    int lastMoveColor = game.getOtherPlayer(currentNode.currentMoveColor);
-    
+    int lastMoveColor = currentNode.parent.currentMoveColor;
+ 
     if (game.gameEnded()) {
 
       double endResult = game.getEndResult(lastMoveColor);
@@ -83,10 +83,10 @@ public class MonteCarloTreeSearch {
 
     TreeNode treeNode = new TreeNode(-1, currentGame.getCurrentPlayer(), 0, 1.0, Game.DRAW, null);
 
-    return this.getActionValues(currentGame, treeNode, temperature, computationGraph, false);
+    return this.getActionValues(currentGame, treeNode, temperature, computationGraph);
   }
 
-  public INDArray getActionValues(Game currentGame, TreeNode rootNode, double temperature, ComputationGraph computationGraph, boolean isTraining) {
+  public INDArray getActionValues(Game currentGame, TreeNode rootNode, double temperature, ComputationGraph computationGraph) {
 
     int playouts = 0;
 
@@ -94,7 +94,7 @@ public class MonteCarloTreeSearch {
 
       Game newGameInstance = currentGame.createNewInstance();
       
-      this.playout(rootNode, newGameInstance, computationGraph, isTraining);
+      this.playout(rootNode, newGameInstance, computationGraph);
       
       playouts++;
     }

@@ -90,7 +90,7 @@ public class NeuralNetUpdater {
     applicationContext.close();
   }
 
-  public void initialize() throws IOException, InterruptedException {
+  public void initialize() throws IOException {
 
     log.info("Wait for AdversaryLearning readiness");
     

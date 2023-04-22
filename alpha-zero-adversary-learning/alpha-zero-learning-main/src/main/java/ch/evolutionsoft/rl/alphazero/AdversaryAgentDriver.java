@@ -1,7 +1,5 @@
 package ch.evolutionsoft.rl.alphazero;
 
-import static ch.evolutionsoft.rl.alphazero.AdversaryLearning.*;
-
 import java.util.ArrayList;
 import java.util.Set;
 

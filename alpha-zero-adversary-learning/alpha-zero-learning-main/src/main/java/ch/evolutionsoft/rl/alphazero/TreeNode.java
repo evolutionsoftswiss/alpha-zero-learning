@@ -34,6 +34,9 @@ public class TreeNode implements Serializable {
 	
 	TreeNode parent;
 	
+	static final TreeNode DEFAULT_ROOT_PARENT =
+	    new TreeNode(AdversaryLearning.NO_MOVE, Game.MIN_PLAYER, -1, 0.0, Game.DRAW, null);
+	
 	transient ConcurrentMap<Integer, TreeNode> children = new ConcurrentHashMap<>();
 	
 	
@@ -51,7 +54,9 @@ public class TreeNode implements Serializable {
 	  this.lastMove = lastMove;
 	  this.moveProbability = moveProbability;
 	  this.currentMoveColor = currentMoveColor;
-
+	  if (this.parent == null) {
+	    this.parent = DEFAULT_ROOT_PARENT;
+	  }
 	}
 	
 	void expand(Game game, INDArray previousActionProbabilities) {
