@@ -12,8 +12,6 @@ public class ConvolutionalResidualNetConstants {
 
   public static final String ADD1 = "add1";
 
-  public static final String BLOCK2_POOL = "block2_pool";
-
   public static final String RESIDUAL1_BATCH_NORMALIZATION = "residual1_bn";
 
   public static final String RESIDUAL1_CONVOLUTION = "residual1_conv";
@@ -33,8 +31,6 @@ public class ConvolutionalResidualNetConstants {
   public static final String BLOCK1_CONV2_ACTIVATION = "block1_conv2_act";
 
   public static final String BLOCK1_CONV1_BATCH_NORMALIZATION = "block1_conv1_bn";
-  
-  public static final String AVERAGE_POOL = "avg_pool";
   
   private ConvolutionalResidualNetConstants() {
     // Hide constructor

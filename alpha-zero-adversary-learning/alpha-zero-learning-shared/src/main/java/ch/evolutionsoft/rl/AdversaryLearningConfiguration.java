@@ -27,7 +27,7 @@ public class AdversaryLearningConfiguration {
    * number of performed net iterations meaning calls to {@link ComputationGraph} fit method here.
    * 
    * The iterations defining the learning rate for ISchedule is only directly related to alpha zero 
-   * numberOfIterations with alwaysUpdateNeuralNetwork = true and a batch size that covers all exisitng
+   * numberOfIterations with alwaysUpdateNeuralNetwork = true and a batch size that covers all existing
    * examples.
    * 
    * Otherwise with alwaysUpdateNeuralNetwork = false and mini batches > 1 it is dependent of 
@@ -45,15 +45,12 @@ public class AdversaryLearningConfiguration {
 
   /**
    * Value of the dirichlet alpha used to add noise to move probability distributions.
-   * TicTacToe uses a rather high default value compared to other games known values from Alpha Zero.
+   * TicTacToe and ConnectFour use a greater value nearer to one compared to other games known values from Alpha Zero.
    */
   private double dirichletAlpha;
 
   /**
    * Weight of the dirichlet noise added to currently known move probabilities.
-   * The higher default TicTacToe value helped to generate more unique training examples.
-   * The known unique 4520 training examples (from dl4j supervised learning project) is not
-   * completely generated after the current numberOfIterations.
    */
   private double dirichletWeight;
 
@@ -151,7 +148,7 @@ public class AdversaryLearningConfiguration {
    * The maximum number of train examples to keep in history and reuse for neural net fit.
    * TicTacToe never exceeds the used value of 5000. ConnectFour uses 80'000 and removes
    * early {@link AdversaryTrainingExample} from around 300 iterations on.
-   * Typical values for Go 19x19 are 1 or 2 million.
+   * Typical values for Go 19x19 are 500'000 to 2 million eaxample positions.
    */
   private int maxTrainExamplesHistory;
 
@@ -162,7 +159,7 @@ public class AdversaryLearningConfiguration {
 
   /**
    * {@link MonteCarloTreeSearch} parameter influencing exploration / exploitation of
-   * different move actions. TicTacToe uses 0.8. ConnectFour uses 1.2.
+   * different move actions. TicTacToe uses 1.5. ConnectFour uses 2.5.
    */
   private double uctConstantFactor;
 
@@ -194,10 +191,10 @@ public class AdversaryLearningConfiguration {
     private MapSchedule learningRateSchedule;
     private int batchSize = 8192;
 
-    private double dirichletAlpha = 2.5;
+    private double dirichletAlpha = 0.8;
     private double dirichletWeight = 0.40;
     private boolean alwaysUpdateNeuralNetwork = true;
-    private int numberOfAllAvailableMoves;
+    private int numberOfAllAvailableMoves = 9;
     private int numberOfGamesToDecideUpdate = 36;
     private double gamesWinRatioThresholdNewNetworkUpdate = 0.55;
     private int numberOfEpisodesBeforePotentialUpdate = 10;
@@ -206,16 +203,16 @@ public class AdversaryLearningConfiguration {
     private int numberOfIterations = 180;
     private int checkPointIterationsFrequency = 50;
     private int fromNumberOfIterationsReducedTemperature = -1;
-    private int fromNumberOfMovesReducedTemperature = 3;
+    private int fromNumberOfMovesReducedTemperature = -1;
     private double reducedTemperature = 0;
     private int maxTrainExamplesHistory = 5000;
-    private int maxTrainExamplesHistoryFromIteration = 100;
+    private int maxTrainExamplesHistoryFromIteration = -1;
 
     private String bestModelFileName = "bestmodel.bin";
     private String trainExamplesFileName = "trainExamples.obj";
 
-    private double uctConstantFactor = 0.8;
-    private int numberOfMonteCarloSimulations = 30;
+    private double uctConstantFactor = 1.5;
+    private int numberOfMonteCarloSimulations = 25;
     
     public AdversaryLearningConfiguration build() {
       

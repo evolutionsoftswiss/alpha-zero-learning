@@ -1,8 +1,9 @@
 package ch.evolutionsoft.rl.alphazero;
 
 import java.io.Serializable;
-import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -79,11 +80,12 @@ public class TreeNode implements Serializable {
 	
 	protected TreeNode selectMove(double cpUct) {
 
-	  List<TreeNode> childNodes = new ArrayList<>(this.children.values());
-
+	  List<TreeNode> childNodes = new LinkedList<>(this.children.values());
+	  Collections.shuffle(childNodes);
+	  
     double bestValue = Integer.MIN_VALUE;
     TreeNode bestNode = null;
-    
+
     for (TreeNode treeNode : childNodes) {
       	
       double currentValue = treeNode.getValue(cpUct);

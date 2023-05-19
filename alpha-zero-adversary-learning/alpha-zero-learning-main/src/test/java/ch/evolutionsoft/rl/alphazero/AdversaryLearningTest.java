@@ -8,17 +8,13 @@ import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
 
-import org.apache.commons.math3.distribution.EnumeratedIntegerDistribution;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.nd4j.linalg.api.ndarray.INDArray;
 import org.nd4j.linalg.factory.Nd4j;
 
-import cc.mallet.types.Dirichlet;
 import ch.evolutionsoft.rl.AdversaryLearningConfiguration;
 import ch.evolutionsoft.rl.AdversaryLearningSharedHelper;
 import ch.evolutionsoft.rl.AdversaryTrainingExample;
@@ -26,7 +22,6 @@ import ch.evolutionsoft.rl.Game;
 
 class AdversaryLearningTest {
 
-  public static final double DIRICHLET_WEIGHT = 0.5;
   public static final String TEST_TRAIN_EXAMPLES = "testTrainExamples.obj";
   public static final String TEST_TRAIN_EXAMPLES_VALUES = "testTrainExamplesValues.obj";
   AdversaryLearning adversaryLearning;
