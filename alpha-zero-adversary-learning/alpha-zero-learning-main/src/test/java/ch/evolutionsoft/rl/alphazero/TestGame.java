@@ -21,11 +21,6 @@ public class TestGame extends Game {
   }
 
   @Override
-  public int getNumberOfCurrentMoves() {
-    return 5;
-  }
-
-  @Override
   public INDArray getInitialBoard() {
     return null;
   }
@@ -36,12 +31,12 @@ public class TestGame extends Game {
   }
 
   @Override
-  public Set<Integer> getValidMoveIndices() {
+  public Set<Integer> getValidMoveIndices(int player) {
     return null;
   }
 
   @Override
-  public INDArray getValidMoves() {
+  public INDArray getValidMoves(int player) {
     return null;
   }
 

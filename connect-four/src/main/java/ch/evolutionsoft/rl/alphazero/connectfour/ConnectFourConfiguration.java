@@ -15,26 +15,25 @@ public class ConnectFourConfiguration {
   public static AdversaryLearningConfiguration getTrainingConfiguration(Game connectFourGame) {
 
     Map<Integer, Double> learningRatesByIterations = new HashMap<>();
-    learningRatesByIterations.put(0, 5e-4);
-    learningRatesByIterations.put(40000, 2e-4);
-    learningRatesByIterations.put(100000, 8e-5);
+    learningRatesByIterations.put(0, 1e-4);
+    learningRatesByIterations.put(40000, 5e-5);
+    learningRatesByIterations.put(100000, 1e-5);
     MapSchedule learningRateMapSchedule = new MapSchedule(ScheduleType.ITERATION, learningRatesByIterations);
  
     return 
         new AdversaryLearningConfiguration.Builder().
         learningRateSchedule(learningRateMapSchedule).
-        alwaysUpdateNeuralNetwork(true).
         numberOfAllAvailableMoves(connectFourGame.getNumberOfAllAvailableMoves()).
         batchSize(4096).
         checkPointIterationsFrequency(50).
-        dirichletAlpha(2.0).
+        dirichletAlpha(0.7).
         dirichletWeight(0.35).
         fromNumberOfIterationsReducedTemperature(-1).
         fromNumberOfMovesReducedTemperature(-1).
-        iterationStart(1).
+        continueTraining(true).
         maxTrainExamplesHistory(81920).
         maxTrainExamplesHistoryFromIteration(300).
-        numberOfIterations(3000).
+        numberOfIterations(1000).
         numberOfEpisodesBeforePotentialUpdate(20).
         numberOfEpisodeThreads(20).
         numberOfMonteCarloSimulations(200).

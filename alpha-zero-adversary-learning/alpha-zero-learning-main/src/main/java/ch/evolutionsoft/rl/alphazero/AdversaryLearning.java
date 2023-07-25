@@ -1,11 +1,10 @@
 package ch.evolutionsoft.rl.alphazero;
 
-import java.io.DataOutputStream;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -32,6 +31,7 @@ import cc.mallet.types.Dirichlet;
 import ch.evolutionsoft.rl.AdversaryLearningConfiguration;
 import ch.evolutionsoft.rl.AdversaryLearningSharedHelper;
 import ch.evolutionsoft.rl.AdversaryTrainingExample;
+import ch.evolutionsoft.rl.FileReadUtility;
 import ch.evolutionsoft.rl.Game;
 import ch.evolutionsoft.rl.GraphLoader;
 
@@ -52,8 +52,6 @@ public class AdversaryLearning {
   public static final double DRAW_WEIGHT = 0.5;
 
   public static final int NO_MOVE = -2;
-
-  public static final int SEVEN_DIGITS = 7;
 
   public static final String TEMPMODEL_NAME = "tempmodel.bin";
 
@@ -93,20 +91,23 @@ public class AdversaryLearning {
     this.initialGame = game;
     this.computationGraph = computationGraph;
     this.adversaryLearningConfiguration = configuration;
-    this.restoreTrainingExamples = configuration.getIterationStart() > 1;
-    this.restoreTrainedNeuralNet = configuration.getIterationStart() > 1;
+    this.restoreTrainingExamples = configuration.isContinueTraining();
+    this.restoreTrainedNeuralNet = configuration.isContinueTraining();
 
     this.adversaryLearningController = new AdversaryLearningController(this);
     this.sharedHelper = new AdversaryLearningSharedHelper(configuration);
-
-    log.info("Using configuration\n{}", configuration);
   }
 
   public void performLearning() throws IOException {
 
     if (this.restoreTrainedNeuralNet) {
-      GraphLoader.loadComputationGraph(this.adversaryLearningConfiguration);
-      loadTempComputationGraph();
+
+      Object loadedComputationGraph = GraphLoader.loadComputationGraph(this.adversaryLearningConfiguration);
+      if (loadedComputationGraph == null) {
+
+        ModelSerializer.writeModel(computationGraph,
+            this.adversaryLearningConfiguration.getBestModelFileName(), true);
+      }
 
     } else {
 
@@ -124,6 +125,9 @@ public class AdversaryLearning {
         if (AdversaryLearning.this.restoreTrainingExamples) {
 
           AdversaryLearning.this.sharedHelper.loadEarlierTrainingExamples();
+          AdversaryLearning.this.iteration = AdversaryLearning.this.sharedHelper.getTrainExampleBoardsByIteration().
+              keySet().stream().mapToInt(Integer::intValue).max().getAsInt() + 1;
+          AdversaryLearning.this.adversaryLearningConfiguration.setInitialIteration(AdversaryLearning.this.iteration);
         }
 
         return null;
@@ -131,14 +135,14 @@ public class AdversaryLearning {
 
     });
 
-    this.iteration = adversaryLearningConfiguration.getIterationStart();
-
     executor.shutdown();
 
     try {
       while (!executor.awaitTermination(Long.MAX_VALUE, TimeUnit.SECONDS)) {
-        // Wait for monte carlo searches termination
+        // Wait for initialization termination
       }
+
+      log.info("Using configuration\n{}", this.adversaryLearningConfiguration);
     } catch (InterruptedException ie) {
 
       Thread.currentThread().interrupt();
@@ -227,21 +231,22 @@ public class AdversaryLearning {
       int iteration,
       ComputationGraph computationGraph) {
 
-    Game currentGame = this.initialGame.createNewInstance();
+    Game currentGame = this.initialGame.createNewInstance(List.of());
     List<AdversaryTrainingExample> trainExamples = new ArrayList<>();
     int currentPlayer = currentGame.getCurrentPlayer();
     int moveNumber = 1;
+    List<Integer> moveActions = new LinkedList<>();
     TreeNode treeNode = new TreeNode(NO_MOVE, currentGame.getCurrentPlayer(), 0, 1.0, 0.5, null);
     MonteCarloTreeSearch mcts = new MonteCarloTreeSearch(adversaryLearningConfiguration);
 
     while (!currentGame.gameEnded()) {
 
-      INDArray validMoves = currentGame.getValidMoves();
-      Set<Integer> validMoveIndices = currentGame.getValidMoveIndices();
+      INDArray validMoves = currentGame.getValidMoves(currentPlayer);
+      Set<Integer> validMoveIndices = currentGame.getValidMoveIndices(currentPlayer);
 
       double currentTemperature = adversaryLearningConfiguration.getCurrentTemperature(iteration, moveNumber);
       INDArray actionProbabilities =
-          mcts.getActionValues(currentGame, treeNode, currentTemperature, computationGraph);
+          mcts.getActionValues(currentGame, treeNode, currentTemperature, computationGraph, moveActions);
       
       INDArray validActionProbabilities = actionProbabilities.mul(validMoves);
       INDArray normalizedActionProbabilities = validActionProbabilities.div(Nd4j.sum(actionProbabilities));
@@ -252,12 +257,17 @@ public class AdversaryLearning {
       trainExamples.addAll(newTrainingExamples);
 
       int moveAction = chooseNewMoveAction(validMoveIndices, normalizedActionProbabilities, currentGame);
+      moveActions.add(moveAction);
 
       currentGame.makeMove(moveAction, currentPlayer);
       moveNumber++;
 
-      treeNode = mcts.updateMonteCarloSearchRoot(currentGame, treeNode, moveAction);
+      treeNode = mcts.updateMonteCarloSearchRoot(currentGame, treeNode, moveActions);
 
+      if (treeNode == null) {
+        log.error("Invalid possible moves? {}\n{}\n", validMoves, validMoveIndices);
+      }
+      
       if (currentGame.gameEnded()) {
         handleGameEnded(trainExamples, currentGame, currentPlayer);
       }
@@ -268,68 +278,8 @@ public class AdversaryLearning {
     return trainExamples;
   }
 
-  public void loadTempComputationGraph() throws IOException {
-
-    String absoluteBestModelPath = AdversaryLearningConfiguration
-        .getAbsolutePathFrom(adversaryLearningConfiguration.getBestModelFileName());
-    if (!this.adversaryLearningConfiguration.isAlwaysUpdateNeuralNetwork()) {
-
-      this.previousComputationGraph = ModelSerializer.restoreComputationGraph(absoluteBestModelPath, true);
-      this.computationGraph.setLearningRate(this.adversaryLearningConfiguration.getLearningRateSchedule());
-
-      log.info("restored temp model from {}", absoluteBestModelPath);
-    }
-
-  }
-
   synchronized boolean updateNeuralNet() throws IOException {
 
-    boolean updateAfterBetterPlayout = false;
-    if (!adversaryLearningConfiguration.isAlwaysUpdateNeuralNetwork()) {
-
-      String absoluteTempModelPath = AdversaryLearningConfiguration.getAbsolutePathFrom(TEMPMODEL_NAME);
-      ModelSerializer.writeModel(computationGraph, absoluteTempModelPath, true);
-
-      log.info("Write temp model {}", absoluteTempModelPath);
-
-      this.previousComputationGraph = ModelSerializer.restoreComputationGraph(absoluteTempModelPath, true);
-
-      this.computationGraph = GraphLoader.loadComputationGraph(adversaryLearningConfiguration);
-
-      log.info("Challenge new model version with previous model in {} games",
-          adversaryLearningConfiguration.getNumberOfGamesToDecideUpdate());
-
-      AdversaryAgentDriver adversaryAgentDriver = new AdversaryAgentDriver(this.previousComputationGraph,
-          this.computationGraph);
-
-      int[] gameResults = adversaryAgentDriver.playGames(this.initialGame, adversaryLearningConfiguration);
-
-      log.info("New model wins {} / prev model wins {} / draws {}", gameResults[1], gameResults[0], gameResults[2]);
-
-      double newModelWinDrawRatio = (gameResults[1] + DRAW_WEIGHT * gameResults[2])
-          / (gameResults[0] + gameResults[1] + DRAW_WEIGHT * gameResults[2]);
-      updateAfterBetterPlayout = newModelWinDrawRatio > adversaryLearningConfiguration
-          .getGamesWinRatioThresholdNewNetworkUpdate();
-
-      log.info("New model win/draw ratio against previous model is {} vs configured threshold {}", newModelWinDrawRatio,
-          adversaryLearningConfiguration.getGamesWinRatioThresholdNewNetworkUpdate());
-
-      if (!updateAfterBetterPlayout) {
-
-        log.info("Rejecting new model");
-        this.computationGraph = ModelSerializer.restoreComputationGraph(absoluteTempModelPath, true);
-
-        log.info("Restored best model from {}", absoluteTempModelPath);
-      }
-
-    } else {
-
-      updateAfterBetterPlayout = true;
-    }
-
-    if (!adversaryLearningConfiguration.isAlwaysUpdateNeuralNetwork() && updateAfterBetterPlayout) {
-      initialGame.evaluateBoardActionExamples(previousComputationGraph);
-    }
     initialGame.evaluateBoardActionExamples(computationGraph);
     initialGame.evaluateNetwork(computationGraph);
 
@@ -337,14 +287,14 @@ public class AdversaryLearning {
 
     log.info("Iteration {} ended", iteration - 1);
 
-    return updateAfterBetterPlayout;
+    return true;
   }
 
   void createCheckpoint(int iteration) throws IOException {
 
     if (0 == iteration % adversaryLearningConfiguration.getCheckPointIterationsFrequency()) {
 
-      StringBuilder prependedZeros = prependZeros(iteration);
+      StringBuilder prependedZeros = FileWriteUtility.prependZeros(iteration);
 
       String bestModelPath = AdversaryLearningConfiguration
           .getAbsolutePathFrom(adversaryLearningConfiguration.getBestModelFileName());
@@ -462,8 +412,8 @@ public class AdversaryLearning {
       int suffixLength = suffix.length();
       trainExamplesBasePath = trainExamplesByBoardPath.substring(0, trainExamplesByBoardPath.length() - suffixLength);
     }
-    writeMapToFile(trainExamplesByBoardPath,
-        trainExamplesBasePath + AdversaryLearningSharedHelper.TRAIN_EXAMPLES_VALUES + suffix,
+    FileWriteUtility.writeMapToFile(trainExamplesByBoardPath,
+        trainExamplesBasePath + FileReadUtility.TRAIN_EXAMPLES_VALUES + suffix,
         this.sharedHelper.getTrainExamplesHistory());
   }
 
@@ -471,7 +421,7 @@ public class AdversaryLearning {
 
     this.sharedHelper.resizeTrainExamplesHistory(iteration);
 
-    StringBuilder prependedZeros = prependZeros(iteration);
+    StringBuilder prependedZeros = FileWriteUtility.prependZeros(iteration);
     String trainExamplesPath = AdversaryLearningConfiguration
         .getAbsolutePathFrom(adversaryLearningConfiguration.getTrainExamplesFileName());
 
@@ -485,65 +435,10 @@ public class AdversaryLearning {
 
     String trainExamplesCheckpointBoardsFile = trainExamplesBasePath + prependedZeros + iteration + suffix;
     String trainExamplesCheckpointValuesFile = trainExamplesBasePath
-        + AdversaryLearningSharedHelper.TRAIN_EXAMPLES_VALUES + prependedZeros + iteration + suffix;
+        + FileReadUtility.TRAIN_EXAMPLES_VALUES + prependedZeros + iteration + suffix;
 
-    this.writeMapToFile(trainExamplesCheckpointBoardsFile, trainExamplesCheckpointValuesFile,
+    FileWriteUtility.writeMapToFile(trainExamplesCheckpointBoardsFile, trainExamplesCheckpointValuesFile,
         this.sharedHelper.getTrainExamplesHistory());
-  }
-
-  void writeMapToFile(String trainExamplesKeyPath, String trainExamplesValuesPath,
-      Map<String, AdversaryTrainingExample> sourceMap) throws IOException {
-
-    if (!sourceMap.isEmpty()) {
-      AdversaryTrainingExample example = sourceMap.values().iterator().next();
-
-      long[] boardShape = example.getBoard().shape();
-      long[] actionShape = example.getActionIndexProbabilities().shape();
-
-      INDArray allBoardsKey = Nd4j.zeros(sourceMap.size(), boardShape[0], boardShape[1], boardShape[2]);
-      INDArray allValues = Nd4j.zeros(sourceMap.size(), actionShape[0] + 3);
-
-      int exampleNumber = 0;
-      for (Map.Entry<String, AdversaryTrainingExample> currentExampleEntry : sourceMap.entrySet()) {
-
-        allBoardsKey.putSlice(exampleNumber, currentExampleEntry.getValue().getBoard());
-        INDArray valueNDArray = Nd4j.zeros(actionShape[0] + 3);
-
-        AdversaryTrainingExample value = currentExampleEntry.getValue();
-        INDArray actionIndexProbabilities = value.getActionIndexProbabilities();
-        for (int actionIndex = 0; actionIndex <= actionShape[0] - 1; actionIndex++) {
-
-          valueNDArray.putScalar(actionIndex, actionIndexProbabilities.getFloat(actionIndex));
-        }
-        valueNDArray.putScalar(actionShape[0], value.getCurrentPlayer());
-        valueNDArray.putScalar(actionShape[0] + 1, value.getCurrentPlayerValue());
-        valueNDArray.putScalar(actionShape[0] + 2, value.getIteration());
-        allValues.putSlice(exampleNumber, valueNDArray);
-
-        exampleNumber++;
-      }
-
-      try (DataOutputStream dataOutputStream = new DataOutputStream(new FileOutputStream(trainExamplesKeyPath))) {
-
-        Nd4j.write(allBoardsKey, dataOutputStream);
-      }
-
-      try (DataOutputStream dataOutputStream = new DataOutputStream(new FileOutputStream(trainExamplesValuesPath))) {
-
-        Nd4j.write(allValues, dataOutputStream);
-      }
-    }
-  }
-
-  StringBuilder prependZeros(int iteration) {
-
-    int prependingZeros = SEVEN_DIGITS - String.valueOf(iteration).length();
-
-    StringBuilder prependedZeros = new StringBuilder();
-    for (int n = 1; n <= prependingZeros; n++) {
-      prependedZeros.append('0');
-    }
-    return prependedZeros;
   }
 
   boolean hasMoreThanOneMove(Set<Integer> emptyFields) {

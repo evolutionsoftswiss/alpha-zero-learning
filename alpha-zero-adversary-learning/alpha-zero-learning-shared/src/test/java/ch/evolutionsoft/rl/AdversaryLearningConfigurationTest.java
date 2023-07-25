@@ -23,7 +23,6 @@ class AdversaryLearningConfigurationTest {
     
     AdversaryLearningConfiguration adversaryLearningConfiguration =
         new AdversaryLearningConfiguration.Builder().
-        alwaysUpdateNeuralNetwork(false).
         numberOfAllAvailableMoves(7).
         batchSize(1024).
         bestModelFileName("alphaModel.bin").
@@ -33,11 +32,9 @@ class AdversaryLearningConfigurationTest {
         fromNumberOfIterationsReducedTemperature(1000).
         fromNumberOfMovesReducedTemperature(10).
         reducedTemperature(0.5).
-        gamesWinRatioThresholdNewNetworkUpdate(0.5).
-        iterationStart(10000).
+        continueTraining(true).
         learningRateSchedule(learningRateSchedule).
         maxTrainExamplesHistory(100000).
-        numberOfGamesToDecideUpdate(50).
         numberOfIterations(1000).
         numberOfEpisodesBeforePotentialUpdate(20).
         numberOfMonteCarloSimulations(100).
@@ -56,7 +53,6 @@ class AdversaryLearningConfigurationTest {
     MapSchedule learningRateSchedule = new MapSchedule(ScheduleType.ITERATION, learningRatesByIteration);
     
     AdversaryLearningConfiguration adversaryLearningConfiguration = new AdversaryLearningConfiguration();
-    adversaryLearningConfiguration.setAlwaysUpdateNeuralNetwork(false);
     adversaryLearningConfiguration.setNumberOfAllAvailableMoves(7);
     adversaryLearningConfiguration.setBatchSize(1024);
     adversaryLearningConfiguration.setBestModelFileName("alphaModel.bin");
@@ -66,11 +62,9 @@ class AdversaryLearningConfigurationTest {
     adversaryLearningConfiguration.setFromNumberOfIterationsTemperatureZero(1000);
     adversaryLearningConfiguration.setFromNumberOfMovesTemperatureZero(10);
     adversaryLearningConfiguration.setReducedTemperature(0.5);
-    adversaryLearningConfiguration.setGamesWinRatioThresholdNewNetworkUpdate(0.5);
-    adversaryLearningConfiguration.setIterationStart(10000);
+    adversaryLearningConfiguration.setContinueTraining(true);
     adversaryLearningConfiguration.setLearningRateSchedule(learningRateSchedule);
     adversaryLearningConfiguration.setMaxTrainExamplesHistory(100000);
-    adversaryLearningConfiguration.setNumberOfGamesToDecideUpdate(50);
     adversaryLearningConfiguration.setNumberOfIterations(1000);
     adversaryLearningConfiguration.setNumberOfEpisodesBeforePotentialUpdate(20);
     adversaryLearningConfiguration.setNumberOfMonteCarloSimulations(100);
@@ -86,7 +80,6 @@ class AdversaryLearningConfigurationTest {
     assertAll(
         () -> assertEquals(String.valueOf(Paths.get("").toAbsolutePath()) + File.separator + "alphaModel.bin", 
             AdversaryLearningConfiguration.getAbsolutePathFrom(adversaryLearningConfiguration.getBestModelFileName())),
-        () -> assertEquals(false, adversaryLearningConfiguration.isAlwaysUpdateNeuralNetwork()),
         () -> assertEquals(7, adversaryLearningConfiguration.getNumberOfAllAvailableMoves()),
         () -> assertEquals(1024, adversaryLearningConfiguration.getBatchSize()),
         () -> assertTrue(adversaryLearningConfiguration.getBestModelFileName().endsWith("alphaModel.bin")),
@@ -101,11 +94,9 @@ class AdversaryLearningConfigurationTest {
         () -> assertEquals(0.4, adversaryLearningConfiguration.getDirichletWeight()),
         () -> assertEquals(1000, adversaryLearningConfiguration.getFromNumberOfIterationsTemperatureZero()),
         () -> assertEquals(10, adversaryLearningConfiguration.getFromNumberOfMovesTemperatureZero()),
-        () -> assertEquals(0.5, adversaryLearningConfiguration.getGamesWinRatioThresholdNewNetworkUpdate()),
-        () -> assertEquals(10000, adversaryLearningConfiguration.getIterationStart()),
+        () -> assertEquals(true, adversaryLearningConfiguration.isContinueTraining()),
         () -> assertEquals(learningRateSchedule, adversaryLearningConfiguration.getLearningRateSchedule()),
         () -> assertEquals(100000, adversaryLearningConfiguration.getMaxTrainExamplesHistory()),
-        () -> assertEquals(50, adversaryLearningConfiguration.getNumberOfGamesToDecideUpdate()),
         () -> assertEquals(1000, adversaryLearningConfiguration.getNumberOfIterations()),
         () -> assertEquals(20, adversaryLearningConfiguration.getNumberOfEpisodesBeforePotentialUpdate()),
         () -> assertEquals(100, adversaryLearningConfiguration.getNumberOfMonteCarloSimulations()),

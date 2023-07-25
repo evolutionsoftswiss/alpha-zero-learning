@@ -73,7 +73,7 @@ public class TicTacToeGamesMain {
         log.info("O wins after {} moves", numberOfMoves);
         results[2]++;
       
-      } else if (ticTacToe.getValidMoveIndices().isEmpty()) {
+      } else if (ticTacToe.getValidMoveIndices(Game.MAX_PLAYER).isEmpty()) {
 
         log.info("Draw");
         results[1]++;
@@ -91,9 +91,9 @@ public class TicTacToeGamesMain {
     INDArray actionOutput = alphaNet.output(inputBoardBatch)[0];
     
     int moveIndex = actionOutput.argMax(1).getInt(0);
-    if (!ticTacToe.getValidMoveIndices().contains(moveIndex)) {
+    if (!ticTacToe.getValidMoveIndices(Game.MAX_PLAYER).contains(moveIndex)) {
       log.warn("Invalid O move from alpha zero net.");
-      moveIndex = ticTacToe.getValidMoveIndices().iterator().next();
+      moveIndex = ticTacToe.getValidMoveIndices(Game.MAX_PLAYER).iterator().next();
     }
     
     return ticTacToe.makeMove(moveIndex, xPlayer ? TicTacToeConstants.MAX_PLAYER_CHANNEL : TicTacToeConstants.MIN_PLAYER_CHANNEL);
@@ -104,9 +104,9 @@ public class TicTacToeGamesMain {
  
     int moveIndex = getBestMove(perfectResNet, ticTacToe.getCurrentBoard());
 
-    if (!ticTacToe.getValidMoveIndices().contains(moveIndex)) {
+    if (!ticTacToe.getValidMoveIndices(Game.MAX_PLAYER).contains(moveIndex)) {
       log.warn("Invalid O move from potentially perfect residual net.");
-      moveIndex = ticTacToe.getValidMoveIndices().iterator().next();
+      moveIndex = ticTacToe.getValidMoveIndices(Game.MAX_PLAYER).iterator().next();
     }
     
     return ticTacToe.makeMove(moveIndex, xPlayer ? TicTacToeConstants.MAX_PLAYER_CHANNEL : TicTacToeConstants.MIN_PLAYER_CHANNEL);

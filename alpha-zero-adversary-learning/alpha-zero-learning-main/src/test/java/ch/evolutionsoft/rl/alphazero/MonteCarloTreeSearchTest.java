@@ -51,7 +51,7 @@ class MonteCarloTreeSearchTest {
     TreeNode rootNode = new TreeNode(-2, Game.MAX_PLAYER, 0, 0.5, 0.0, null);
     this.mcts.getActionValues(mockedGame, rootNode, 0, mockedComputationGraph);
 
-    // The mcts value is taken from parent and for parent max here > 0.5
+    // The mcts value is taken from parent and for parent min here > 0.5
     assertTrue(rootNode.qValue > 0.5);
   }
   
@@ -87,7 +87,7 @@ class MonteCarloTreeSearchTest {
     TreeNode rootNode = new TreeNode(2, Game.MIN_PLAYER, 0, 0.5, 0.0, null);
     this.mcts.getActionValues(mockedGame, rootNode, 0, mockedComputationGraph);
 
-    // The mcts value is taken from parent and for parent min here < 0.5   
+    // The mcts value is taken from parent and for parent max here < 0.5   
     assertTrue(rootNode.qValue < 0.5);
   }
 }

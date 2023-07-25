@@ -2,7 +2,10 @@
 /.project
 /trainExamples*0*.obj
 /bestmodel*0*.bin
+/model*0*.bin
 /.settings/
 /adversaryLearning.log
 /tree*0*.obj
 /*.txt
+/bestmodelh5.bin
+/model.h5

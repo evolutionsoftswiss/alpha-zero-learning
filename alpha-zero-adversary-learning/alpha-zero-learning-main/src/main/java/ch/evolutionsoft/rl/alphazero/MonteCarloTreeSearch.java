@@ -1,6 +1,7 @@
 package ch.evolutionsoft.rl.alphazero;
 
 import java.util.Arrays;
+import java.util.List;
 import java.util.Set;
 
 import org.deeplearning4j.nn.graph.ComputationGraph;
@@ -61,7 +62,7 @@ public class MonteCarloTreeSearch {
       INDArray actionProbabilities = neuralNetOutput[0];
       double leafValue = neuralNetOutput[1].getDouble(0);
       
-      INDArray validMovesMask = game.getValidMoves();
+      INDArray validMovesMask = game.getValidMoves(currentNode.currentMoveColor);
       INDArray validActionProbabilities = actionProbabilities.mul(validMovesMask);
       
       Number validActionsSum = validActionProbabilities.sumNumber();
@@ -86,23 +87,37 @@ public class MonteCarloTreeSearch {
     return this.getActionValues(currentGame, treeNode, temperature, computationGraph);
   }
 
-  public INDArray getActionValues(Game currentGame, TreeNode rootNode, double temperature, ComputationGraph computationGraph) {
+  public INDArray getActionValues(
+      Game currentGame,
+      TreeNode rootNode,
+      double temperature,
+      ComputationGraph computationGraph) {
+
+    return this.getActionValues(currentGame, rootNode, temperature, computationGraph, List.of());
+  }
+
+  public INDArray getActionValues(
+      Game currentGame,
+      TreeNode rootNode,
+      double temperature,
+      ComputationGraph computationGraph,
+      List<Integer> lastMoves) {
 
     int playouts = 0;
 
     while (playouts < numberOfSimulations) {
 
-      Game newGameInstance = currentGame.createNewInstance();
+      Game newGameInstance = currentGame.createNewInstance(lastMoves);
       
       this.playout(rootNode, newGameInstance, computationGraph);
       
       playouts++;
     }
 
-    int[] visitedCounts = new int[currentGame.getNumberOfCurrentMoves()];
+    int[] visitedCounts = new int[currentGame.getNumberOfAllAvailableMoves()];
     int maxVisitedCounts = 0;
 
-    for (int index = 0; index < currentGame.getNumberOfCurrentMoves(); index++) {
+    for (int index = 0; index < currentGame.getNumberOfAllAvailableMoves(); index++) {
 
       if (rootNode.containsChildMoveIndex(index)) {
 
@@ -114,7 +129,7 @@ public class MonteCarloTreeSearch {
       }
     }
 
-    INDArray moveProbabilities = Nd4j.zeros(currentGame.getNumberOfCurrentMoves());
+    INDArray moveProbabilities = Nd4j.zeros(currentGame.getNumberOfAllAvailableMoves());
 
     if (0 == temperature) {
 
@@ -133,8 +148,8 @@ public class MonteCarloTreeSearch {
       return moveProbabilities;
     }
 
-    INDArray softmaxParameters = Nd4j.zeros(currentGame.getNumberOfCurrentMoves());
-    Set<Integer> validMoveIndices = currentGame.getValidMoveIndices();
+    INDArray softmaxParameters = Nd4j.zeros(currentGame.getNumberOfAllAvailableMoves());
+    Set<Integer> validMoveIndices = currentGame.getValidMoveIndices(rootNode.currentMoveColor);
     for (int index : validMoveIndices) {
 
       softmaxParameters.putScalar(index, (1 / temperature) * Math.log(visitedCounts[index] + 1e-8));
@@ -159,16 +174,17 @@ public class MonteCarloTreeSearch {
 
     return moveProbabilities;
   }
+  
+  public TreeNode updateMonteCarloSearchRoot(Game game, TreeNode lastRoot, List<Integer> moveIndices) {
 
-  public TreeNode updateMonteCarloSearchRoot(Game game, TreeNode lastRoot, int moveAction) {
+    Integer lastMoveIndex = moveIndices.get(moveIndices.size() - 1);
+    if (lastRoot.containsChildMoveIndex(lastMoveIndex)) {
 
-    if (lastRoot.containsChildMoveIndex(moveAction)) {
-
-      return lastRoot.getChildWithMoveIndex(moveAction);
+      return lastRoot.getChildWithMoveIndex(lastMoveIndex);
     } else {
 
-      logger.warn("{}", game);
-      logger.error("no child with move {} " + "found for current root node with last move {}", moveAction,
+      logger.warn("{}\n,{}", game, lastRoot);
+      logger.error("no child {} found with moves {} " + " for current root node with last move {}", lastMoveIndex, moveIndices,
           lastRoot.lastMove);
 
       return null;

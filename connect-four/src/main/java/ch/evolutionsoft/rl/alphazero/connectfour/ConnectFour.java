@@ -16,7 +16,7 @@ import ch.evolutionsoft.rl.AdversaryTrainingExample;
 import ch.evolutionsoft.rl.Game;
 import ch.evolutionsoft.rl.alphazero.connectfour.playground.BinaryPlayground;
 
-public class BinaryConnectFour extends Game {
+public class ConnectFour extends Game {
 
   public static final int CURRENT_PLAYER_CHANNEL = 2;
   public static final int NUMBER_OF_BOARD_CHANNELS = 3;
@@ -32,28 +32,28 @@ public class BinaryConnectFour extends Game {
     EMPTY_CONVOLUTIONAL_PLAYGROUND.putSlice(EMPTY, ONES_PLAYGROUND_IMAGE);
   }
   
-  BinaryPlayground arrayPlayground = new BinaryPlayground();
+  BinaryPlayground binaryPlayground = new BinaryPlayground();
   int lastMoveColumn = -1;
 
-  public BinaryConnectFour() {
+  public ConnectFour() {
     
   }
 
-  public BinaryConnectFour(int currentPlayer) {
+  public ConnectFour(int currentPlayer) {
 
     super(currentPlayer);
   }
   
   @Override
-  public Game createNewInstance() {
+  public Game createNewInstance(List<Integer> lastMoveIndices) {
     
-    BinaryConnectFour connectFour = new BinaryConnectFour(this.currentPlayer);
+    ConnectFour connectFour = new ConnectFour(this.currentPlayer);
     
     long[] boardPosition = new long[2];
-    System.arraycopy(this.arrayPlayground.getPosition(), 0, boardPosition, 0, boardPosition.length);
+    System.arraycopy(this.binaryPlayground.getPosition(), 0, boardPosition, 0, boardPosition.length);
     int[] columnHeights = new int[COLUMN_COUNT];
-    System.arraycopy(this.arrayPlayground.getColumnHeights(), 0, columnHeights, 0, columnHeights.length);
-    connectFour.arrayPlayground = new BinaryPlayground(boardPosition, columnHeights, 42);
+    System.arraycopy(this.binaryPlayground.getColumnHeights(), 0, columnHeights, 0, columnHeights.length);
+    connectFour.binaryPlayground = new BinaryPlayground(boardPosition, columnHeights, 42);
     
     connectFour.lastMoveColumn = this.lastMoveColumn;
     connectFour.currentBoard = this.currentBoard.dup();
@@ -61,17 +61,17 @@ public class BinaryConnectFour extends Game {
     return connectFour;
   }
   
-  public Game createNewInstance(BinaryPlayground arrayPlayground) {
+  public Game createNewInstance(BinaryPlayground binaryPlayground, int lastMoveColumn) {
     
-    BinaryConnectFour connectFour = new BinaryConnectFour();
+    ConnectFour connectFour = new ConnectFour();
 
     long[] boardPosition = new long[2];
-    System.arraycopy(arrayPlayground.getPosition(), 0, boardPosition, 0, boardPosition.length);
+    System.arraycopy(binaryPlayground.getPosition(), 0, boardPosition, 0, boardPosition.length);
     int[] columnHeights = new int[COLUMN_COUNT];
-    System.arraycopy(arrayPlayground.getColumnHeights(), 0, columnHeights, 0, columnHeights.length);
-    connectFour.arrayPlayground = new BinaryPlayground(boardPosition, columnHeights, arrayPlayground.getFieldsLeft());
+    System.arraycopy(binaryPlayground.getColumnHeights(), 0, columnHeights, 0, columnHeights.length);
+    connectFour.binaryPlayground = new BinaryPlayground(boardPosition, columnHeights, binaryPlayground.getFieldsLeft());
     
-    connectFour.lastMoveColumn = -1;
+    connectFour.lastMoveColumn = lastMoveColumn;
     int yellowStones = 0;
     int redStones = 0;
 
@@ -124,12 +124,6 @@ public class BinaryConnectFour extends Game {
   }
 
   @Override
-  public int getNumberOfCurrentMoves() {
-
-    return COLUMN_COUNT;
-  }
-
-  @Override
   public INDArray getInitialBoard() {
 
     return EMPTY_CONVOLUTIONAL_PLAYGROUND.dup();
@@ -142,7 +136,7 @@ public class BinaryConnectFour extends Game {
   }
 
   @Override
-  public Set<Integer> getValidMoveIndices() {
+  public Set<Integer> getValidMoveIndices(int player) {
 
     Set<Integer> emptyFieldsIndices = new HashSet<>(10);
     
@@ -159,11 +153,11 @@ public class BinaryConnectFour extends Game {
   }
 
   @Override
-  public INDArray getValidMoves() {
+  public INDArray getValidMoves(int player) {
 
     INDArray validMoves = Nd4j.zeros(COLUMN_COUNT);
     
-    Set<Integer> validMoveIndices = getValidMoveIndices();
+    Set<Integer> validMoveIndices = getValidMoveIndices(player);
     validMoveIndices.stream().forEach(index -> validMoves.putScalar(index, AdversaryLearningConstants.ONE));
     
     return validMoves;
@@ -178,23 +172,25 @@ public class BinaryConnectFour extends Game {
 
     if (YELLOW == otherConnectFourPlayer) {
       
-      return this.arrayPlayground.fourInARow(this.arrayPlayground.getFirstPlayerPosition()) ||
-                  this.arrayPlayground.getAvailableColumns().isEmpty();
+      boolean fourInARow = this.binaryPlayground.fourInARow(this.binaryPlayground.getFirstPlayerPosition());
+      return fourInARow ||
+                  this.binaryPlayground.getAvailableColumns().isEmpty();
     }
-    
-    return this.arrayPlayground.fourInARow(this.arrayPlayground.getSecondPlayerPosition()) ||
-                this.arrayPlayground.getAvailableColumns().isEmpty();
+
+    boolean fourInARow = this.binaryPlayground.fourInARow(this.binaryPlayground.getSecondPlayerPosition());
+    return fourInARow ||
+                this.binaryPlayground.getAvailableColumns().isEmpty();
   }
 
   @Override
   public INDArray makeMove(int moveIndex, int player) {
 
     int connectFourPlayer = convertGamePlayerToConnectFourPlayer(player);
-    int playedRow = this.arrayPlayground.trySetField(moveIndex, connectFourPlayer);
+    int playedRow = this.binaryPlayground.trySetField(moveIndex, connectFourPlayer);
     this.lastMoveColumn = moveIndex;
  
     this.currentBoard = this.currentBoard.dup();
-    if (Game.MAX_PLAYER == player) {
+    if (Game.MIN_PLAYER == player) {
 
       this.currentBoard.putSlice(CURRENT_PLAYER_CHANNEL, ONES_PLAYGROUND_IMAGE); 
     } else {
@@ -212,14 +208,14 @@ public class BinaryConnectFour extends Game {
   @Override
   public double getEndResult(int lastPlayer) {
 
-    boolean maxWin = arrayPlayground.fourInARow(this.arrayPlayground.getFirstPlayerPosition());
+    boolean maxWin = binaryPlayground.fourInARow(this.binaryPlayground.getFirstPlayerPosition());
     
     if (maxWin) {
       
       return Game.MAX_WIN;
     }
     
-    boolean minWin = arrayPlayground.fourInARow(this.arrayPlayground.getSecondPlayerPosition());
+    boolean minWin = binaryPlayground.fourInARow(this.binaryPlayground.getSecondPlayerPosition());
     
     if (minWin) {
       
@@ -249,6 +245,12 @@ public class BinaryConnectFour extends Game {
     
     return symmetries;
   }
+  
+  @Override
+  public String toString() {
+    
+    return this.binaryPlayground.toString();
+  }
 
   static INDArray mirrorBoardVertically(INDArray playgroundRotation) {
 
@@ -258,7 +260,7 @@ public class BinaryConnectFour extends Game {
     
     return Nd4j.create(
         List.of(maxPlayerMirrorHorizontal, minPlayerMirrorHorizontal, boardPlayerMirrorHorizontal),
-        new long[] {3, 6, 7});
+        NUMBER_OF_BOARD_CHANNELS, ROW_COUNT, COLUMN_COUNT);
   }
   
   static INDArray mirrorBoardPartVertically(INDArray toMirror) {
@@ -269,8 +271,7 @@ public class BinaryConnectFour extends Game {
       verticalMirrors.add(Nd4j.reverse(toMirror.getRow(row)));
     }
     
-    return Nd4j.create(verticalMirrors,
-        new long[] {6, 7});
+    return Nd4j.create(verticalMirrors, ROW_COUNT, COLUMN_COUNT);
   }
 
   int convertGamePlayerToConnectFourPlayer(int gamePlayer) {

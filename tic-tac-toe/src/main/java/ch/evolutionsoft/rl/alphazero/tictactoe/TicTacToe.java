@@ -49,7 +49,7 @@ public class TicTacToe extends Game {
   }
 
   @Override
-  public Game createNewInstance() {
+  public Game createNewInstance(List<Integer> lastMoveIndices) {
 
     TicTacToe ticTacToe = new TicTacToe(currentPlayer); 
     ticTacToe.currentBoard = this.currentBoard.dup();
@@ -59,12 +59,6 @@ public class TicTacToe extends Game {
   
   @Override
   public int getNumberOfAllAvailableMoves() {
-
-    return TicTacToeConstants.COLUMN_COUNT;
-  }
-
-  @Override
-  public int getNumberOfCurrentMoves() {
 
     return TicTacToeConstants.COLUMN_COUNT;
   }
@@ -155,7 +149,7 @@ public class TicTacToe extends Game {
         verticalWin(currentBoard, otherPlayer) ||
         diagonalWin(currentBoard, otherPlayer);
     
-    return getValidMoveIndices().isEmpty() ||
+    return getValidMoveIndices(this.currentPlayer).isEmpty() ||
         lastPlayerMoveHasWon;
   }
 
@@ -210,7 +204,7 @@ public class TicTacToe extends Game {
    * In TicTacToe the valid moves are all empty fields.
    */
   @Override
-  public Set<Integer> getValidMoveIndices() {
+  public Set<Integer> getValidMoveIndices(int player) {
     
     Set<Integer> emptyFieldsIndices = new HashSet<>(SMALL_CAPACITY);
     
@@ -229,7 +223,7 @@ public class TicTacToe extends Game {
   }
 
   @Override
-  public INDArray getValidMoves() {
+  public INDArray getValidMoves(int player) {
     
     INDArray validMoves = Nd4j.zeros(COLUMN_COUNT);
     

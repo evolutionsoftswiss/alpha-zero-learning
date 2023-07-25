@@ -40,12 +40,13 @@ public class TicTacToeReinforcementLearningMain {
     TicTacToe tictactoeGame = new TicTacToe(Game.MAX_PLAYER);
     
     Map<Integer, Double> learningRatesByIterations = new HashMap<>();
-    learningRatesByIterations.put(0, 2e-3);
+    learningRatesByIterations.put(0, 1e-3);
     MapSchedule learningRateMapSchedule = new MapSchedule(ScheduleType.ITERATION, learningRatesByIterations);
     AdversaryLearningConfiguration adversaryLearningConfiguration =
         new AdversaryLearningConfiguration.Builder().
         learningRateSchedule(learningRateMapSchedule).
         numberOfAllAvailableMoves(tictactoeGame.getNumberOfAllAvailableMoves()).
+        continueTraining(false).
         numberOfIterations(250).
         dirichletAlpha(0.8).
         numberOfMonteCarloSimulations(25).

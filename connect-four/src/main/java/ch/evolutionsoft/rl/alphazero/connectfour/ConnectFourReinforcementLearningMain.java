@@ -36,9 +36,9 @@ public class ConnectFourReinforcementLearningMain {
   }
 
   @PostConstruct
-  public void init() throws IOException {
+  public void init() {
  
-    Game connectFourGame = new BinaryConnectFour(Game.MAX_PLAYER);
+    Game connectFourGame = new ConnectFour(Game.MAX_PLAYER);
 
     AdversaryLearningConfiguration adversaryLearningConfiguration =
         ConnectFourConfiguration.getTrainingConfiguration(connectFourGame);
@@ -55,7 +55,7 @@ public class ConnectFourReinforcementLearningMain {
             adversaryLearningConfiguration);
   }
   
-  ComputationGraph createConvolutionalConfiguration(AdversaryLearningConfiguration adversaryLearningConfiguration) throws IOException {
+  ComputationGraph createConvolutionalConfiguration(AdversaryLearningConfiguration adversaryLearningConfiguration) {
 
     ConvolutionResidualNet convolutionalLayerNet =
         new ConvolutionResidualNet(adversaryLearningConfiguration.getLearningRateSchedule());

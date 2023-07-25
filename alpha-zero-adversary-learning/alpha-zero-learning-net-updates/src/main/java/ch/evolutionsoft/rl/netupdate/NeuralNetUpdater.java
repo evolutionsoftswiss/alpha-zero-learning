@@ -39,8 +39,9 @@ import ch.evolutionsoft.rl.GraphLoader;
 public class NeuralNetUpdater {
 
   public static final Logger log = LoggerFactory.getLogger(NeuralNetUpdater.class);
-  
-  public static final String CONTROLLER_BASE_URL = "http://localhost:8080/alpha-zero";
+
+  // TODO configurable port
+  public static final String CONTROLLER_BASE_URL = "http://localhost:8088/alpha-zero";
   
   public static final int ONE_GIGA_BYTE = 1024 * 1024 * 1024;
 
@@ -110,7 +111,7 @@ public class NeuralNetUpdater {
         adversaryLearningConfiguration);
 
     if (null != adversaryLearningConfiguration &&
-        adversaryLearningConfiguration.getIterationStart() > 1) {
+        adversaryLearningConfiguration.isContinueTraining()) {
       this.adversaryLearningSharedHelper.loadEarlierTrainingExamples();
     }
     
@@ -134,12 +135,12 @@ public class NeuralNetUpdater {
         // Wait for initialization
       }
       
-      for (int iteration = adversaryLearningConfiguration.getIterationStart() - 1;
-          iteration < adversaryLearningConfiguration.getIterationStart() + 
+      for (int iteration = adversaryLearningConfiguration.getInitialIteration() - 1;
+          iteration < adversaryLearningConfiguration.getInitialIteration() + 
           adversaryLearningConfiguration.getNumberOfIterations();
           iteration++) {
         
-        if (iteration >= adversaryLearningConfiguration.getIterationStart()) {
+        if (iteration >= adversaryLearningConfiguration.getInitialIteration()) {
           while (null != netUpdaterExecutor && !netUpdaterExecutor.awaitTermination(Long.MAX_VALUE, TimeUnit.MINUTES)) {
             // Wait for previous net update
           }

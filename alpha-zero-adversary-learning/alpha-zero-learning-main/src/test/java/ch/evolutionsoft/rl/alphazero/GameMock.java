@@ -1,5 +1,6 @@
 package ch.evolutionsoft.rl.alphazero;
 
+import java.util.List;
 import java.util.Set;
 
 import org.nd4j.linalg.api.ndarray.INDArray;
@@ -24,19 +25,13 @@ public class GameMock extends Game {
   }
   
   @Override
-  public Game createNewInstance() {
+  public Game createNewInstance(List<Integer> lastMoveIndices) {
 
     return new GameMock(this.moveNumber, this.staticGameEndValue, this.staticGameEndAfterMoves, this.currentPlayer);
   }
   
   @Override
   public int getNumberOfAllAvailableMoves() {
-
-    return 2;
-  }
-
-  @Override
-  public int getNumberOfCurrentMoves() {
 
     return 2;
   }
@@ -54,13 +49,13 @@ public class GameMock extends Game {
   }
 
   @Override
-  public Set<Integer> getValidMoveIndices() {
+  public Set<Integer> getValidMoveIndices(int player) {
     
     return Set.of(0, 1);
   }
 
   @Override
-  public INDArray getValidMoves() {
+  public INDArray getValidMoves(int player) {
 
     return Nd4j.ones(2);
   }

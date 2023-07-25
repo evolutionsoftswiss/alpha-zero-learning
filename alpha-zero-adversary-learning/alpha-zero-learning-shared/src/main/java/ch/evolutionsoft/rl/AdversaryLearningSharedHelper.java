@@ -1,7 +1,5 @@
 package ch.evolutionsoft.rl;
 
-import java.io.DataInputStream;
-import java.io.FileInputStream;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.Collection;
@@ -17,14 +15,11 @@ import java.util.stream.Collectors;
 
 import org.nd4j.linalg.api.ndarray.INDArray;
 import org.nd4j.linalg.api.shape.Shape;
-import org.nd4j.linalg.factory.Nd4j;
 import org.nd4j.linalg.string.NDArrayStrings;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class AdversaryLearningSharedHelper {
-
-  public static final String TRAIN_EXAMPLES_VALUES = "Values";
 
   Map<String, AdversaryTrainingExample> trainExamplesHistory;
 
@@ -51,8 +46,12 @@ public class AdversaryLearningSharedHelper {
     log.info("Restoring trainExamplesByBoard history map, this may take a while...");
     
     String trainExamplesFile = adversaryLearningConfiguration.getTrainExamplesFileName();
-    loadMapFromFile(trainExamplesFile);
+    this.trainExamplesHistory = FileReadUtility.loadMapFromFile(trainExamplesFile);
+    int size = this.trainExamplesHistory.size();
 
+    log.info("Restored train examples from {} with {} train examples",
+         trainExamplesFile,
+         size);
     log.info("Restoring exampleBoardsByIteration from trainExamplesByBoard map...");
     
     this.initializeTrainExampleBoardsByIterationFromTrainExamplesHistory();
@@ -63,55 +62,6 @@ public class AdversaryLearningSharedHelper {
     log.info("exampleBoardsByIteration map has {} restored Set of boards entries with total {} examples",
         this.getTrainExampleBoardsByIteration().size(),
         this.countAllExampleBoardsByIteration());
-  }
-
-  void loadMapFromFile(String trainExamplesFile) throws IOException {
-    
-    String suffix = "";
-    String trainExamplesBasePath = trainExamplesFile;
-    if (adversaryLearningConfiguration.getTrainExamplesFileName().contains(".")) {
-      suffix = trainExamplesFile.substring(trainExamplesFile.lastIndexOf('.'), trainExamplesFile.length());
-      int suffixLength = suffix.length();
-      trainExamplesBasePath = trainExamplesFile.substring(0, trainExamplesFile.length() - suffixLength);
-    }
-    INDArray storedBoardKeys;
-    try (DataInputStream dataInputStream =
-        new DataInputStream(new FileInputStream(trainExamplesFile))) {
-      storedBoardKeys = Nd4j.read(dataInputStream);
-    }
-    INDArray storedValues;
-    try (DataInputStream dataInputStream =
-        new DataInputStream(new FileInputStream(trainExamplesBasePath + TRAIN_EXAMPLES_VALUES + suffix))) {
-      storedValues =  Nd4j.read(dataInputStream);
-    }
-
-    long[] actionShape = storedValues.shape();
-    int actionIndicesCount = (int) (actionShape[1] - 3);
-    for (int index = 0; index < storedBoardKeys.shape()[0]; index++) {
-      
-      INDArray currentBoardKey = storedBoardKeys.slice(index);
-      INDArray currentStoredValue = storedValues.getRow(index);
-      INDArray actionIndexProbs = Nd4j.zeros(actionIndicesCount);
-      
-      for (int actionIndex = 0; actionIndex < actionIndicesCount; actionIndex++) {
-        
-        actionIndexProbs.putScalar(actionIndex, currentStoredValue.getFloat(actionIndex));
-      }
-      int player = currentStoredValue.getInt(actionIndicesCount);
-      float playerValue = currentStoredValue.getFloat(actionIndicesCount + 1L);
-      int iterationValue = currentStoredValue.getInt(actionIndicesCount + 2);
-      AdversaryTrainingExample currentAdversaryExample =
-          new AdversaryTrainingExample(currentBoardKey, player, actionIndexProbs, iterationValue);
-
-      currentAdversaryExample.setCurrentPlayerValue(playerValue);
-      
-      this.trainExamplesHistory.put(currentAdversaryExample.getBoardString(), currentAdversaryExample);
-    }
-      
-    int size = this.trainExamplesHistory.size();
-    log.info("Restored train examples from {} with {} train examples",
-         trainExamplesFile,
-         size);
   }
 
   

@@ -18,18 +18,18 @@ class ConnectFourTest {
   @Test
   void testCreateNewInstance() {
     
-    ConnectFour newInstance = (ConnectFour) this.connectFour.createNewInstance();
+    ConnectFour newInstance = (ConnectFour) this.connectFour.createNewInstance(List.of());
     
     assertNotSame(this.connectFour.getCurrentBoard(), newInstance.getCurrentBoard());
     assertEquals(this.connectFour.getCurrentBoard(), newInstance.getCurrentBoard());
     
-    assertNotSame(this.connectFour.arrayPlayground, newInstance.arrayPlayground);
+    assertNotSame(this.connectFour.binaryPlayground, newInstance.binaryPlayground);
     assertArrayEquals(
-        this.connectFour.arrayPlayground.getColumnHeights(),
-        newInstance.arrayPlayground.getColumnHeights());
+        this.connectFour.binaryPlayground.getColumnHeights(),
+        newInstance.binaryPlayground.getColumnHeights());
     assertArrayEquals(
-        this.connectFour.arrayPlayground.getPosition(),
-        newInstance.arrayPlayground.getPosition());
+        this.connectFour.binaryPlayground.getPosition(),
+        newInstance.binaryPlayground.getPosition());
     
   }
   
@@ -39,18 +39,18 @@ class ConnectFourTest {
     this.connectFour.makeMove(0, Game.MAX_PLAYER);
     this.connectFour.makeMove(0, Game.MIN_PLAYER);
     
-    ConnectFour newInstance = (ConnectFour) this.connectFour.createNewInstance();
+    ConnectFour newInstance = (ConnectFour) this.connectFour.createNewInstance(List.of());
     
     assertNotSame(this.connectFour.getCurrentBoard(), newInstance.getCurrentBoard());
     assertEquals(this.connectFour.getCurrentBoard(), newInstance.getCurrentBoard());
     
-    assertNotSame(this.connectFour.arrayPlayground, newInstance.arrayPlayground);
+    assertNotSame(this.connectFour.binaryPlayground, newInstance.binaryPlayground);
     assertArrayEquals(
-        this.connectFour.arrayPlayground.getColumnHeights(),
-        newInstance.arrayPlayground.getColumnHeights());
+        this.connectFour.binaryPlayground.getColumnHeights(),
+        newInstance.binaryPlayground.getColumnHeights());
     assertArrayEquals(
-        this.connectFour.arrayPlayground.getPosition(),
-        newInstance.arrayPlayground.getPosition());
+        this.connectFour.binaryPlayground.getPosition(),
+        newInstance.binaryPlayground.getPosition());
     
   }
   
@@ -82,7 +82,7 @@ class ConnectFourTest {
 
     this.connectFour.makeMove(3, Game.MAX_PLAYER);
     this.connectFour.makeMove(3, Game.MIN_PLAYER);
-    Game newMirroredInstance = this.connectFour.createNewInstance();
+    Game newMirroredInstance = this.connectFour.createNewInstance(List.of());
     this.connectFour.makeMove(1, Game.MAX_PLAYER);
     this.connectFour.makeMove(4, Game.MIN_PLAYER);
     newMirroredInstance.makeMove(5, Game.MAX_PLAYER);

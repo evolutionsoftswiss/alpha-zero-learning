@@ -13,11 +13,9 @@ import org.nd4j.linalg.api.ndarray.INDArray;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import ch.evolutionsoft.rl.AdversaryLearningConfiguration;
 import ch.evolutionsoft.rl.AdversaryLearningConstants;
 import ch.evolutionsoft.rl.Game;
 import ch.evolutionsoft.rl.alphazero.MonteCarloTreeSearch;
-import ch.evolutionsoft.rl.alphazero.connectfour.playground.PlaygroundConstants;
 
 public class NeuralNetMoveEvaluation {
 
@@ -36,10 +34,8 @@ public class NeuralNetMoveEvaluation {
   }
   
   ComputationGraph loadConnectFourComputationGraph() throws IOException {
-
-    AdversaryLearningConfiguration adversaryLearningConfiguration = new AdversaryLearningConfiguration.Builder().build();
     
-    return ModelSerializer.restoreComputationGraph(adversaryLearningConfiguration.getBestModelFileName());
+    return ModelSerializer.restoreComputationGraph("model.bin");
   }
   
   String evaluateMoves() throws IOException {
@@ -111,8 +107,8 @@ public class NeuralNetMoveEvaluation {
     connectFourEarlyThreat.makeMove(3, MIN_PLAYER);
     connectFourEarlyThreat.makeMove(2, MAX_PLAYER);
     
-    INDArray valueAndActionOutput1 = this.mcts.getActionValues(connectFourEmpty, 1.0, connectFourComputationGraph);
-    INDArray valueAndActionOutput2 = this.mcts.getActionValues(connectFourEarlyThreat, 1.0, connectFourComputationGraph);
+    INDArray valueAndActionOutput1 = this.mcts.getActionValues(connectFourEmpty, 0.0, connectFourComputationGraph);
+    INDArray valueAndActionOutput2 = this.mcts.getActionValues(connectFourEarlyThreat, 0.0, connectFourComputationGraph);
     
     neuralNetOutputs.add(valueAndActionOutput1);
     neuralNetOutputs.add(valueAndActionOutput2);
@@ -122,7 +118,7 @@ public class NeuralNetMoveEvaluation {
   
   INDArray createNeuralNetInputSingleBatch(INDArray boardInput) {
     
-    return boardInput.reshape(1, NUMBER_OF_BOARD_CHANNELS, PlaygroundConstants.ROW_COUNT, PlaygroundConstants.COLUMN_COUNT);
+    return boardInput.reshape(1, NUMBER_OF_BOARD_CHANNELS, ROW_COUNT, COLUMN_COUNT);
   }
   
   INDArray middleOpeningBoard() {
@@ -130,7 +126,7 @@ public class NeuralNetMoveEvaluation {
     INDArray boardInput = EMPTY_CONVOLUTIONAL_PLAYGROUND.dup();
 
     // Create horizontal double threat possibility on max next move
-    boardInput.putScalar(YELLOW, PlaygroundConstants.ROW_COUNT - 1L, 3, AdversaryLearningConstants.ONE);
+    boardInput.putScalar(YELLOW, ROW_COUNT - 1L, 3, AdversaryLearningConstants.ONE);
     boardInput.putSlice(CURRENT_PLAYER_CHANNEL, MINUS_ONES_PLAYGROUND_IMAGE.dup());
     
     return boardInput;
@@ -141,7 +137,7 @@ public class NeuralNetMoveEvaluation {
     INDArray boardInput = EMPTY_CONVOLUTIONAL_PLAYGROUND.dup();
 
     // Create horizontal double threat possibility on max next move
-    boardInput.putScalar(YELLOW, PlaygroundConstants.ROW_COUNT - 1L, 0, AdversaryLearningConstants.ONE);
+    boardInput.putScalar(YELLOW, ROW_COUNT - 1L, 0, AdversaryLearningConstants.ONE);
     boardInput.putSlice(CURRENT_PLAYER_CHANNEL, MINUS_ONES_PLAYGROUND_IMAGE.dup());
     
     return boardInput;
@@ -152,9 +148,9 @@ public class NeuralNetMoveEvaluation {
     INDArray boardInput = EMPTY_CONVOLUTIONAL_PLAYGROUND.dup();
 
     // Create horizontal double threat possibility on max next move
-    boardInput.putScalar(YELLOW, PlaygroundConstants.ROW_COUNT - 1L, 3, AdversaryLearningConstants.ONE);
-    boardInput.putScalar(RED, PlaygroundConstants.ROW_COUNT - 2L, 3, AdversaryLearningConstants.ONE);
-    boardInput.putScalar(YELLOW, PlaygroundConstants.ROW_COUNT - 1L, 2, AdversaryLearningConstants.ONE);
+    boardInput.putScalar(YELLOW, ROW_COUNT - 1L, 3, AdversaryLearningConstants.ONE);
+    boardInput.putScalar(RED, ROW_COUNT - 2L, 3, AdversaryLearningConstants.ONE);
+    boardInput.putScalar(YELLOW, ROW_COUNT - 1L, 2, AdversaryLearningConstants.ONE);
     boardInput.putSlice(CURRENT_PLAYER_CHANNEL, MINUS_ONES_PLAYGROUND_IMAGE.dup());
     
     return boardInput;

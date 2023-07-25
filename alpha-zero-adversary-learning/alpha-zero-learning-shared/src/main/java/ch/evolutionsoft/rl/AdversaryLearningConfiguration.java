@@ -27,10 +27,9 @@ public class AdversaryLearningConfiguration {
    * number of performed net iterations meaning calls to {@link ComputationGraph} fit method here.
    * 
    * The iterations defining the learning rate for ISchedule is only directly related to alpha zero 
-   * numberOfIterations with alwaysUpdateNeuralNetwork = true and a batch size that covers all existing
-   * examples.
+   * numberOfIterations with a batch size that covers all existing examples.
    * 
-   * Otherwise with alwaysUpdateNeuralNetwork = false and mini batches > 1 it is dependent of 
+   * Otherwise with mini batches > 1 it is dependent of 
    * performed {@link ComputationGraph} updates using the fit method.
    */
   private MapSchedule learningRateSchedule;
@@ -53,38 +52,11 @@ public class AdversaryLearningConfiguration {
    * Weight of the dirichlet noise added to currently known move probabilities.
    */
   private double dirichletWeight;
-
-  /**
-   * True means Alpha Zero approach to update the neural net without games comparing the
-   * win rate of different neural net versions. After numberOfEpisodesBeforePotentialUpdate
-   * the Alpha Zero net gets always updated. gamesToGetNewNetworkWinRatio and 
-   * updateGamesNewNetworkWinRatioThreshold are irrelevant with this configuration set to true.
-   * 
-   * False uses the AlphaGo Zero approach by running games with different neural net versions.
-   * gamesToGetNewNetworkWinRatio and updateGamesNewNetworkWinRatioThreshold are used to
-   * decide if the neural net gets updated or not.
-   */
-  private boolean alwaysUpdateNeuralNetwork;
   
   /**
-   * 
+   * The number of all available moves define some shapes and capacity initializations.
    */
   private int numberOfAllAvailableMoves;
-
-  /**
-   * Number of total games to perform before deciding to update neural net or not.
-   * Only relevant with alwaysUpdateNeuralNetwork = false.
-   */
-  private int numberOfGamesToDecideUpdate;
-
-  /**
-   * Win ratio minimum to perform an update of the neural network.
-   * 
-   *  updateAfterBetterPlayout = 
-   *    (newNeuralNetVersionWins + 0.5 * draws) /
-   *    (double) (newNeuralNetVersionWins + oldNeuralNetVersionWins + 0.5 * draws) > gamesWinRatioThresholdNewNetworkUpdate;
-   */
-  private double gamesWinRatioThresholdNewNetworkUpdate;
 
   /**
    * numberOfEpisodesBeforePotentialUpdate stands for numberOfEpisodes.
@@ -104,13 +76,15 @@ public class AdversaryLearningConfiguration {
   private int numberOfEpisodeThreads;
   
   /**
-   * Mainly used to continue training after program termination.
-   * Only iterationStart > 1 causes a restore of saved tempmodel.bin, bestmodel.bin and trainexamples.obj.
-   * If you decide to run additional 1000 iterations after 4000 performed iterations with
-   * saved latest values after program termination,
-   * you can use iterationStart = 4001 and numberOfIterations = 1000.
+   * Used to continue training after program termination.
    */
-  private int iterationStart;
+  private boolean continueTraining;
+
+  /**
+   * initialIteration should not be set manually, default is 1 and with continueTraining = true
+   * the value is taken from the latest stored iteration from trainExamples files.
+   */
+  private int initialIteration;
 
   /**
    * numberOfIterations here means the total number of Alpha Zero iterations.
@@ -193,14 +167,12 @@ public class AdversaryLearningConfiguration {
 
     private double dirichletAlpha = 0.8;
     private double dirichletWeight = 0.40;
-    private boolean alwaysUpdateNeuralNetwork = true;
     private int numberOfAllAvailableMoves = 9;
-    private int numberOfGamesToDecideUpdate = 36;
-    private double gamesWinRatioThresholdNewNetworkUpdate = 0.55;
     private int numberOfEpisodesBeforePotentialUpdate = 10;
     private int numberOfEpisodeThreads = Runtime.getRuntime().availableProcessors() / 2;
-    private int iterationStart = 1;
-    private int numberOfIterations = 180;
+    private boolean continueTraining = false;
+    private int initialIteration = 1;
+    private int numberOfIterations = 250;
     private int checkPointIterationsFrequency = 50;
     private int fromNumberOfIterationsReducedTemperature = -1;
     private int fromNumberOfMovesReducedTemperature = -1;
@@ -208,7 +180,7 @@ public class AdversaryLearningConfiguration {
     private int maxTrainExamplesHistory = 5000;
     private int maxTrainExamplesHistoryFromIteration = -1;
 
-    private String bestModelFileName = "bestmodel.bin";
+    private String bestModelFileName = "model.bin";
     private String trainExamplesFileName = "trainExamples.obj";
 
     private double uctConstantFactor = 1.5;
@@ -222,13 +194,11 @@ public class AdversaryLearningConfiguration {
       configuration.batchSize = batchSize;
       configuration.dirichletAlpha = dirichletAlpha;
       configuration.dirichletWeight = dirichletWeight;
-      configuration.alwaysUpdateNeuralNetwork = alwaysUpdateNeuralNetwork;
       configuration.numberOfAllAvailableMoves = numberOfAllAvailableMoves;
-      configuration.numberOfGamesToDecideUpdate = numberOfGamesToDecideUpdate;
-      configuration.gamesWinRatioThresholdNewNetworkUpdate = gamesWinRatioThresholdNewNetworkUpdate;
       configuration.numberOfEpisodesBeforePotentialUpdate = numberOfEpisodesBeforePotentialUpdate;
       configuration.numberOfEpisodeThreads = numberOfEpisodeThreads;
-      configuration.iterationStart = iterationStart;
+      configuration.continueTraining = continueTraining;
+      configuration.initialIteration = initialIteration;
       configuration.numberOfIterations = numberOfIterations;
       configuration.checkPointIterationsFrequency = checkPointIterationsFrequency;
       configuration.fromNumberOfIterationsReducedTemperature = fromNumberOfIterationsReducedTemperature;
@@ -279,23 +249,8 @@ public class AdversaryLearningConfiguration {
       return this;
     }
     
-    public Builder alwaysUpdateNeuralNetwork(boolean alwaysUpdateNeuralNetwork) {
-      this.alwaysUpdateNeuralNetwork = alwaysUpdateNeuralNetwork;
-      return this;
-    }
-    
     public Builder numberOfAllAvailableMoves(int numberOfAllAvailableMoves) {
       this.numberOfAllAvailableMoves = numberOfAllAvailableMoves;
-      return this;
-    }
-    
-    public Builder numberOfGamesToDecideUpdate(int numberOfGamesToDecideUpdate) {
-      this.numberOfGamesToDecideUpdate = numberOfGamesToDecideUpdate;
-      return this;
-    }
-
-    public Builder gamesWinRatioThresholdNewNetworkUpdate(double gamesWinRatioThresholdNewNetworkUpdate) {
-      this.gamesWinRatioThresholdNewNetworkUpdate = gamesWinRatioThresholdNewNetworkUpdate;
       return this;
     }
 
@@ -309,8 +264,13 @@ public class AdversaryLearningConfiguration {
       return this;
     }
     
-    public Builder iterationStart(int iterationStart) {
-      this.iterationStart = iterationStart;
+    public Builder continueTraining(boolean continueTraining) {
+      this.continueTraining = continueTraining;
+      return this;
+    }
+
+    public Builder initialIteration(int initialIteration) {
+      this.initialIteration = initialIteration;
       return this;
     }
 
@@ -362,13 +322,11 @@ public class AdversaryLearningConfiguration {
         "\n batch size: " + this.batchSize +
         "\n dirichletAlpha: " + this.dirichletAlpha + 
         "\n dirichletWeight: " + this.dirichletWeight +
-        "\n alwaysUpdateNeuralNetwork: " + this.alwaysUpdateNeuralNetwork +
         "\n numberOfAllAvailableMoves: " + this.numberOfAllAvailableMoves +
-        "\n gamesToGetNewNetworkWinRatio: " + (this.alwaysUpdateNeuralNetwork ? "-" : this.numberOfGamesToDecideUpdate) +
-        "\n gamesWinRatioThresholdNewNetworkUpdate: " + (this.alwaysUpdateNeuralNetwork ? "-" : this.gamesWinRatioThresholdNewNetworkUpdate) +
         "\n numberOfEpisodesBeforePotentialUpdate: " + this.numberOfEpisodesBeforePotentialUpdate + 
         "\n numberOfEpisodeThreads: " + this.numberOfEpisodeThreads +
-        "\n iterationStart: " + this.iterationStart + 
+        "\n continueTraining: " + this.continueTraining + 
+        "\n initialIteration: " + this.initialIteration + 
         "\n numberOfIterations: " + this.numberOfIterations +
         "\n checkPointIterationsFrequency: " + this.checkPointIterationsFrequency +
         "\n fromNumberOfIterationsReducedTemperature: " + this.fromNumberOfIterationsReducedTemperature +
@@ -376,7 +334,7 @@ public class AdversaryLearningConfiguration {
         "\n reducedTemperature: " + this.reducedTemperature +
         "\n maxTrainExamplesHistory: " + this.maxTrainExamplesHistory +
         "\n maxTrainExamplesHistoryFromIteration: " + this.maxTrainExamplesHistoryFromIteration +
-        "\n currentMaxTrainExamplesHistory: " + this.getCurrentMaxTrainExamplesHistory(iterationStart) +
+        "\n currentMaxTrainExamplesHistory: " + this.getCurrentMaxTrainExamplesHistory(initialIteration) +
         "\n cpUct: " + this.uctConstantFactor +
         "\n numberOfMonteCarloSimulations: " + this.numberOfMonteCarloSimulations +
         "\n bestModelFileName: " + getAbsolutePathFrom(this.bestModelFileName) +
@@ -427,36 +385,12 @@ public class AdversaryLearningConfiguration {
     this.dirichletWeight = dirichletWeight;
   }
 
-  public boolean isAlwaysUpdateNeuralNetwork() {
-    return alwaysUpdateNeuralNetwork;
-  }
-
-  public void setAlwaysUpdateNeuralNetwork(boolean alwaysUpdateNeuralNetwork) {
-    this.alwaysUpdateNeuralNetwork = alwaysUpdateNeuralNetwork;
-  }
-
   public int getNumberOfAllAvailableMoves() {
     return numberOfAllAvailableMoves;
   }
 
   public void setNumberOfAllAvailableMoves(int numberOfAllAvailableMoves) {
     this.numberOfAllAvailableMoves = numberOfAllAvailableMoves;
-  }
-
-  public int getNumberOfGamesToDecideUpdate() {
-    return numberOfGamesToDecideUpdate;
-  }
-
-  public void setNumberOfGamesToDecideUpdate(int numberOfGamesToDecideUpdate) {
-    this.numberOfGamesToDecideUpdate = numberOfGamesToDecideUpdate;
-  }
-
-  public double getGamesWinRatioThresholdNewNetworkUpdate() {
-    return gamesWinRatioThresholdNewNetworkUpdate;
-  }
-
-  public void setGamesWinRatioThresholdNewNetworkUpdate(double gamesWinRatioThresholdNewNetworkUpdate) {
-    this.gamesWinRatioThresholdNewNetworkUpdate = gamesWinRatioThresholdNewNetworkUpdate;
   }
 
   public int getNumberOfEpisodesBeforePotentialUpdate() {
@@ -475,13 +409,20 @@ public class AdversaryLearningConfiguration {
     this.numberOfEpisodeThreads = numberOfEpisodeThreads;
   }
 
-  
-  public int getIterationStart() {
-    return this.iterationStart;
+  public boolean isContinueTraining() {
+    return continueTraining;
   }
-  
-  public void setIterationStart(int iterationStart) {
-    this.iterationStart = iterationStart;
+
+  public void setContinueTraining(boolean continueTraining) {
+    this.continueTraining = continueTraining;
+  }
+
+  public int getInitialIteration() {
+    return this.initialIteration;
+  }
+
+  public void setInitialIteration(int initialIteration) {
+    this.initialIteration = initialIteration;
   }
 
   public int getNumberOfIterations() {

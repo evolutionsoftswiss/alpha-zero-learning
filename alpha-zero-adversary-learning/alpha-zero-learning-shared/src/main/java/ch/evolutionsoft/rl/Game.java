@@ -98,8 +98,12 @@ public abstract class Game {
   public void evaluateNetwork(ComputationGraph computationGraph) {
     
   }
-  
-  public Game createNewInstance() {
+
+  /**
+   * @param lastMoveIndices support board inputs for several moves before last one
+   * @return a new Game instance
+   */
+  public Game createNewInstance(List<Integer> lastMoveIndices) {
     
     return null;
   }
@@ -145,14 +149,6 @@ public abstract class Game {
    * number of the neural net.
    */
   public abstract int getNumberOfAllAvailableMoves();
-  
-  /**
-   * For some games also identical to boardSize, boardsize + 1 for Go with additional pass move
-   * after some number of stones present threshold.
-   * 
-   * @return a number smaller or equal than getNumberOfAllAvailableMoves()
-   */
-  public abstract int getNumberOfCurrentMoves();
 
   /**
    * Return the initial board state, that is used as neural net input.
@@ -176,7 +172,7 @@ public abstract class Game {
    * 
    * @return a Set of indices of valid move fields
    */
-  public abstract Set<Integer> getValidMoveIndices();
+  public abstract Set<Integer> getValidMoveIndices(int player);
 
   /**
    * Returns an INDArray mask containing the valid moves at a given board state.
@@ -184,7 +180,7 @@ public abstract class Game {
    * 
    * @return one dimensional INDArray with valid move indices ones, zero for other indices
    */
-  public abstract INDArray getValidMoves();
+  public abstract INDArray getValidMoves(int player);
 
   /**
    * 

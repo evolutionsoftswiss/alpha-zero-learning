@@ -69,20 +69,12 @@ public class BinaryPlayground{
     }
     
     
-    public BinaryPlayground(Object position, int fieldsLeft) {
-    	
-    	if (position instanceof ArrayPlayground){
-    		
-    		ArrayPlayground arrayPlayground = (ArrayPlayground) position;
+    public BinaryPlayground(ArrayPosition position, int fieldsLeft) {
         	
-            this.positions = this.makePosition(arrayPlayground.getPosition());
-            this.columnHeights = this.makeHeightOfColumn(arrayPlayground);
-            this.firstFreeBitOfColumns = this.makeFirstFreeBitOfColumn(this.columnHeights);
-            this.fieldsLeft = fieldsLeft;
-    	}
-    	else {
-    		throw new IllegalArgumentException("Type " + position.getClass() + " not supported");
-    	}
+      this.positions = this.makePosition(position.getPosition());
+      this.columnHeights = position.getColumnHeights();
+      this.firstFreeBitOfColumns = this.makeFirstFreeBitOfColumn(this.columnHeights);
+      this.fieldsLeft = fieldsLeft;
     }
     
     
@@ -194,7 +186,7 @@ public class BinaryPlayground{
     
     public List<Integer> getAvailableColumns() {
 
-    	List<Integer> result = new ArrayList<Integer>(7);
+    	List<Integer> result = new ArrayList<>(7);
 		
 		for (int index = 0; index < 7; index++){
 			
@@ -242,26 +234,27 @@ public class BinaryPlayground{
     
     
     public String toString() {
-        StringBuffer bufferedString = new StringBuffer();
+ 
+      StringBuilder stringBuilder = new StringBuilder();
         for (int row = HEIGHT - 1; row >= 0; row--) {
             for (int columnBit = row; columnBit < BIT_SIZE; columnBit += BITS_PER_COLUMN) {
                 long mask = 1L << columnBit;
                 if ((this.positions[FIRST_PLAYER] & mask) != 0)
-                    bufferedString.append("X ");
+                    stringBuilder.append("X ");
                 else if ((this.positions[SECOND_PLAYER] & mask) != 0)
-                    bufferedString.append("O ");
+                    stringBuilder.append("O ");
                 else 
-                    bufferedString.append(". "); 
+                    stringBuilder.append(". "); 
             }
-            bufferedString.append("\n");
+            stringBuilder.append("\n");
         }
-        return bufferedString.toString();
+        return stringBuilder.toString();
     }
  
     @Override
     public boolean equals(Object otherObject) {
       
-      if (otherObject == null || !(otherObject instanceof BinaryPlayground) ) {
+      if (!(otherObject instanceof BinaryPlayground) ) {
         
         return false;
       }
@@ -289,8 +282,8 @@ public class BinaryPlayground{
             	
         	if (arrayPosition[index] != PlaygroundConstants.GREY){
         		
-        		int row = (index - PlaygroundConstants.COLUMN_COUNT) / PlaygroundConstants.COLUMN_COUNT;
-        		int column = (index - 1) % PlaygroundConstants.COLUMN_COUNT;
+        		int row = (index - PlaygroundConstants.ARRAY_COLUMN_COUNT) / PlaygroundConstants.ARRAY_COLUMN_COUNT;
+        		int column = (index - 1) % PlaygroundConstants.ARRAY_COLUMN_COUNT;
         		
                 if (arrayPosition[index] == PlaygroundConstants.YELLOW)
                     position[FIRST_PLAYER] |= 1L << (column * 7 + row);
@@ -302,22 +295,6 @@ public class BinaryPlayground{
         }
         	
         return position;
-    }
-    
-    
-    /**
-     * @param positionArray
-     * @return
-     */
-    protected int[] makeHeightOfColumn(ArrayPlayground positionArray) {
-    	
-        int[] heightOfColumns = positionArray.getColumnHeights();
-        
-        int[] result = new int[7];
-        
-        System.arraycopy(heightOfColumns, 0, result, 0, heightOfColumns.length);
-        
-        return result;
     }
     
     

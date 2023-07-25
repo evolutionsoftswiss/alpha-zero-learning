@@ -13,7 +13,7 @@
 
 	<properties>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-		<java.version>8</java.version>
+		<java.version>11</java.version>
 		<nd4j.version>1.0.0-M1.1</nd4j.version>
 		<dl4j.version>1.0.0-M1.1</dl4j.version>
 		<datavec.version>1.0.0-M1.1</datavec.version>

@@ -3,7 +3,7 @@
 /.project
 /logs/
 /output/
-/bestmodel0*.bin
+/model0*.bin
 /trainExamples0*.obj
 /trainExamplesValues0*.obj
 /tictactoe.log

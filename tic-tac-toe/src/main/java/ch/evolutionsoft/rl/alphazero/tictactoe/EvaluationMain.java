@@ -23,17 +23,25 @@ public class EvaluationMain {
 
   public static void main(String[] args) throws IOException {
 
-    ComputationGraph computationGraph1 = ModelSerializer.restoreComputationGraph("bestmodel.bin", true);
+    AdversaryLearningConfiguration configuration =
+        new AdversaryLearningConfiguration.Builder().
+        continueTraining(true).
+        numberOfIterations(0).
+        build();
 
-    AdversaryLearning adversdaryLearning = new AdversaryLearning(
+    ComputationGraph computationGraph = ModelSerializer.restoreComputationGraph(
+        configuration.getBestModelFileName(), true);
+    AdversaryLearning adversaryLearning = new AdversaryLearning(
         new TicTacToe(Game.MAX_PLAYER),
-        computationGraph1,
-        new AdversaryLearningConfiguration.Builder().iterationStart(2).build());
+        computationGraph,
+        configuration);
  
-    log.info("Empty board probabilities {}", adversdaryLearning.getTrainExamplesHistory().get(
+    adversaryLearning.performLearning();
+    
+    log.info("Empty board probabilities {}", adversaryLearning.getTrainExamplesHistory().get(
         AdversaryLearningSharedHelper.writeStringForArray(TicTacToeConstants.EMPTY_CONVOLUTIONAL_PLAYGROUND)));
     
-    evaluateNetwork(computationGraph1);
+    evaluateNetwork(computationGraph);
   }
 
   public static void evaluateNetwork(ComputationGraph graphNetwork) {
@@ -46,7 +54,9 @@ public class EvaluationMain {
 
     Pair<INDArray, INDArray> stackedPlaygroundLabels =
         TicTacToeNeuralDataConverter.stackConvolutionalPlaygroundLabels(trainDataSetPairsList);
-    DataSet dataSet = new org.nd4j.linalg.dataset.DataSet(stackedPlaygroundLabels.getFirst(), stackedPlaygroundLabels.getSecond());
+    DataSet dataSet = new org.nd4j.linalg.dataset.DataSet(
+        stackedPlaygroundLabels.getFirst(),
+        stackedPlaygroundLabels.getSecond());
     
     INDArray output = graphNetwork.output(dataSet.getFeatures())[0];
     Evaluation eval = new Evaluation(TicTacToeConstants.COLUMN_COUNT);

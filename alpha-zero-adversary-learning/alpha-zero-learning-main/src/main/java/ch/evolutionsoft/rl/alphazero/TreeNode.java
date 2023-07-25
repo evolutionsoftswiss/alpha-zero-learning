@@ -62,15 +62,16 @@ public class TreeNode implements Serializable {
 	
 	void expand(Game game, INDArray previousActionProbabilities) {
 
-  	  Set<Integer> validMoveIndices = game.getValidMoveIndices();
+    int otherPlayer = game.getOtherPlayer(this.currentMoveColor);
+  	  Set<Integer> validMoveIndices = game.getValidMoveIndices(this.currentMoveColor);
    
   	  for (int moveIndex : validMoveIndices) {
   	      
-  	    this.children.put(
+        this.children.put(
   	        moveIndex,
   	        new TreeNode(
   	            moveIndex,
-  	            game.getOtherPlayer(this.currentMoveColor),
+  	            otherPlayer,
   	            this.depth + 1,
   	            previousActionProbabilities.getDouble(moveIndex),
   	            Game.getInversedResult(this.qValue),
@@ -148,6 +149,18 @@ public class TreeNode implements Serializable {
 
   public boolean isExpanded() {
     return !this.children.isEmpty();
+  }
+  
+  public String toString() {
+    
+    return "last move: " + this.lastMove + "\n" +
+        this.getChildIndices() + "\n" + 
+        this.isExpanded();
+  }
+
+  public Collection<Integer> getChildIndices() {
+  
+    return this.children.keySet();
   }
 
 	public Collection<TreeNode> getChildren() {
