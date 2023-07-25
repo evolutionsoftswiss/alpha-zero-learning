@@ -23,9 +23,9 @@ You can more easily adapt the algorithm to less complex board games like connect
 Also the first goal of Java alpha-zero-learning is to enable alpha zero for less complex games. The implementation does not yet enable distributed learning and even omits some parallelization possibilities on a single machine yet.
 
 ### Generic release build
-You can use the existing Java alpha-zero-learning with the generic published release builds. With ch.evolutionsoft.rl.alphazero.tictactoe-1.1.0-jar-with-dependencies you can directly repeat the training for the Tic Tac Toe prototype. See also the submodule [tic-tac-toe/README.md](./tic-tac-toe/README.md) for a few more information.
+You can use the existing Java alpha-zero-learning with the generic published release builds. With ch.evolutionsoft.rl.alphazero.tictactoe-1.1.1-jar-with-dependencies you can directly repeat the training for the Tic Tac Toe prototype. See also the submodule [tic-tac-toe/README.md](./tic-tac-toe/README.md) for a few more information.
 
-ch.evolutionsoft.rl.alphazero.adversary-learning-1.1.0-jar-with-dependencies would let you reuse the general part of the implementation for other board games. The submodule [alpha-zero-adversary-learning/README.md](./alpha-zero-adversary-learning/README.md) contains hints about a new board game implementation.
+ch.evolutionsoft.rl.alphazero.adversary-learning-1.1.1-jar-with-dependencies would let you reuse the general part of the implementation for other board games. The submodule [alpha-zero-adversary-learning/README.md](./alpha-zero-adversary-learning/README.md) contains hints about a new board game implementation.
 
 ### Running the Connect Four implementation
 
@@ -39,11 +39,11 @@ Change to the tic-tac-toe submodule directory and execute one of the following c
 
 #### Evaluation method
 
-	~/git/alpha-zero-learning/tic-tac-toe$ java -cp target/ch.evolutionsoft.rl.alphazero.tictactoe-1.1.0-jar-with-dependencies.jar ch.evolutionsoft.rl.tictactoe.TicTacToeGamesMain
+	~/git/alpha-zero-learning/tic-tac-toe$ java -cp target/ch.evolutionsoft.rl.alphazero.tictactoe-1.1.1-jar-with-dependencies.jar ch.evolutionsoft.rl.tictactoe.TicTacToeGamesMain
 
 #### Restart the learning progress from scratch
 
-	~/git/alpha-zero-learning/tic-tac-toe$ java -cp target/ch.evolutionsoft.rl.alphazero.tictactoe-1.1.0-jar-with-dependencies.jar ch.evolutionsoft.rl.tictactoe.TicTacToeReinforcementLearningMain
+	~/git/alpha-zero-learning/tic-tac-toe$ java -cp target/ch.evolutionsoft.rl.alphazero.tictactoe-1.1.1-jar-with-dependencies.jar ch.evolutionsoft.rl.tictactoe.TicTacToeReinforcementLearningMain
 	
 #### Continue the learning progress from an iteration
 By changing the iterationStart to a value greater than 1, you can continue a training progress. The latest bestmodel.bin and trainExamples.obj are loaded from the current directory
@@ -55,7 +55,7 @@ By changing the iterationStart to a value greater than 1, you can continue a tra
 
 And then after rebuilding with 'mvn package':        
 
-		~/git/alpha-zero-learning/tic-tac-toe$ java -cp target/ch.evolutionsoft.rl.alphazero.tictactoe-1.1.0-jar-with-dependencies.jar ch.evolutionsoft.rl.tictactoe.TicTacToeReinforcementLearningMain
+		~/git/alpha-zero-learning/tic-tac-toe$ java -cp target/ch.evolutionsoft.rl.alphazero.tictactoe-1.1.1-jar-with-dependencies.jar ch.evolutionsoft.rl.tictactoe.TicTacToeReinforcementLearningMain
 	
 
 ### Rebuild for your hardware
