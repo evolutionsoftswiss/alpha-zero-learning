@@ -5,7 +5,7 @@ Alpha zero learning is a Java implementation of the alpha zero algorithm using d
 ## Introduction
 There are already several alpha[Go] zero related projects on github in python and also c++.
 The Java implementation here could help to reuse your existing Java game logics with alpha zero reinforcement learning.
-It may also be a simpler approach to alpha zero for people more familiar with Java than python, like me. 
+It may also be a simpler approach to alpha zero for people more familiar with Java than python. 
 
 ### Alpha[Go] Zero algorithm
 During almost 20 years after IBM DeepBlue defeated Kasparov 1997 in chess, 19x19 Go was still a game where computers were far from human strength level of play. It changed definitely after AlphaGo vs. Lee Sedol, the Google Deepmind Challenge Match. Alpha Go has beaten the worlds best Go Player in 5 Games 4:1. There is a very interesting Movie on Youtube around the event: [AlphaGo - The Movie](https://www.youtube.com/watch?v=WXuK6gekU1Y). Beside the DeepMind efforts it also gives an insight about the ideology and philosophy of the Go Game in asian countries.
@@ -20,12 +20,12 @@ There are efforts like [leela-zero](https://github.com/leela-zero/leela-zero) to
 You can more easily adapt the algorithm to less complex board games like connect four, Gomoku, Othello and others. With such games it is more realistic to perform the necessary training to obtain a strong artificial intelligence.
 
 ## Using Java Alpha Zero
-Also the first goal of Java alpha-zero-learning is to enable alpha zero for less complex games. The implementation does not yet enable distributed learning and even omits some parallelization possibilities on a single machine yet.
+The goal of Java alpha-zero-learning is to enable alpha zero for less complex games. The implementation does not support distributed learning. It is designed to run on a single machine with optional graphic cards usage.
 
 ### Generic release build
-You can use the existing Java alpha-zero-learning with the generic published release builds. With ch.evolutionsoft.rl.alphazero.tictactoe-1.1.1-jar-with-dependencies you can directly repeat the training for the Tic Tac Toe prototype. See also the submodule [tic-tac-toe/README.md](./tic-tac-toe/README.md) for a few more information.
+You can use the existing Java alpha-zero-learning with the generic published release builds. With ch.evolutionsoft.rl.alphazero.tictactoe-2.0.0-jar-with-dependencies you can directly repeat the training for the Tic Tac Toe prototype. See also the submodule [tic-tac-toe/README.md](./tic-tac-toe/README.md) for a few more information.
 
-ch.evolutionsoft.rl.alphazero.adversary-learning-1.1.1-jar-with-dependencies would let you reuse the general part of the implementation for other board games. The submodule [alpha-zero-adversary-learning/README.md](./alpha-zero-adversary-learning/README.md) contains hints about a new board game implementation.
+ch.evolutionsoft.rl.alphazero.adversary-learning-2.0.0-jar-with-dependencies would let you reuse the general part of the implementation for other board games. The submodule [alpha-zero-adversary-learning/README.md](./alpha-zero-adversary-learning/README.md) contains hints about a new board game implementation.
 
 ### Running the Connect Four implementation
 
@@ -82,19 +82,11 @@ Also without GPU there is the AVX/AVX2 performance improvement on newer CPU's. U
 ### Implement new games
 Refer to the submodule [alpha-zero-adversary-learning/README.md](alpha-zero-adversary-learning/README.md) to see what's necessary for a new game implementation.
 
-## Open implementation issues
+## Implementation details
 
-### Missing parallelization
-#### Single threaded Monte Carlo Tree Search
-The Monte Carlo Tree Search implementation [MonteCarloTreeSearch.java](https://github.com/evolutionsoftswiss/alpha-zero-learning/blob/master/alpha-zero-adversary-learning/src/main/java/ch/evolutionsoft/rl/MonteCarloTreeSearch.java) is not yet implemented to support multi-threads. First trials with parallelized playout method let [MonteCarloTreeSearchTest.java](https://github.com/evolutionsoftswiss/alpha-zero-learning/blob/master/tic-tac-toe/src/test/java/ch/evolutionsoft/rl/MonteCarloTreeSearchTest.java) fail. The mismatch in real visit counts versus expected visit counts of direct root child nodes shows the existence of problems in parallelized runs.
-
-Without synchronizing almost all of the code that should run in parallel, those issues and the failing test case remained.
-
-#### Single threaded challenge games in AlphaGo variation
-Also when challenging an updated Model against the previous model in a number of games, that is done game after game.
-That makes the algorithm significantly slower even for a very simple game like Tic Tac Toe.
-
-You may want to prefer to always update the model after having it trained with new play-through examples. That approach was also a change from Alpha Zero compared to AlphaGo Zero.
+### Simplified parallelization
+#### Multi threaded Monte Carlo Tree Search with separate trees
+The Monte Carlo Tree Search implementation [MonteCarloTreeSearch.java](https://github.com/evolutionsoftswiss/alpha-zero-learning/blob/master/alpha-zero-adversary-learning/alpha-zero-learning-main/src/main/java/ch/evolutionsoft/rl/alphazero/MonteCarloTreeSearch.java) is run separately for each thread. The separate trees help to produce more different samples, but are probably less accurate than a single shared tree.
 
 ### Mvn build and packaging
-The mvn builds for each submodule take several minutes and a lot of different system architecture dependencies are packaged into the jar's with dependencies. That is a deeplearning4j related issue leading to very large distribution packages.
+The mvn builds for each submodule take several minutes and a lot of different system architecture dependencies are packaged into the jar's with dependencies. That is deeplearning4j related and leading to very distribution packages.

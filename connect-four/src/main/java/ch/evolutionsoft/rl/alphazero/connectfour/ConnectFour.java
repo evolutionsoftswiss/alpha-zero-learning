@@ -1,6 +1,6 @@
 package ch.evolutionsoft.rl.alphazero.connectfour;
 
-import static ch.evolutionsoft.rl.alphazero.connectfour.playground.PlaygroundConstants.*;
+import static ch.evolutionsoft.rl.alphazero.connectfour.model.PlaygroundConstants.*;
 
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -14,7 +14,7 @@ import org.nd4j.linalg.factory.Nd4j;
 import ch.evolutionsoft.rl.AdversaryLearningConstants;
 import ch.evolutionsoft.rl.AdversaryTrainingExample;
 import ch.evolutionsoft.rl.Game;
-import ch.evolutionsoft.rl.alphazero.connectfour.playground.BinaryPlayground;
+import ch.evolutionsoft.rl.alphazero.connectfour.model.BinaryPlayground;
 
 public class ConnectFour extends Game {
 

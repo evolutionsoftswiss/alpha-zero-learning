@@ -1,4 +1,4 @@
-package ch.evolutionsoft.rl.alphazero.connectfour.playground;
+package ch.evolutionsoft.rl.alphazero.connectfour.model;
 
 /**
  * @author evolutionsoft
@@ -18,11 +18,11 @@ public class ArrayPosition {
     
     this.fieldsLeft = 42;
     
-    for (int row = PlaygroundConstants.ARRAY_ROW_COUNT - 1; row >= 0; row--) {
+    for (int row = PlaygroundConstants.ROW_COUNT - 1; row >= 0; row--) {
       
-      for (int column = 0; column < PlaygroundConstants.ARRAY_COLUMN_COUNT; column++) {
+      for (int column = 0; column < PlaygroundConstants.COLUMN_COUNT; column++) {
         
-        int index = row * PlaygroundConstants.ARRAY_COLUMN_COUNT + column;
+        int index = row * PlaygroundConstants.COLUMN_COUNT + column;
         
         if (this.playground[index] == PlaygroundConstants.YELLOW ||
             this.playground[index] == PlaygroundConstants.RED) {

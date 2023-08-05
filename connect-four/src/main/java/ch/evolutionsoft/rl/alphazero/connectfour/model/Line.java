@@ -1,4 +1,4 @@
-package ch.evolutionsoft.rl.alphazero.connectfour.playground;
+package ch.evolutionsoft.rl.alphazero.connectfour.model;
 
 /**
  * @author evolutionsoft

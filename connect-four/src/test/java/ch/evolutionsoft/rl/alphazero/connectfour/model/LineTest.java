@@ -1,4 +1,4 @@
-package ch.evolutionsoft.rl.alphazero.connectfour.playground;
+package ch.evolutionsoft.rl.alphazero.connectfour.model;
 
 import static org.junit.jupiter.api.Assertions.assertSame;
 
@@ -9,8 +9,8 @@ class LineTest {
   @Test
   void testVerticalBeginningFieldBottom() {
 
-    Field beginningField = new Field(10);
-    Field endField = new Field(37);
+    Field beginningField = new Field("A1");
+    Field endField = new Field("A4");
 
     Line line = new Line(beginningField, endField, PlaygroundConstants.RED);
 
@@ -22,8 +22,8 @@ class LineTest {
   @Test
   void testVerticalBeginningFieldUp() {
 
-    Field beginningField = new Field(37);
-    Field endField = new Field(10);
+    Field beginningField = new Field("A4");
+    Field endField = new Field("A1");
 
     Line line = new Line(beginningField, endField, PlaygroundConstants.RED);
 
@@ -35,8 +35,8 @@ class LineTest {
   @Test
   void testHorizontalBeginningFieldLeft() {
 
-    Field beginningField = new Field(31);
-    Field endField = new Field(34);
+    Field beginningField = new Field("C3");
+    Field endField = new Field("G3");
 
     Line line = new Line(beginningField, endField, PlaygroundConstants.RED);
 
@@ -48,8 +48,8 @@ class LineTest {
   @Test
   void testHorizontalBeginningFieldRight() {
 
-    Field beginningField = new Field(34);
-    Field endField = new Field(31);
+    Field beginningField = new Field("G3");
+    Field endField = new Field("C3");
 
     Line line = new Line(beginningField, endField, PlaygroundConstants.RED);
 
@@ -61,8 +61,8 @@ class LineTest {
   @Test
   void testDiagonallyDownBeginningFieldLeft() {
 
-    Field beginningField = new Field(55);
-    Field endField = new Field(31);
+    Field beginningField = new Field("C6");
+    Field endField = new Field("G3");
 
     Line line = new Line(beginningField, endField, PlaygroundConstants.RED);
 
@@ -74,8 +74,8 @@ class LineTest {
   @Test
   void testDiagonallyDownBeginningFieldRight() {
 
-    Field beginningField = new Field(31);
-    Field endField = new Field(55);
+    Field beginningField = new Field("G3");
+    Field endField = new Field("C6");
 
     Line line = new Line(beginningField, endField, PlaygroundConstants.RED);
 

@@ -1,7 +1,7 @@
 package ch.evolutionsoft.rl.alphazero.connectfour;
 
 import static ch.evolutionsoft.rl.alphazero.connectfour.ConnectFour.*;
-import static ch.evolutionsoft.rl.alphazero.connectfour.playground.PlaygroundConstants.*;
+import static ch.evolutionsoft.rl.alphazero.connectfour.model.PlaygroundConstants.*;
 
 import java.io.IOException;
 import java.util.LinkedList;

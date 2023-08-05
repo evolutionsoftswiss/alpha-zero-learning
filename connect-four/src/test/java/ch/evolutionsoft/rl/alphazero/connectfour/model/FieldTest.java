@@ -1,4 +1,4 @@
-package ch.evolutionsoft.rl.alphazero.connectfour.playground;
+package ch.evolutionsoft.rl.alphazero.connectfour.model;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -7,14 +7,18 @@ import org.junit.jupiter.api.Test;
 
 class FieldTest {
 
-  Field fieldC2, fieldD2, fieldE5, fieldE6;
+  Field fieldC2;
+  Field fieldD2;
+  Field fieldE5;
+  Field fieldE6;
+  
 
   @BeforeEach
   void setUp() {
-    fieldC2 = new Field(21);
-    fieldD2 = new Field(22);
-    fieldE5 = new Field(50);
-    fieldE6 = new Field(59);
+    fieldC2 = new Field(7 + 2);
+    fieldD2 = new Field(7 + 3);
+    fieldE5 = new Field(4 * 7 + 4);
+    fieldE6 = new Field(5 * 7 + 4);
 
   }
 
@@ -52,7 +56,7 @@ class FieldTest {
   void testConstructorWithString() {
 
     Field fieldE3 = new Field("e3");
-    assertEquals(32, fieldE3.getPosition());
+    assertEquals(2 * 7 + 4, fieldE3.getPosition());
   }
 
   @Test

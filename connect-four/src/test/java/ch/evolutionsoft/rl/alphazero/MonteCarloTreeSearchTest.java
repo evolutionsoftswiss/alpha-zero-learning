@@ -16,8 +16,8 @@ import ch.evolutionsoft.rl.AdversaryLearningConfiguration;
 import ch.evolutionsoft.rl.Game;
 import ch.evolutionsoft.rl.alphazero.connectfour.ConnectFour;
 import ch.evolutionsoft.rl.alphazero.connectfour.ConvolutionResidualNet;
-import ch.evolutionsoft.rl.alphazero.connectfour.playground.ArrayPosition;
-import ch.evolutionsoft.rl.alphazero.connectfour.playground.BinaryPlayground;
+import ch.evolutionsoft.rl.alphazero.connectfour.model.ArrayPosition;
+import ch.evolutionsoft.rl.alphazero.connectfour.model.BinaryPlayground;
 
 /**
  * Attention: These tests are sensitiv to network changes and initializations

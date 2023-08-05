@@ -1,6 +1,6 @@
-package ch.evolutionsoft.rl.alphazero.connectfour.playground;
+package ch.evolutionsoft.rl.alphazero.connectfour.model;
 
-import static ch.evolutionsoft.rl.alphazero.connectfour.playground.PlaygroundConstants.*;
+import static ch.evolutionsoft.rl.alphazero.connectfour.model.PlaygroundConstants.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 import java.util.ArrayList;

@@ -8,7 +8,7 @@ import org.nd4j.linalg.schedule.ScheduleType;
 
 import ch.evolutionsoft.rl.AdversaryLearningConfiguration;
 import ch.evolutionsoft.rl.Game;
-import ch.evolutionsoft.rl.alphazero.connectfour.playground.PlaygroundConstants;
+import ch.evolutionsoft.rl.alphazero.connectfour.model.PlaygroundConstants;
 
 public class ConnectFourConfiguration {
 
@@ -30,10 +30,10 @@ public class ConnectFourConfiguration {
         dirichletWeight(0.35).
         fromNumberOfIterationsReducedTemperature(-1).
         fromNumberOfMovesReducedTemperature(-1).
-        continueTraining(true).
+        continueTraining(false).
         maxTrainExamplesHistory(81920).
         maxTrainExamplesHistoryFromIteration(300).
-        numberOfIterations(1000).
+        numberOfIterations(4000).
         numberOfEpisodesBeforePotentialUpdate(20).
         numberOfEpisodeThreads(20).
         numberOfMonteCarloSimulations(200).
