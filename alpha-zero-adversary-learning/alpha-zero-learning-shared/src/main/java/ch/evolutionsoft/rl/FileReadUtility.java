@@ -40,7 +40,7 @@ public class FileReadUtility {
     long[] actionShape = storedValues.shape();
     int actionIndicesCount = (int) (actionShape[1] - 3);
     Map<String, AdversaryTrainingExample> loadedMap = new HashMap<>();
-    
+
     for (int index = 0; index < storedBoardKeys.shape()[0]; index++) {
       
       INDArray currentBoardKey = storedBoardKeys.slice(index);

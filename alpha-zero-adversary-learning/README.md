@@ -3,11 +3,6 @@ Alpha Zero adversary learning
 
 This is the main submodule providing the general parts of Java alpha zero learning.
 
-Alpha zero adversary learning uses 1 for a winning position, 0.5 for a draw and 0 for a losing position.
-These differ from the often used 1, 0, -1.
-
-Keep this in mind when using position values or defining the activation function of the neural net value output: TANH does fit a range from -1 to 1, while SIGMOID can be used for 0 to 1.
-
 ## Implement your own new board game
 You need at least the following to implement your own new game and perform trainings.
 
@@ -17,54 +12,68 @@ You need at least the following to implement your own new game and perform train
 4. Put 1.-3. together in a main method and let the computer learn the game
 
 Here's the main class of tic-tac-toe giving an overview:
+```java
+public class TicTacToeReinforcementLearningMain {
 
-	  public static void main(String[] args) throws IOException {
-	    
-	    TicTacToeReinforcementLearningMain main = new TicTacToeReinforcementLearningMain();
-	    
-	    Map<Integer, Double> learningRatesByIterations = new HashMap<>();
-	    learningRatesByIterations.put(0, 2e-3);
-	    learningRatesByIterations.put(200, 1e-3);
-	    MapSchedule learningRateMapSchedule = new MapSchedule(ScheduleType.ITERATION, learningRatesByIterations);
-	    AdversaryLearningConfiguration adversaryLearningConfiguration =
-	        new AdversaryLearningConfiguration.Builder().
-	        learningRateSchedule(learningRateMapSchedule).
-	        build();
-	   
-	    ComputationGraph neuralNet = main.createConvolutionalConfiguration(adversaryLearningConfiguration);
-	
-	    if (log.isInfoEnabled()) {
-	      log.info(neuralNet.summary());
-	    }
-	    
-	    AdversaryLearning adversaryLearning =
-	        new AdversaryLearning(
-	            new TicTacToe(Game.MAX_PLAYER),
-	            neuralNet,
-	            adversaryLearningConfiguration);
-	    
-	    adversaryLearning.performLearning();
-	  }
-	
-	  ComputationGraph createConvolutionalConfiguration(AdversaryLearningConfiguration adversaryLearningConfiguration) {
-	
-	    ConvolutionResidualNet convolutionalLayerNet =
-	        new ConvolutionResidualNet(adversaryLearningConfiguration.getLearningRate());
-	
-	    if (null != adversaryLearningConfiguration.getLearningRateSchedule()) {
-	
-	      convolutionalLayerNet =
-	          new ConvolutionResidualNet(adversaryLearningConfiguration.getLearningRateSchedule());
-	    }
-	    
-	    ComputationGraphConfiguration convolutionalLayerNetConfiguration =
-	        convolutionalLayerNet.createConvolutionalGraphConfiguration();
-	
-	    ComputationGraph net = new ComputationGraph(convolutionalLayerNetConfiguration);
-	    net.init();
-	
-	    return net;
-	  }
+  private static final Logger log = LoggerFactory.getLogger(TicTacToeReinforcementLearningMain.class);
+
+  @Autowired
+  AdversaryLearning adversaryLearning;
+  
+  public static void main(String[] args) {
+
+    SpringApplication.run(AdversaryLearningController.class);
+  }
+
+  @PostConstruct
+  public void init() throws IOException {
+
+    TicTacToe tictactoeGame = new TicTacToe(Game.MAX_PLAYER);
+    
+    Map<Integer, Double> learningRatesByIterations = new HashMap<>();
+    learningRatesByIterations.put(0, 1e-3);
+    MapSchedule learningRateMapSchedule = new MapSchedule(ScheduleType.ITERATION, learningRatesByIterations);
+    AdversaryLearningConfiguration adversaryLearningConfiguration =
+        new AdversaryLearningConfiguration.Builder().
+        learningRateSchedule(learningRateMapSchedule).
+        numberOfAllAvailableMoves(tictactoeGame.getNumberOfAllAvailableMoves()).
+        continueTraining(false).
+        numberOfIterations(250).
+        dirichletAlpha(0.8).
+        numberOfMonteCarloSimulations(25).
+        uctConstantFactor(1.5).
+        maxTrainExamplesHistoryFromIteration(0).
+        build();
+   
+    ComputationGraph neuralNet = createConvolutionalConfiguration(adversaryLearningConfiguration);
+
+    if (log.isInfoEnabled()) {
+      log.info(neuralNet.summary());
+    }
+    
+    adversaryLearning.initialize(
+            tictactoeGame,
+            neuralNet,
+            adversaryLearningConfiguration);
+
+    adversaryLearning.performLearning();
+  }
+
+  ComputationGraph createConvolutionalConfiguration(AdversaryLearningConfiguration adversaryLearningConfiguration) {
+
+    ConvolutionResidualNet convolutionalLayerNet =
+        new ConvolutionResidualNet(adversaryLearningConfiguration.getLearningRateSchedule());
+    
+    ComputationGraphConfiguration convolutionalLayerNetConfiguration =
+        convolutionalLayerNet.createConvolutionalGraphConfiguration();
+
+    ComputationGraph net = new ComputationGraph(convolutionalLayerNetConfiguration);
+    net.init();
+
+    return net;
+  }
+}
+``
 
 ### Subclass Game.java
 Important hints:

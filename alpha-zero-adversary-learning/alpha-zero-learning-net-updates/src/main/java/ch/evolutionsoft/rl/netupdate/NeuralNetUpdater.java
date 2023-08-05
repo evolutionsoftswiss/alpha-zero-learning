@@ -22,7 +22,6 @@ import org.nd4j.linalg.factory.Nd4j;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
-import org.springframework.context.annotation.ComponentScan;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.client.reactive.ReactorClientHttpConnector;
 import org.springframework.stereotype.Component;
@@ -35,16 +34,14 @@ import ch.evolutionsoft.rl.AdversaryTrainingExample;
 import ch.evolutionsoft.rl.GraphLoader;
 
 @Component
-@ComponentScan("ch.evolutionsoft.rl")
 public class NeuralNetUpdater {
 
   public static final Logger log = LoggerFactory.getLogger(NeuralNetUpdater.class);
-
-  // TODO configurable port
-  public static final String CONTROLLER_BASE_URL = "http://localhost:8088/alpha-zero";
   
   public static final int ONE_GIGA_BYTE = 1024 * 1024 * 1024;
-
+  
+  private String controllerBaseUrl;
+  
   AdversaryLearningConfiguration adversaryLearningConfiguration;
   
   AdversaryLearningSharedHelper adversaryLearningSharedHelper;
@@ -58,7 +55,10 @@ public class NeuralNetUpdater {
     
   };
 
-  public NeuralNetUpdater() {
+  public NeuralNetUpdater(UpdaterConfiguration portConfiguration) {
+
+    int adversaryLearningPort = portConfiguration.getAdversaryLearningPort();
+    this.controllerBaseUrl = "http://localhost:" + adversaryLearningPort + "/alpha-zero";
 
     this.webClient = WebClient.builder().
         clientConnector(new ReactorClientHttpConnector()).
@@ -69,7 +69,7 @@ public class NeuralNetUpdater {
   public static void main(String[] args) {
 
     AnnotationConfigApplicationContext applicationContext =
-       new AnnotationConfigApplicationContext(NeuralNetUpdater.class);
+       new AnnotationConfigApplicationContext(UpdaterConfiguration.class);
     
     NeuralNetUpdater neuralNetUpdater = applicationContext.getBean(NeuralNetUpdater.class);
 
@@ -102,7 +102,7 @@ public class NeuralNetUpdater {
     this.adversaryLearningConfiguration = 
         this.webClient.
         get().
-        uri(URI.create(CONTROLLER_BASE_URL + "/adversaryLearningConfiguration")).
+        uri(URI.create(controllerBaseUrl + "/adversaryLearningConfiguration")).
         retrieve().
         bodyToMono(AdversaryLearningConfiguration.class).
         block();
@@ -124,7 +124,7 @@ public class NeuralNetUpdater {
   
   public void listenForNewTrainingExamples() {
 
-    String targetUrl = CONTROLLER_BASE_URL + "/newTrainingExamples";
+    String targetUrl = controllerBaseUrl + "/newTrainingExamples";
     Set<AdversaryTrainingExample> newExamples = new HashSet<>();
     
     ExecutorService netUpdaterExecutor = null;
@@ -158,13 +158,16 @@ public class NeuralNetUpdater {
 
           netUpdaterExecutor.shutdown();
         }
-        
-        newExamples = 
-            webClient.get().
-            uri(URI.create(targetUrl)).
-            retrieve().
-            bodyToMono(parameterizedTypeReference).
-            block();
+
+        if (iteration + 1 < adversaryLearningConfiguration.getInitialIteration() + 
+            adversaryLearningConfiguration.getNumberOfIterations()) {
+          newExamples = 
+              webClient.get().
+              uri(URI.create(targetUrl)).
+              retrieve().
+              bodyToMono(parameterizedTypeReference).
+              block();
+        }
       }
     } catch (InterruptedException ie) {
       
@@ -181,7 +184,7 @@ public class NeuralNetUpdater {
   
         webClient.
         put().
-        uri(URI.create(CONTROLLER_BASE_URL + "/modelUpdated")).
+        uri(URI.create(controllerBaseUrl + "/modelUpdated")).
         retrieve().
         bodyToMono(Void.class).
         block();
@@ -213,7 +216,7 @@ public class NeuralNetUpdater {
 
     return this.webClient.
         get().
-        uri(URI.create(CONTROLLER_BASE_URL + "/isInitialized")).
+        uri(URI.create(controllerBaseUrl + "/isInitialized")).
         retrieve().
         bodyToMono(Boolean.class).
         block();

@@ -234,7 +234,7 @@ public class AdversaryLearning {
     Game currentGame = this.initialGame.createNewInstance(List.of());
     List<AdversaryTrainingExample> trainExamples = new ArrayList<>();
     int currentPlayer = currentGame.getCurrentPlayer();
-    int moveNumber = 1;
+    int moveNumber = 0;
     List<Integer> moveActions = new LinkedList<>();
     TreeNode treeNode = new TreeNode(NO_MOVE, currentGame.getCurrentPlayer(), 0, 1.0, 0.5, null);
     MonteCarloTreeSearch mcts = new MonteCarloTreeSearch(adversaryLearningConfiguration);
@@ -275,6 +275,8 @@ public class AdversaryLearning {
       currentPlayer = currentPlayer == Game.MAX_PLAYER ? Game.MIN_PLAYER : Game.MAX_PLAYER;
     }
 
+    log.info("One game episode ended after {} moves ", moveNumber);
+    
     return trainExamples;
   }
 
