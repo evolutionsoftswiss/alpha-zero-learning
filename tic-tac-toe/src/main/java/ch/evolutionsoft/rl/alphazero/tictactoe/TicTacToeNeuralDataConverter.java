@@ -153,7 +153,7 @@ public class TicTacToeNeuralDataConverter {
       INDArray currentPlayground = allPlaygroundsResults.get(index).getFirst();
 
       INDArray currentResult = allPlaygroundsResults.get(index).getSecond();
-      INDArray adaptedResult = convertMiniMaxResultToBinaryNetLabel(currentPlayground, currentResult);
+      INDArray adaptedResult = convertMiniMaxResultToOneHotNetLabel(currentPlayground, currentResult);
       
       adaptedPlaygroundsLabels.add(new Pair<>(currentPlayground, adaptedResult));
     }
@@ -186,33 +186,34 @@ public class TicTacToeNeuralDataConverter {
       }
     }
 
-    INDArray adaptedResult = null;
+    return createNeuralNetMultiLabels(currentPlayground, currentResult, numberOfDrawMoves, numberOfMaxWins, numberOfMinWins);
+  }
+
+  protected static INDArray createNeuralNetMultiLabels(INDArray currentPlayground, INDArray currentResult,
+      int numberOfDrawMoves, int numberOfMaxWins, int numberOfMinWins) {
 
     if (isMaxMove(currentPlayground) && numberOfMaxWins > 0) {
 
-      adaptedResult = handleMultiMaxWinPosition(currentResult, numberOfMaxWins);
+      return handleMultiMaxWinPosition(currentResult, numberOfMaxWins);
 
     } else if (!isMaxMove(currentPlayground) && numberOfMinWins > 0) {
 
-      adaptedResult = handleMultiMinWinPosition(currentResult, numberOfMinWins);
+      return handleMultiMinWinPosition(currentResult, numberOfMinWins);
 
     } else if (numberOfDrawMoves > 0) {
 
-      adaptedResult = handleMultiDrawPosition(currentPlayground, currentResult);
+      return handleMultiDrawPosition(currentPlayground, currentResult);
 
     } else if (isMaxMove(currentPlayground) && numberOfMinWins > 0) {
 
-      adaptedResult = handleMultiLossPosition(currentPlayground);
+      return handleMultiLossPosition(currentPlayground);
     
-    } else if (!isMaxMove(currentPlayground) && numberOfMaxWins > 0) {
-
-      adaptedResult = handleMultiLossPosition(currentPlayground);
     }
 
-    return adaptedResult;
+    return handleMultiLossPosition(currentPlayground);
   }
 
-  protected static INDArray convertMiniMaxResultToBinaryNetLabel(INDArray currentPlayground, INDArray currentResult) {
+  protected static INDArray convertMiniMaxResultToOneHotNetLabel(INDArray currentPlayground, INDArray currentResult) {
 
     int numberOfDrawMoves = 0;
     int numberOfMaxWins = 0;
@@ -235,8 +236,7 @@ public class TicTacToeNeuralDataConverter {
           SMALLEST_MAX_WIN <= upcomingFieldResult) {
 
         numberOfMaxWins++;
-        if (currentFastestMaxWin < upcomingFieldResult ||
-            bestMaxIndex == -1) {
+        if (currentFastestMaxWin < upcomingFieldResult) {
           currentFastestMaxWin = upcomingFieldResult;
           bestMaxIndex = arrayIndex;
         
@@ -246,8 +246,7 @@ public class TicTacToeNeuralDataConverter {
           BIGGEST_MIN_WIN >= upcomingFieldResult) {
 
         numberOfMinWins++;
-        if (currentFastestMinWin > upcomingFieldResult ||
-            bestMinIndex == -1) {
+        if (currentFastestMinWin > upcomingFieldResult) {
 
           currentFastestMinWin = upcomingFieldResult;
           bestMinIndex = arrayIndex;
@@ -256,26 +255,34 @@ public class TicTacToeNeuralDataConverter {
       }
     }
 
-    INDArray adaptedResult;
+    return createNeuralNetLabels(
+        currentPlayground,
+        currentResult,
+        numberOfDrawMoves,
+        numberOfMaxWins,
+        numberOfMinWins,
+        bestMaxIndex,
+        bestMinIndex);
+  }
+
+  protected static INDArray createNeuralNetLabels(INDArray currentPlayground, INDArray currentResult,
+      int numberOfDrawMoves, int numberOfMaxWins, int numberOfMinWins, int bestMaxIndex, int bestMinIndex) {
+
 
     if (isMaxMove(currentPlayground) && numberOfMaxWins > 0) {
 
-      adaptedResult = Nd4j.zeros(COLUMN_COUNT).putScalar(bestMaxIndex, NET_WIN);
+      return Nd4j.zeros(COLUMN_COUNT).putScalar(bestMaxIndex, NET_WIN);
 
     } else if (!isMaxMove(currentPlayground) && numberOfMinWins > 0) {
 
-      adaptedResult = Nd4j.zeros(COLUMN_COUNT).putScalar(bestMinIndex, NET_WIN);
+      return Nd4j.zeros(COLUMN_COUNT).putScalar(bestMinIndex, NET_WIN);
 
     } else if (numberOfDrawMoves > 0) {
 
-      adaptedResult = handleDrawPosition(currentPlayground, currentResult);
-
-    } else {
-      
-      adaptedResult = handleLossPosition(currentPlayground);
+      return handleDrawPosition(currentPlayground, currentResult);
     }
-
-    return adaptedResult;
+      
+    return handleLossPosition(currentPlayground);
   }
 
   protected static INDArray handleMultiMaxWinPosition(INDArray currentResult, int maxWins) {
