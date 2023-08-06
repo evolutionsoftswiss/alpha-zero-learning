@@ -3,12 +3,11 @@ package ch.evolutionsoft.rl.alphazero.connectfour.model;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Observable;
 
 /**
  * @author evolutionsoft
  */
-public class BinaryPlayground extends Observable implements Playground {
+public class BinaryPlayground implements Playground {
 
   public static final int FIRST_PLAYER = 0;
   public static final int SECOND_PLAYER = 1;

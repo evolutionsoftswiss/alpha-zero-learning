@@ -1,8 +1,6 @@
 package ch.evolutionsoft.rl.alphazero.connectfour.model;
 
-import java.util.Observable;
-
-public abstract class AbstractPlayer extends Observable {
+public abstract class AbstractPlayer {
 
   protected int color;
 

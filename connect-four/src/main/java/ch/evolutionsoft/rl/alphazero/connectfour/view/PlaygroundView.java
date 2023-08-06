@@ -1,12 +1,14 @@
 package ch.evolutionsoft.rl.alphazero.connectfour.view;
 
+import static ch.evolutionsoft.rl.alphazero.connectfour.model.ModelViewConstants.*;
+
 import java.awt.Dimension;
 import java.awt.FlowLayout;
 import java.awt.GridLayout;
 import java.awt.event.ComponentAdapter;
 import java.awt.event.ComponentEvent;
-import java.util.Observable;
-import java.util.Observer;
+import java.beans.PropertyChangeEvent;
+import java.beans.PropertyChangeListener;
 
 import javax.swing.JPanel;
 import javax.swing.Timer;
@@ -16,7 +18,7 @@ import ch.evolutionsoft.rl.alphazero.connectfour.model.Line;
 import ch.evolutionsoft.rl.alphazero.connectfour.model.Move;
 import ch.evolutionsoft.rl.alphazero.connectfour.model.PlaygroundConstants;
 
-public class PlaygroundView extends JPanel implements Observer {
+public class PlaygroundView extends JPanel implements PropertyChangeListener {
 
   private transient ConnectFourGame game;
 
@@ -34,7 +36,7 @@ public class PlaygroundView extends JPanel implements Observer {
     super();
     this.game = game;
 
-    this.game.addObserver(this);
+    this.game.addPropertyChangeListener(this);
 
     this.init();
 
@@ -68,22 +70,41 @@ public class PlaygroundView extends JPanel implements Observer {
     }
   }
 
-  public void blinkFourInARow() {
+  @Override
+  public void propertyChange(PropertyChangeEvent event) {
 
-    Line winningRow = this.game.getWinningRow();
+    if (NEW_MOVE_PROPERTY.equals(event.getPropertyName()) || MOVE_REDONE_PROPERTY.equals(event.getPropertyName())) {
 
-    final int rowDirection = winningRow.getWinningRowRowDirection();
-    final int columnDirection = winningRow.getWinningRowColumnDirection();
-    final int beginningRow = winningRow.getBeginning().getRow();
-    final int beginningColumn = winningRow.getBeginning().getColumn();
-    final int length = winningRow.getWinningRowLength();
-    final int color = this.game.getWinner().getColor();
+      Move move = this.game.getLastMove();
+      fieldViewElements[move.getRow()][move.getColumn()].setColor(move.getColor());
+      fieldViewElements[move.getRow()][move.getColumn()].repaint();
 
-    this.blinkWinningRowTimer = new Timer(HALF_SECOND, actionListener -> 
-        inverseWinningRow(beginningRow, beginningColumn, rowDirection, columnDirection, length, color)
-    );
+    } else if (NEW_GAME_PROPERTY.equals(event.getPropertyName())) {
 
-    this.blinkWinningRowTimer.start();
+      this.reset();
+
+    } else if (MOVE_TOOK_BACK_PROPERTY.equals(event.getPropertyName())) {
+ 
+      Line winningRow = this.game.getWinningRow();
+      if (winningRow != null) {
+        stopBlinkingWinningRow();
+        this.resetWinningRow(
+          winningRow.getBeginning().getRow(),
+          winningRow.getBeginning().getColumn(),
+          winningRow.getWinningRowRowDirection(),
+          winningRow.getWinningRowColumnDirection(), 
+          winningRow.getWinningRowLength(),
+          winningRow.getColor());
+        this.game.resetWinner();
+      }
+      Move move = this.game.getLastTookBackMove();
+      fieldViewElements[move.getRow()][move.getColumn()].setColor(PlaygroundConstants.EMPTY);
+      fieldViewElements[move.getRow()][move.getColumn()].repaint();
+
+    } else if (FOUR_IN_A_ROW_PROPERTY.equals(event.getPropertyName())) {
+
+      this.blinkFourInARow();
+    }
   }
 
   protected void inverseWinningRow(int beginningRow, int beginningColumn,
@@ -137,47 +158,28 @@ public class PlaygroundView extends JPanel implements Observer {
     }
   }
 
+  private void blinkFourInARow() {
+
+    Line winningRow = this.game.getWinningRow();
+
+    final int rowDirection = winningRow.getWinningRowRowDirection();
+    final int columnDirection = winningRow.getWinningRowColumnDirection();
+    final int beginningRow = winningRow.getBeginning().getRow();
+    final int beginningColumn = winningRow.getBeginning().getColumn();
+    final int length = winningRow.getWinningRowLength();
+    final int color = this.game.getWinner().getColor();
+
+    this.blinkWinningRowTimer = new Timer(HALF_SECOND, actionListener -> 
+        inverseWinningRow(beginningRow, beginningColumn, rowDirection, columnDirection, length, color)
+    );
+
+    this.blinkWinningRowTimer.start();
+  }
+
   private void stopBlinkingWinningRow() {
 
     if (this.blinkWinningRowTimer != null) {
       this.blinkWinningRowTimer.stop();
-    }
-  }
-
-  /*
-   * (non-Javadoc)
-   * 
-   * @see java.util.Observer#update(java.util.Observable, java.lang.Object)
-   */
-  public void update(Observable observable, Object object) {
-
-    if ("New move".equals(object) || "Move redone".equals(object)) {
-
-      Move move = this.game.getLastMove();
-      fieldViewElements[move.getRow()][move.getColumn()].setColor(move.getColor());
-      fieldViewElements[move.getRow()][move.getColumn()].repaint();
-
-    } else if ("New game".equals(object)) {
-
-      this.reset();
-
-    } else if ("Move took back".equals(object)) {
- 
-      Line winningRow = this.game.getWinningRow();
-      if (winningRow != null) {
-        stopBlinkingWinningRow();
-        this.resetWinningRow(
-          winningRow.getBeginning().getRow(),
-          winningRow.getBeginning().getColumn(),
-          winningRow.getWinningRowRowDirection(),
-          winningRow.getWinningRowColumnDirection(), 
-          winningRow.getWinningRowLength(),
-          winningRow.getColor());
-        this.game.resetWinner();
-      }
-      Move move = this.game.getLastTookBackMove();
-      fieldViewElements[move.getRow()][move.getColumn()].setColor(PlaygroundConstants.EMPTY);
-      fieldViewElements[move.getRow()][move.getColumn()].repaint();
     }
   }
 }

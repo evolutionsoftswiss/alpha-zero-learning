@@ -14,6 +14,8 @@ public class PlaygroundConstants {
   
   public static final int COLUMN_COUNT = 7;
   public static final int ROW_COUNT = 6;
+  
+  // TODO Increased array size with border fields is now only used in tests
   public static final int ARRAY_COLUMN_COUNT = 9;
   public static final int ARRAY_ROW_COUNT = 8;
   

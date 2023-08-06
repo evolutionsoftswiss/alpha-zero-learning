@@ -1,5 +1,7 @@
 package ch.evolutionsoft.rl.alphazero.connectfour.model;
 
+import java.beans.PropertyChangeListener;
+import java.beans.PropertyChangeSupport;
 import java.io.IOException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -33,7 +35,9 @@ public class AlphaZeroPlayer extends AbstractPlayer {
   private boolean searchInitialized;
   
   private int move;
-  
+
+  private PropertyChangeSupport propertyChangeSupport;
+
   public AlphaZeroPlayer(int color, String model, boolean useMonteCarloSearch, double temperature) {
 
     super(color);
@@ -48,6 +52,12 @@ public class AlphaZeroPlayer extends AbstractPlayer {
     this.modelName = model;
     this.useMonteCarloSearch = useMonteCarloSearch;
     this.temp = temperature;
+    this.propertyChangeSupport = new PropertyChangeSupport(this);
+  }
+
+  public void addPropertyChangeListener(PropertyChangeListener view) {
+
+    this.propertyChangeSupport.addPropertyChangeListener(view);
   }
 
   public void reset() {
@@ -64,8 +74,7 @@ public class AlphaZeroPlayer extends AbstractPlayer {
 
     this.searchInitialized = true;
 
-    this.setChanged();
-    this.notifyObservers("Search move");
+    this.propertyChangeSupport.firePropertyChange("searchMove", false, true);
 
     ExecutorService monteCarloSearchExecutor = Executors.newSingleThreadExecutor();
     monteCarloSearchExecutor.submit(() -> {

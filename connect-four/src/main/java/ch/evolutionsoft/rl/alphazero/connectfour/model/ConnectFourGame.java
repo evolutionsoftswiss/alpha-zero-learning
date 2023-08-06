@@ -1,10 +1,13 @@
 package ch.evolutionsoft.rl.alphazero.connectfour.model;
 
+import static ch.evolutionsoft.rl.alphazero.connectfour.model.ModelViewConstants.*;
+
+import java.beans.PropertyChangeListener;
+import java.beans.PropertyChangeSupport;
 import java.util.ArrayDeque;
 import java.util.Deque;
-import java.util.Observable;
 
-public class ConnectFourGame extends Observable {
+public class ConnectFourGame {
 
   private BinaryPlayground playground;
   private int turn = PlaygroundConstants.YELLOW;
@@ -14,11 +17,13 @@ public class ConnectFourGame extends Observable {
   private Deque<Move> moves = new ArrayDeque<>();
   private Deque<Move> movesTookBack = new ArrayDeque<>();
   private Line winningRow;
+  private PropertyChangeSupport propertyChangeSupport;
 
   public ConnectFourGame(AbstractPlayer player1, AbstractPlayer player2) {
 
     this.playground = new BinaryPlayground();
 
+    this.propertyChangeSupport = new PropertyChangeSupport(this);
     this.setPlayers(player1, player2);
     this.setGameInstanceFromComputerPlayer();
   }
@@ -134,8 +139,7 @@ public class ConnectFourGame extends Observable {
       this.redPlayer = player1;
     }
 
-    this.setChanged();
-    this.notifyObservers("Players set");
+    this.propertyChangeSupport.firePropertyChange(PLAYERS_PROPERTY, false, true);
   }
 
   public void setOtherPlayer(AbstractPlayer newPlayer) {
@@ -145,10 +149,11 @@ public class ConnectFourGame extends Observable {
 
       throw new IllegalArgumentException("Illegal player or color");
     }
-
+    
     if (this.turn == PlaygroundConstants.YELLOW) {
 
       redPlayer = newPlayer;
+
     } else if (this.turn == PlaygroundConstants.RED) {
 
       yellowPlayer = newPlayer;
@@ -156,12 +161,16 @@ public class ConnectFourGame extends Observable {
 
     this.setGameInstanceFromComputerPlayer();
 
-    this.setChanged();
-    this.notifyObservers("Other player set");
+    this.propertyChangeSupport.firePropertyChange(OTHER_PLAYER_PROPERTY, false, true);
   }
 
   // --------- public methods
   // ------------------------------------------------------------
+
+  public void addPropertyChangeListener(PropertyChangeListener view) {
+
+    this.propertyChangeSupport.addPropertyChangeListener(view);
+  }
 
   public void newGame(AbstractPlayer player1, AbstractPlayer player2) {
 
@@ -169,8 +178,7 @@ public class ConnectFourGame extends Observable {
     this.setPlayers(player1, player2);
     this.setGameInstanceFromComputerPlayer();
 
-    this.setChanged();
-    this.notifyObservers("New game");
+    this.propertyChangeSupport.firePropertyChange(NEW_GAME_PROPERTY, false, true);
   }
 
   public void move(int column, int color) {
@@ -193,8 +201,7 @@ public class ConnectFourGame extends Observable {
           && this.notOver())
         ((AlphaZeroPlayer) this.getCurrentPlayer()).move();
 
-      this.setChanged();
-      this.notifyObservers("New move");
+      this.propertyChangeSupport.firePropertyChange(NEW_MOVE_PROPERTY, false, true);
     }
   }
 
@@ -210,8 +217,7 @@ public class ConnectFourGame extends Observable {
 
       this.swapTurn();
 
-      this.setChanged();
-      this.notifyObservers("Move took back");
+      this.propertyChangeSupport.firePropertyChange(MOVE_TOOK_BACK_PROPERTY, false, true);
     }
   }
 
@@ -227,8 +233,7 @@ public class ConnectFourGame extends Observable {
       
       this.checkForWinner(move.getColumn(), move.getColor());
 
-      this.setChanged();
-      this.notifyObservers("Move redone");
+      this.propertyChangeSupport.firePropertyChange(MOVE_REDONE_PROPERTY, false, true);
     }
   }
 
@@ -236,6 +241,7 @@ public class ConnectFourGame extends Observable {
 
     this.winner = null;
     this.winningRow = null;
+    this.propertyChangeSupport.firePropertyChange(RESET_WINNER_PROPERTY, false, true);
   }
 
   public boolean hasComputerPlayer() {
@@ -287,8 +293,7 @@ public class ConnectFourGame extends Observable {
       this.setWinner(color);
       this.winningRow = this.playground.getWinningRow(column, color);
 
-      this.setChanged();
-      this.notifyObservers("Four in a row");
+      this.propertyChangeSupport.firePropertyChange(FOUR_IN_A_ROW_PROPERTY, false, true);
     }
 
   }
