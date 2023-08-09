@@ -6,6 +6,8 @@ This submodule is an example implementation using the general other module [alph
 ## Implementation details
 
 ### Residual net architecture
+
+```
 	=============================================================================================================================================================
 	VertexName (VertexType)                         nIn,nOut   TotalParams   ParamsShape                                                 Vertex Inputs           
 	=============================================================================================================================================================
@@ -36,32 +38,39 @@ This submodule is an example implementation using the general other module [alph
 	        Trainable Parameters:  5,138
 	           Frozen Parameters:  0
 	=============================================================================================================================================================
+```
 
 ### Adversary learning configuration
-	 learningRate: MapSchedule(scheduleType=ITERATION, values={0=0.002, 200=0.001}, allKeysSorted=[0, 200])
-	 batch size: 8192
-	 dirichletAlpha: 1.1
-	 dirichletWeight: 0.45
-	 alwaysUpdateNeuralNetwork: true
-	 gamesToGetNewNetworkWinRatio: -
-	 gamesWinRatioThresholdNewNetworkUpdate: -
-	 numberOfEpisodesBeforePotentialUpdate: 10
-	 iterationStart: 1
-	 numberOfIterations: 250
-	 checkPointIterationsFrequency: 50
-	 fromNumberOfIterationsTemperatureZero: -1
-	 fromNumberOfMovesTemperatureZero: 3
-	 maxTrainExamplesHistory: 5000
-	 cpUct: 0.8
-	 numberOfMonteCarloSimulations: 30
-	 bestModelFileName: ~/alpha-zero-learning/tic-tac-toe/bestmodel.bin
-	 trainExamplesFileName: ~/alpha-zero-learning/tic-tac-toe/trainExamples.obj
+
+```
+ learningRate: MapSchedule(scheduleType=ITERATION, values={0=0.001}, allKeysSorted=[0])
+ batch size: 8192
+ dirichletAlpha: 0.8
+ dirichletWeight: 0.4
+ numberOfAllAvailableMoves: 9
+ numberOfEpisodesBeforePotentialUpdate: 10
+ numberOfEpisodeThreads: 16
+ continueTraining: false
+ initialIteration: 1
+ numberOfIterations: 300
+ checkPointIterationsFrequency: 50
+ fromNumberOfIterationsReducedTemperature: -1
+ fromNumberOfMovesReducedTemperature: -1
+ reducedTemperature: 0.0
+ maxTrainExamplesHistory: 5000
+ maxTrainExamplesHistoryFromIteration: 0
+ currentMaxTrainExamplesHistory: 5000
+ cpUct: 1.5
+ numberOfMonteCarloSimulations: 25
+ modelFileName: /home/evolutionsoft/git/alpha-zero-learning/tic-tac-toe/model.bin
+ trainExamplesFileNames: /home/evolutionsoft/git/alpha-zero-learning/tic-tac-toe/trainExamples.obj
+```
 
 ## Learning performance
 
-With the above configuration 250 iterations with 10 self play episodes take around 45 minutes on i7-5700 with avx2 enabled build. After those 250 iterations ~4000 of 4520 play through examples from [supervised learning](https://github.com/evolutionsoftswiss/dl4j) are generated.
+With the above configuration 300 iterations with 10 self play episodes take around 12 minutes on AMD Ryzen 3950 with an NVIDIA RTX A6000 and CUDA 11.4 support. After those 300 iterations ~4300 of 4520 play through examples from [supervised learning](https://github.com/evolutionsoftswiss/dl4j) are generated.
 
-With 250 iterations the trained model holds the draw with any or almost any of the nine opening moves playing as first or as second player.
+With 300 iterations the trained model holds the draw with any or almost any of the nine opening moves playing as first or as second player. Additionally enabling a small monte carlo search can make the model stronger.
 
 ## Additional classes with main methods
 For training only TicTacToeReinforcementLearningMain.java is necessary. Here two additional classes with main methods are provided. They help interpreting the progress of the performed alpha zero training.
@@ -73,32 +82,32 @@ For examples and hints about executing the main methods see the parent module [R
 ### EvaluationMain.java
 With Tic Tac Toe as a special case, because the simplicity allows a full minimax search, there are generated labels from the [supervised dl4j learning project](https://github.com/evolutionsoftswiss/dl4j). This evaluation is done after each iteration and shows also a learning progress. Alpha zero learns some same moves, but probably also find different correct moves.
 
-	========================Evaluation Metrics========================
-	 # of classes:    9
-	 Accuracy:        0.5478
-	 Precision:       0.5617
-	 Recall:          0.5999
-	 F1 Score:        0.5477
-	Precision, recall & F1: macro-averaged (equally weighted avg. of 9 classes)
-	
-	
-	=========================Confusion Matrix=========================
-	   0   1   2   3   4   5   6   7   8
-	-------------------------------------
-	 490  63 122  49 371  67 116  55 116 | 0 = 0
-	   8 184  24  25  75  22  37   7  39 | 1 = 1
-	  13   1 341  31 112   4  27  21  31 | 2 = 2
-	   5   9   5 146  62   3  20  24  39 | 3 = 3
-	   7   8  13  10 572  13  24  13  21 | 4 = 4
-	   7   6   2   1  20 138  26  19   8 | 5 = 5
-	  10   1  12   4  47   8 244   7  27 | 6 = 6
-	   5   1   3   5  20   6   5 113  12 | 7 = 7
-	   8   4  15   3  33   4   3   0 248 | 8 = 8
-	
-	Confusion matrix format: Actual (rowClass) predicted as (columnClass) N times
-	==================================================================
+```
+========================Evaluation Metrics========================
+ # of classes:    9
+ Accuracy:        0.6659
+ Precision:       0.6901
+ Recall:          0.7667
+ F1 Score:        0.6974
+Precision, recall & F1: macro-averaged (equally weighted avg. of 9 classes)
+
+
+=========================Confusion Matrix=========================
+   0   1   2   3   4   5   6   7   8
+-------------------------------------
+ 531  66 128  52 303  74 125  67 151 | 0 = 0
+   2 228   7   6  53   6  19   2  16 | 1 = 1
+   3   2 384  13  72   8  14  16  14 | 2 = 2
+   1   1   0 208  51   5   4   4  15 | 3 = 3
+   9   2   4   0 586   5  17  11  20 | 4 = 4
+   1   0   0   1  12 210  10   8   2 | 5 = 5
+   1   3   6   0  24   3 340   5  13 | 6 = 6
+   4   0   2   1  15   0   1 190   2 | 7 = 7
+   1   2   3   1  18   1   2   0 333 | 8 = 8
+
+Confusion matrix format: Actual (rowClass) predicted as (columnClass) N times
+==================================================================
+```
 
 ### TicTacToeGamesMain.java
-Play 3*9 games with all possible opening moves as X and O player, a total of 54 games. Most of the games should end with a draw after successful training or with the provided bestmodel.bin. If an alpha zero model would win, there would be a bug in the TicTacToePerfectResidualNet.bin.
-
-Experience showed that around 50-60% accuracy compared with the generated labels are enough to always reach the draw. There may still be different play through's with other moves than from TicTacToePerfectResidualNet.bin after the first move, where the alpha zero model not has the correct answer learned yet.
+Play 3*9 games with all possible opening moves as X and O player, a total of 54 games. As a more difficult test than with monte carlo search, use neural net output only.
