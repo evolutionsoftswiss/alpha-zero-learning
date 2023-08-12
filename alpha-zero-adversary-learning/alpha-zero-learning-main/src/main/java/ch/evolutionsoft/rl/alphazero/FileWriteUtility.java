@@ -18,7 +18,7 @@ public class FileWriteUtility {
     // hide constructor
   }
   
-  public static void writeMapToFile(String trainExamplesKeyPath, String trainExamplesValuesPath,
+  public static void writeTrainExamplesToFiles(String trainExamplesKeyPath, String trainExamplesValuesPath,
       Map<String, AdversaryTrainingExample> sourceMap) throws IOException {
 
     if (!sourceMap.isEmpty()) {

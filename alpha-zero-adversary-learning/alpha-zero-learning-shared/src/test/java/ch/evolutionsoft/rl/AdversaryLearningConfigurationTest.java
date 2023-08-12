@@ -25,7 +25,7 @@ class AdversaryLearningConfigurationTest {
         new AdversaryLearningConfiguration.Builder().
         numberOfAllAvailableMoves(7).
         batchSize(1024).
-        bestModelFileName("alphaModel.bin").
+        modelFileName("alphaModel.bin").
         checkPointIterationsFrequency(5).
         dirichletAlpha(0.8).
         dirichletWeight(0.4).
@@ -55,7 +55,7 @@ class AdversaryLearningConfigurationTest {
     AdversaryLearningConfiguration adversaryLearningConfiguration = new AdversaryLearningConfiguration();
     adversaryLearningConfiguration.setNumberOfAllAvailableMoves(7);
     adversaryLearningConfiguration.setBatchSize(1024);
-    adversaryLearningConfiguration.setBestModelFileName("alphaModel.bin");
+    adversaryLearningConfiguration.setModelFileName("alphaModel.bin");
     adversaryLearningConfiguration.setCheckPointIterationsFrequency(5);
     adversaryLearningConfiguration.setDirichletAlpha(0.8);
     adversaryLearningConfiguration.setDirichletWeight(0.4);
@@ -79,10 +79,10 @@ class AdversaryLearningConfigurationTest {
 
     assertAll(
         () -> assertEquals(String.valueOf(Paths.get("").toAbsolutePath()) + File.separator + "alphaModel.bin", 
-            AdversaryLearningConfiguration.getAbsolutePathFrom(adversaryLearningConfiguration.getBestModelFileName())),
+            AdversaryLearningConfiguration.getAbsolutePathFrom(adversaryLearningConfiguration.getModelFileName())),
         () -> assertEquals(7, adversaryLearningConfiguration.getNumberOfAllAvailableMoves()),
         () -> assertEquals(1024, adversaryLearningConfiguration.getBatchSize()),
-        () -> assertTrue(adversaryLearningConfiguration.getBestModelFileName().endsWith("alphaModel.bin")),
+        () -> assertTrue(adversaryLearningConfiguration.getModelFileName().endsWith("alphaModel.bin")),
         () -> assertTrue(adversaryLearningConfiguration.getTrainExamplesFileName().endsWith("trainingExamplesHistory.obj")),
         () -> assertEquals(5, adversaryLearningConfiguration.getCheckPointIterationsFrequency()),
         () -> assertEquals(1.0, adversaryLearningConfiguration.getCurrentTemperature(0, 9)),

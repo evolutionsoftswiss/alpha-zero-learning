@@ -106,13 +106,13 @@ public class AdversaryLearning {
       if (loadedComputationGraph == null) {
 
         ModelSerializer.writeModel(computationGraph,
-            this.adversaryLearningConfiguration.getBestModelFileName(), true);
+            this.adversaryLearningConfiguration.getModelFileName(), true);
       }
 
     } else {
 
       ModelSerializer.writeModel(computationGraph,
-          this.adversaryLearningConfiguration.getBestModelFileName(), true);
+          this.adversaryLearningConfiguration.getModelFileName(), true);
     }
 
     ExecutorService executor = Executors.newSingleThreadExecutor();
@@ -216,10 +216,11 @@ public class AdversaryLearning {
     }
 
     this.sharedHelper.replaceOldTrainingExamplesWithNewActionProbabilities(examplesFromEpisodes.values());
-    saveTrainExamplesHistory();
 
     if (0 == iteration % adversaryLearningConfiguration.getCheckPointIterationsFrequency()) {   
       saveTrainExamplesHistory(iteration);
+    } else {
+      saveTrainExamplesHistory();
     }
 
     this.iteration++;
@@ -299,11 +300,11 @@ public class AdversaryLearning {
       StringBuilder prependedZeros = FileWriteUtility.prependZeros(iteration);
 
       String bestModelPath = AdversaryLearningConfiguration
-          .getAbsolutePathFrom(adversaryLearningConfiguration.getBestModelFileName());
+          .getAbsolutePathFrom(adversaryLearningConfiguration.getModelFileName());
 
       String suffix = "";
       String bestModelBasePath = bestModelPath;
-      if (adversaryLearningConfiguration.getBestModelFileName().contains(".")) {
+      if (adversaryLearningConfiguration.getModelFileName().contains(".")) {
         suffix = bestModelPath.substring(bestModelPath.lastIndexOf('.'), bestModelPath.length());
         int suffixLength = suffix.length();
         bestModelBasePath = bestModelPath.substring(0, bestModelPath.length() - suffixLength);
@@ -403,20 +404,6 @@ public class AdversaryLearning {
   void saveTrainExamplesHistory() throws IOException {
 
     this.sharedHelper.resizeTrainExamplesHistory(this.iteration);
-
-    String trainExamplesByBoardPath = AdversaryLearningConfiguration
-        .getAbsolutePathFrom(adversaryLearningConfiguration.getTrainExamplesFileName());
-    String suffix = "";
-    String trainExamplesBasePath = trainExamplesByBoardPath;
-    if (adversaryLearningConfiguration.getTrainExamplesFileName().contains(".")) {
-      suffix = trainExamplesByBoardPath.substring(trainExamplesByBoardPath.lastIndexOf('.'),
-          trainExamplesByBoardPath.length());
-      int suffixLength = suffix.length();
-      trainExamplesBasePath = trainExamplesByBoardPath.substring(0, trainExamplesByBoardPath.length() - suffixLength);
-    }
-    FileWriteUtility.writeMapToFile(trainExamplesByBoardPath,
-        trainExamplesBasePath + FileReadUtility.TRAIN_EXAMPLES_VALUES + suffix,
-        this.sharedHelper.getTrainExamplesHistory());
   }
 
   void saveTrainExamplesHistory(int iteration) throws IOException {
@@ -439,7 +426,7 @@ public class AdversaryLearning {
     String trainExamplesCheckpointValuesFile = trainExamplesBasePath
         + FileReadUtility.TRAIN_EXAMPLES_VALUES + prependedZeros + iteration + suffix;
 
-    FileWriteUtility.writeMapToFile(trainExamplesCheckpointBoardsFile, trainExamplesCheckpointValuesFile,
+    FileWriteUtility.writeTrainExamplesToFiles(trainExamplesCheckpointBoardsFile, trainExamplesCheckpointValuesFile,
         this.sharedHelper.getTrainExamplesHistory());
   }
 

@@ -180,7 +180,7 @@ public class NeuralNetUpdater {
 
     try {
         
-        ModelSerializer.writeModel(computationGraph, adversaryLearningConfiguration.getBestModelFileName(), true);
+        ModelSerializer.writeModel(computationGraph, adversaryLearningConfiguration.getModelFileName(), true);
   
         webClient.
         put().

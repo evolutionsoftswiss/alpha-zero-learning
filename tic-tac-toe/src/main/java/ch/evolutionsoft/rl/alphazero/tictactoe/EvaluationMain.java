@@ -30,7 +30,7 @@ public class EvaluationMain {
         build();
 
     ComputationGraph computationGraph = ModelSerializer.restoreComputationGraph(
-        configuration.getBestModelFileName(), true);
+        configuration.getModelFileName(), true);
     AdversaryLearning adversaryLearning = new AdversaryLearning(
         new TicTacToe(Game.MAX_PLAYER),
         computationGraph,

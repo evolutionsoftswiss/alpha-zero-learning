@@ -23,7 +23,7 @@ public class TicTacToeGamesMain {
     ComputationGraph perfectResNet = ModelSerializer.restoreComputationGraph(
         AdversaryLearningConfiguration.getAbsolutePathFrom("TicTacToePerfectResidualNet.bin"));
     ComputationGraph alphaNet = ModelSerializer.restoreComputationGraph(
-        AdversaryLearningConfiguration.getAbsolutePathFrom(configuration.getBestModelFileName()));
+        AdversaryLearningConfiguration.getAbsolutePathFrom(configuration.getModelFileName()));
     
     int[] results1 = playGames(perfectResNet, alphaNet, false);
     int[] results2 = playGames(perfectResNet, alphaNet, true);

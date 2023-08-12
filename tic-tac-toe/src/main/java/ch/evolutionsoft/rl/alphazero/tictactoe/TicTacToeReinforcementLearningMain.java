@@ -47,7 +47,7 @@ public class TicTacToeReinforcementLearningMain {
         learningRateSchedule(learningRateMapSchedule).
         numberOfAllAvailableMoves(tictactoeGame.getNumberOfAllAvailableMoves()).
         continueTraining(false).
-        numberOfIterations(250).
+        numberOfIterations(300).
         dirichletAlpha(0.8).
         numberOfMonteCarloSimulations(25).
         uctConstantFactor(1.5).

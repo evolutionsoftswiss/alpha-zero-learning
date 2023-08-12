@@ -147,7 +147,7 @@ public class AdversaryLearningConfiguration {
   /**
    * The file name and extension without path to use for the current best model.
    */
-  private String bestModelFileName;
+  private String modelFileName;
 
   /**
    * The file name and extension without path to use for storing the generated
@@ -180,7 +180,7 @@ public class AdversaryLearningConfiguration {
     private int maxTrainExamplesHistory = 5000;
     private int maxTrainExamplesHistoryFromIteration = -1;
 
-    private String bestModelFileName = "model.bin";
+    private String modelFileName = "model.bin";
     private String trainExamplesFileName = "trainExamples.obj";
 
     private double uctConstantFactor = 1.5;
@@ -208,7 +208,7 @@ public class AdversaryLearningConfiguration {
       configuration.maxTrainExamplesHistoryFromIteration = maxTrainExamplesHistoryFromIteration;
       configuration.uctConstantFactor = uctConstantFactor;
       configuration.numberOfMonteCarloSimulations = numberOfMonteCarloSimulations;
-      configuration.bestModelFileName = getAbsolutePathFrom(bestModelFileName);
+      configuration.modelFileName = getAbsolutePathFrom(modelFileName);
       configuration.trainExamplesFileName = getAbsolutePathFrom(trainExamplesFileName);
       
       return configuration;
@@ -305,8 +305,8 @@ public class AdversaryLearningConfiguration {
       return this;
     }
     
-    public Builder bestModelFileName(String bestModelFileName) {
-      this.bestModelFileName = bestModelFileName;
+    public Builder modelFileName(String modelFileName) {
+      this.modelFileName = modelFileName;
       return this;
     }
     
@@ -337,7 +337,7 @@ public class AdversaryLearningConfiguration {
         "\n currentMaxTrainExamplesHistory: " + this.getCurrentMaxTrainExamplesHistory(initialIteration) +
         "\n cpUct: " + this.uctConstantFactor +
         "\n numberOfMonteCarloSimulations: " + this.numberOfMonteCarloSimulations +
-        "\n bestModelFileName: " + getAbsolutePathFrom(this.bestModelFileName) +
+        "\n modelFileName: " + getAbsolutePathFrom(this.modelFileName) +
         "\n trainExamplesFileNames: " + getAbsolutePathFrom(this.trainExamplesFileName);
   }
   
@@ -535,12 +535,12 @@ public class AdversaryLearningConfiguration {
     return String.valueOf(filePath);
   }
 
-  public String getBestModelFileName() {
-    return bestModelFileName;
+  public String getModelFileName() {
+    return modelFileName;
   }
 
-  public void setBestModelFileName(String bestModelFileName) {
-    this.bestModelFileName = bestModelFileName;
+  public void setModelFileName(String modelFileName) {
+    this.modelFileName = modelFileName;
   }
 
   public String getTrainExamplesFileName() {
