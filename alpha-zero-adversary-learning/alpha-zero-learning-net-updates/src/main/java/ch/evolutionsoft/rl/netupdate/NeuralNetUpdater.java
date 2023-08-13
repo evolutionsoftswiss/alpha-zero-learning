@@ -37,13 +37,13 @@ import ch.evolutionsoft.rl.GraphLoader;
 public class NeuralNetUpdater {
 
   public static final Logger log = LoggerFactory.getLogger(NeuralNetUpdater.class);
-  
+
   public static final int ONE_GIGA_BYTE = 1024 * 1024 * 1024;
-  
+
   private String controllerBaseUrl;
-  
+
   AdversaryLearningConfiguration adversaryLearningConfiguration;
-  
+
   AdversaryLearningSharedHelper adversaryLearningSharedHelper;
 
   ExecutorService initializationExecutor = Executors.newSingleThreadExecutor();
@@ -68,9 +68,9 @@ public class NeuralNetUpdater {
 
   public static void main(String[] args) {
 
-    AnnotationConfigApplicationContext applicationContext =
-       new AnnotationConfigApplicationContext(UpdaterConfiguration.class);
-    
+    AnnotationConfigApplicationContext applicationContext = new AnnotationConfigApplicationContext(
+        UpdaterConfiguration.class);
+
     NeuralNetUpdater neuralNetUpdater = applicationContext.getBean(NeuralNetUpdater.class);
 
     neuralNetUpdater.initializationExecutor.submit(new Callable<Void>() {
@@ -79,22 +79,22 @@ public class NeuralNetUpdater {
       public Void call() throws Exception {
 
         neuralNetUpdater.initialize();
-        
+
         return null;
       }
-      
+
     });
     neuralNetUpdater.initializationExecutor.shutdown();
-    
+
     neuralNetUpdater.listenForNewTrainingExamples();
-    
+
     applicationContext.close();
   }
 
   public void initialize() throws IOException {
 
     log.info("Wait for AdversaryLearning readiness");
-    
+
     while (!this.adversaryLearningIsReady()) {
       // Wait for startup
     }
@@ -114,26 +114,28 @@ public class NeuralNetUpdater {
         adversaryLearningConfiguration.isContinueTraining()) {
       this.adversaryLearningSharedHelper.loadEarlierTrainingExamples();
     }
-    
+
     while (!getAdversaryLearningIsInitialized()) {
       // Wait for initialization
     }
-    
+
     log.info("Neural Net Updater initialized");
   }
-  
+
   public void listenForNewTrainingExamples() {
 
     String targetUrl = controllerBaseUrl + "/newTrainingExamples";
     Set<AdversaryTrainingExample> newExamples = new HashSet<>();
-    
+
     ExecutorService netUpdaterExecutor = null;
 
     try {
-      
+
       while (!this.initializationExecutor.awaitTermination(Long.MAX_VALUE, TimeUnit.MINUTES)) {
         // Wait for initialization
       }
+
+      log.info("Initial iteration from configuration is {}", adversaryLearningConfiguration.getInitialIteration());
       
       for (int iteration = adversaryLearningConfiguration.getInitialIteration() - 1;
           iteration < adversaryLearningConfiguration.getInitialIteration() + 
@@ -144,22 +146,21 @@ public class NeuralNetUpdater {
           while (null != netUpdaterExecutor && !netUpdaterExecutor.awaitTermination(Long.MAX_VALUE, TimeUnit.MINUTES)) {
             // Wait for previous net update
           }
-          
+
           final int updateIteration = iteration;
           netUpdaterExecutor = Executors.newSingleThreadExecutor();
           final List<AdversaryTrainingExample> finalInputList = new LinkedList<>(newExamples);
           netUpdaterExecutor.execute(() -> {
-    
-              ComputationGraph computationGraph = fitNeuralNet(finalInputList, updateIteration);
-    
-              writeUpdatedModel(updateIteration, computationGraph);
-            }
-          );
+
+            ComputationGraph computationGraph = fitNeuralNet(finalInputList, updateIteration);
+
+            writeUpdatedModel(updateIteration, computationGraph);
+          });
 
           netUpdaterExecutor.shutdown();
         }
 
-        if (iteration + 1 < adversaryLearningConfiguration.getInitialIteration() + 
+        if (iteration + 1 < adversaryLearningConfiguration.getInitialIteration() +
             adversaryLearningConfiguration.getNumberOfIterations()) {
           newExamples = 
               webClient.get().
@@ -170,7 +171,7 @@ public class NeuralNetUpdater {
         }
       }
     } catch (InterruptedException ie) {
-      
+
       Thread.currentThread().interrupt();
       throw new NeuralNetUpdaterRuntimeException(ie);
     }
@@ -201,13 +202,12 @@ public class NeuralNetUpdater {
   }
 
   boolean adversaryLearningIsReady() {
-    
+
     try {
-      getAdversaryLearningIsInitialized();
-      return true;
-    
+      return getAdversaryLearningIsInitialized();
+
     } catch (WebClientRequestException wcre) {
-      
+
       return false;
     }
   }
@@ -221,9 +221,9 @@ public class NeuralNetUpdater {
         bodyToMono(Boolean.class).
         block();
   }
-  
+
   ComputationGraph fitNeuralNet(List<AdversaryTrainingExample> newExamples, int updateIteration) {
-    
+
     log.info("Replace old present examples with new ones");
     this.adversaryLearningSharedHelper.replaceOldTrainingExamplesWithNewActionProbabilities(
         newExamples);
@@ -231,10 +231,10 @@ public class NeuralNetUpdater {
     log.info("Resize train examples history for iteration {}", updateIteration);
     this.adversaryLearningSharedHelper.resizeTrainExamplesHistory(updateIteration);
 
-    List<AdversaryTrainingExample> trainingExamples =
-        new ArrayList<>(this.adversaryLearningSharedHelper.getTrainExamplesHistory().values());
+    List<AdversaryTrainingExample> trainingExamples = new ArrayList<>(
+        this.adversaryLearningSharedHelper.getTrainExamplesHistory().values());
     Collections.shuffle(trainingExamples);
-    
+
     ComputationGraph computationGraph = GraphLoader.loadComputationGraph(adversaryLearningConfiguration);
     
     int batchSize = this.adversaryLearningConfiguration.getBatchSize();
@@ -256,6 +256,9 @@ public class NeuralNetUpdater {
         log.info("Fitted model with batch number {}", batchIteration);
       }
     }
+    
+    log.info("Epochs from computation graph model is {}",
+        computationGraph.getEpochCount());
     log.info("Iterations (number of updates) from computation graph model is {}",
         computationGraph.getIterationCount());
     log.info("Learning rate from computation graph model layer 'OutputLayer': {}",
@@ -266,50 +269,51 @@ public class NeuralNetUpdater {
 
   List<MultiDataSet> createMiniBatchList(
       List<AdversaryTrainingExample> trainingExamples) {
- 
+
     int batchSize = adversaryLearningConfiguration.getBatchSize();
     int trainingExamplesSize = trainingExamples.size();
     int batchNumber = 1 + trainingExamplesSize / batchSize;
     if (0 == trainingExamplesSize % batchSize) {
       batchNumber--;
     }
- 
+
     long[] gameInputBoardStackShape = trainingExamples.get(0).getBoard().shape();
-    
+
     List<MultiDataSet> batchedMultiDataSet = new LinkedList<>();
 
     for (int currentBatch = 0; currentBatch < batchNumber; currentBatch++) {
 
       INDArray inputBoards = Nd4j.zeros(batchSize, gameInputBoardStackShape[0], gameInputBoardStackShape[1],
           gameInputBoardStackShape[2]);
-      INDArray probabilitiesLabels = Nd4j.zeros(batchSize, adversaryLearningConfiguration.getNumberOfAllAvailableMoves());
+      INDArray probabilitiesLabels = Nd4j.zeros(batchSize,
+          adversaryLearningConfiguration.getNumberOfAllAvailableMoves());
       INDArray valueLabels = Nd4j.zeros(batchSize, 1);
-      
+
       if (currentBatch >= batchNumber - 1) {
 
         int lastBatchSize = trainingExamplesSize % batchSize;
         inputBoards = Nd4j.zeros(lastBatchSize, gameInputBoardStackShape[0], gameInputBoardStackShape[1],
-        gameInputBoardStackShape[2]);
+            gameInputBoardStackShape[2]);
         probabilitiesLabels = Nd4j.zeros(lastBatchSize, adversaryLearningConfiguration.getNumberOfAllAvailableMoves());
         valueLabels = Nd4j.zeros(lastBatchSize, 1);
       }
 
-      for (int batchExample = 0, exampleNumber = currentBatch * batchSize;
-          exampleNumber < (currentBatch + 1) * batchSize && exampleNumber < trainingExamplesSize;
-          exampleNumber++, batchExample++) {
-        
+      for (int batchExample = 0,
+          exampleNumber = currentBatch * batchSize; exampleNumber < (currentBatch + 1) * batchSize
+              && exampleNumber < trainingExamplesSize; exampleNumber++, batchExample++) {
+
         AdversaryTrainingExample currentTrainingExample = trainingExamples.get(exampleNumber);
         inputBoards.putSlice(batchExample, currentTrainingExample.getBoard());
-        
+
         probabilitiesLabels.putRow(batchExample, currentTrainingExample.getActionIndexProbabilities());
-  
+
         valueLabels.putRow(batchExample, Nd4j.zeros(1).putScalar(0, currentTrainingExample.getCurrentPlayerValue()));
       }
-      
-      batchedMultiDataSet.add( new org.nd4j.linalg.dataset.MultiDataSet(new INDArray[] { inputBoards },
-      new INDArray[] { probabilitiesLabels, valueLabels }));
+
+      batchedMultiDataSet.add(new org.nd4j.linalg.dataset.MultiDataSet(new INDArray[] { inputBoards },
+          new INDArray[] { probabilitiesLabels, valueLabels }));
     }
-    
+
     return batchedMultiDataSet;
   }
 }
