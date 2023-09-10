@@ -1,6 +1,6 @@
 Java Alpha Zero Reinforcement Learning with deeplearning4j
 ==========================================================
-The provide AlphaZero learning here is a Java implementation of the alpha zero algorithm using deeplearning4j library.
+The provided AlphaZero learning here is a Java implementation of the alpha zero algorithm using deeplearning4j library.
 
 ## Introduction
 There are already several Alpha[Go] Zero-related projects on github in python and also in C++.
@@ -23,9 +23,9 @@ It's easier to adapt the algorithm to less complex board games like connect four
 The goal of Java alpha-zero-learning is to enable alpha zero for less complex games. The implementation does not support distributed learning. It is designed to run on a single machine, optionally using graphic cards for net updates.
 
 ### Generic release build
-You can use the existing Java alpha-zero-learning with the generic published release builds. With ch.evolutionsoft.rl.alphazero.tictactoe-2.0.0-jar-with-dependencies you can directly repeat the training for the Tic Tac Toe prototype. See also the submodule [tic-tac-toe/README.md](./tic-tac-toe/README.md) for a few more information.
+You can use the existing Java alpha-zero-learning with the generic published release builds. With ch.evolutionsoft.rl.alphazero.tictactoe-1.1.1-jar-with-dependencies you can directly repeat the training for the Tic Tac Toe prototype. See also the submodule [tic-tac-toe/README.md](./tic-tac-toe/README.md) for a few more information.
 
-ch.evolutionsoft.rl.alphazero.adversary-learning-2.0.0-jar-with-dependencies would let you reuse the general part of the implementation for other board games. The submodule [alpha-zero-adversary-learning/README.md](./alpha-zero-adversary-learning/README.md) contains hints about a new board game implementation.
+ch.evolutionsoft.rl.alphazero.adversary-learning-1.1.1-jar-with-dependencies would let you reuse the general part of the implementation for other board games. The submodule [alpha-zero-adversary-learning/README.md](./alpha-zero-adversary-learning/README.md) contains hints about a new board game implementation.
 	
 
 ### Rebuild for your hardware
